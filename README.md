@@ -4,6 +4,8 @@ Convert Psion Series 3, 3a and 3c *Word* Documents to Plain Text.
 
 > This utility owes a massive debt to the work of [Clive Feather](https://www.davros.org), whose [Psionics Files](https://www.davros.org/psion/psionics/) contains (among many other useful things) the results of his work reverse engineering the Series 3 applications’ document formats.
 
+![Palmtop from the 1990s: The Psion Series 3a](./images/psion-series-3a.jpg)
+
 ## Usage
 
 Use *word2text* to convert into plain text any Psion *Word* documents that you have transferred to your Mac. Provide a `.WRD` file name as an argument and *word2text* will output a plain text version to stdout. This way you can pipe the result into other command line utilities or redirect output to a file . For example:
