@@ -27,40 +27,13 @@
 import Foundation
 
 
-/*
-    Structure to hold the outcome of a single file processing operation.
- 
-    The `text` property will either be the file's textual content or an error message.
-    
-    The `errorCode` value will be zero on a successful process, or an error code if processing
-    failed. This can be used as an exit code and to determine what kind of content `text`
-    contains.
-*/
-struct ProcessResult {
-    var text: String
-    var errorCode: ProcessError
-}
 
-
-/*
-    Enumeration of processing error codes.
-*/
-enum ProcessError: Int {
-    case none = 0
-    case badFile = 1
-    case badPsionFileType = 2
-}
 
 
 // MARK: - Constants
 
 let BLOCK_RECORD_UNIT_LENGTH: Int   = 6
 let RECORD_HEADER_LENGTH: Int       = 4
-let RECORD_TYPE_FILE_INFO: Int      = 1
-let RECORD_TYPE_HEADER_TEXT: Int    = 4
-let RECORD_TYPE_FOOTER_TEXT: Int    = 5
-let RECORD_TYPE_TEXT: Int           = 8
-let RECORD_TYPE_BLOCKS: Int         = 9
 
 // Use stderr, stdout for output
 let STD_ERR: FileHandle = FileHandle.standardError
@@ -97,11 +70,26 @@ func processPaths() {
     
 }
 
+
+/**
+    @Brief Convert an individual Word file to plain text.
+ 
+    @Parameters
+        - filepath: Absolute path of the target Word file.
+    
+    @Returns ProcessResult containing the text or an error message/code.
+*/
 func processFile(_ filepath: String) -> ProcessResult {
     
+    // Convert
     var data: Data
     var text: String = ""
+    var outerText: [String] = ["", ""]
+    var styles: [String:PsionWordStyle] = [:]
+    var emphases: [String:PsionWordStyle] = [:]
+    var byteIndex: Int = 40
     
+    // Read in the file if we can
     let fileURL: URL = URL.init(fileURLWithPath: filepath)
     do {
        data  = try Data(contentsOf: fileURL)
@@ -113,6 +101,7 @@ func processFile(_ filepath: String) -> ProcessResult {
     let preamble: String? = String.init(data: data.prefix(15), encoding: .ascii)
     if let p: String = preamble {
         if p != "PSIONWPDATAFILE" {
+            // TODO Report actual file type
             return ProcessResult.init(text: "Not a Psion Series 3 Word file", errorCode: .badPsionFileType)
         }
         
@@ -121,74 +110,96 @@ func processFile(_ filepath: String) -> ProcessResult {
         }
     }
     
+    // Check for encrypted files
+    // NOTE We can't handle these yet as the decode algorithm remains unknown
+    let encrypted: Bool = (getWordValue(data, 16) == 256)
+    if encrypted {
+        return ProcessResult.init(text: "Word file is encrypted", errorCode: .badPsionFileType)
+    }
+    
     // Decode the file's records, one by one
     let RECORD_TYPES = ["FILE INFO", "PRINTER CONFIG", "PRINTER DRIVER INFO", "HEADER TEXT", "FOOTER TEXT", "STYLE DEFINITION", "EMPHASIS DEFINITION", "BODY TEXT", "STYLE APPLICATION"]
     
-    var outerText: [String] = ["", ""]
-    var byteIndex: Int = 39
-    
+    // Iterate over the file's bytes to extract the records
     while byteIndex < data.count - RECORD_HEADER_LENGTH {
         let recordType: Int = getWordValue(data, byteIndex)
         let recordDataLength: Int = getWordValue(data, byteIndex + 2)
         
-        assert(recordType - 1 <= RECORD_TYPES.count, "UNKNOWN RECORD TYPE")
+        assert(recordType - 1 <= RECORD_TYPES.count, "UNKNOWN RECORD TYPE (\(recordType) @ \(String.init(format: "0x%04x", arguments: [byteIndex]))")
         if doShowInfo {
-            writeToStderr("Record of type \(RECORD_TYPES[recordType - 1]) found at offset \(String.init(format: "0x%04x", arguments: [byteIndex])) (\(byteIndex)). Size: \(recordDataLength) bytes")
+            writeToStderr("Record of type \(RECORD_TYPES[recordType - 1]) found at offset \(String.init(format: "0x%04x", arguments: [byteIndex])). Size: \(recordDataLength) bytes")
         }
         
         // File record
         // NOTE We don't require this for text conversion
-        if recordType == RECORD_TYPE_FILE_INFO && doShowInfo {
-            let recordByteIndex: Int = byteIndex + RECORD_HEADER_LENGTH
-            let cursorLocation: Int = getWordValue(data, recordByteIndex)
-            let shownSymbols: UInt8 = data[recordByteIndex + 2]
-            let statusWindow: UInt8 = data[recordByteIndex + 3]
-            let showStyleBar: UInt8 = data[recordByteIndex + 4]
-            let fileType: UInt8 = data[recordByteIndex + 5]
-            let outlineLevel: UInt8 = data[recordByteIndex + 6]
+        if recordType == PsionWordRecordType.fileInfo.rawValue {
             
-            writeToStderr("  Cursor location: \(cursorLocation), outline level: \(outlineLevel)")
-            writeToStderr("  Show style bar: \(showStyleBar == 1 ? "yes" : "no"), File type: \(fileType == 1 ? "line" : "paragraph")")
+            if recordDataLength != 10 {
+                return ProcessResult(text: "Bad file info record size (\(recordDataLength) not 10 bytes", errorCode: .badRecordLengthFileInfo)
+            }
             
-            var symbolsShown: [String] = []
-            var symbolText: String = ""
-            if shownSymbols & 0x01 > 0 { symbolsShown.append("tabs") }
-            if shownSymbols & 0x02 > 0 { symbolsShown.append("spaces") }
-            if shownSymbols & 0x04 > 0 { symbolsShown.append("newlines") }
-            if shownSymbols & 0x08 > 0 { symbolsShown.append("soft hyphens") }
-            if shownSymbols & 0x10 > 0 { symbolsShown.append("forced line breaks") }
-            
-            if symbolsShown.count >  0 {
-                for symbol in symbolsShown {
-                    symbolText += "\(symbol), "
+            if doShowInfo {
+                let recordByteIndex: Int = byteIndex + RECORD_HEADER_LENGTH
+                let cursorLocation: Int = getWordValue(data, recordByteIndex)
+                let shownSymbols: UInt8 = data[recordByteIndex + 2]
+                let statusWindow: UInt8 = data[recordByteIndex + 3]
+                let showStyleBar: UInt8 = data[recordByteIndex + 4]
+                let fileType: UInt8 = data[recordByteIndex + 5]
+                let outlineLevel: UInt8 = data[recordByteIndex + 6]
+                
+                writeToStderr("  Cursor location: \(cursorLocation), outline level: \(outlineLevel)")
+                writeToStderr("  Show style bar: \(showStyleBar == 1 ? "yes" : "no"), File type: \(fileType == 1 ? "line" : "paragraph")")
+                
+                var symbolsShown: [String] = []
+                var symbolText: String = ""
+                if shownSymbols & 0x01 > 0 { symbolsShown.append("tabs") }
+                if shownSymbols & 0x02 > 0 { symbolsShown.append("spaces") }
+                if shownSymbols & 0x04 > 0 { symbolsShown.append("newlines") }
+                if shownSymbols & 0x08 > 0 { symbolsShown.append("soft hyphens") }
+                if shownSymbols & 0x10 > 0 { symbolsShown.append("forced line breaks") }
+                
+                if symbolsShown.count >  0 {
+                    for symbol in symbolsShown {
+                        symbolText += "\(symbol), "
+                    }
+                } else {
+                    symbolText = "none"
                 }
-            } else {
-                symbolText = "none"
+                
+                writeToStderr("  Symbols shown: \(symbolText)")
+                
+                var windowState: UInt8 = statusWindow & 0x03
+                var windowText: String
+                switch windowState {
+                    case 1:
+                        windowText = "narrow"
+                    case 2:
+                        windowText = "wide"
+                    default:
+                        windowText = "none"
+                }
+                
+                writeToStderr("  Status window: \(windowText)")
+                
+                windowState = (statusWindow & 0x30) >> 4
+                writeToStderr("  Zoom level: \(windowState + 1)x")
             }
-            
-            writeToStderr("  Symbols shown: \(symbolText)")
-            
-            var windowState: UInt8 = statusWindow & 0x03
-            var windowText: String
-            switch windowState {
-                case 1:
-                    windowText = "narrow"
-                case 2:
-                    windowText = "wide"
-                default:
-                    windowText = "none"
-            }
-            
-            writeToStderr("  Status window: \(windowText)")
-            
-            windowState = (statusWindow & 0x30) >> 4
-            writeToStderr("  Zoom level: \(windowState + 1)x")
+        }
+        
+        // Printer Settings
+        // NOTE We don't care about this beyond its size
+        if recordType == PsionWordRecordType.printerConfig.rawValue && recordDataLength != 58 {
+            return ProcessResult(text: "Bad printer config record size (\(recordDataLength) not 58 bytes", errorCode: .badRecordLengthPrinterConfig)
         }
         
         // Header and footer records
-        if recordType == RECORD_TYPE_HEADER_TEXT || recordType == RECORD_TYPE_FOOTER_TEXT {
-            let index: Int = recordType - RECORD_TYPE_HEADER_TEXT
-            let asciiBytes: [UInt8] = [UInt8](data[byteIndex + RECORD_HEADER_LENGTH..<byteIndex + RECORD_HEADER_LENGTH + recordDataLength])
+        // Data are NUL-terminated strings
+        if recordType == PsionWordRecordType.headerText.rawValue || recordType == PsionWordRecordType.footerText.rawValue {
+            let index: Int = recordType - PsionWordRecordType.headerText.rawValue
+            
+            // Allow for the trailing NUL
+            let stringLength = recordDataLength - 1
+            let asciiBytes: [UInt8] = [UInt8](data[byteIndex + RECORD_HEADER_LENGTH..<byteIndex + RECORD_HEADER_LENGTH + stringLength])
             outerText[index] = String(bytes: asciiBytes, encoding: .ascii)!
             
             if doShowInfo {
@@ -196,8 +207,28 @@ func processFile(_ filepath: String) -> ProcessResult {
             }
         }
         
+        // Style Definitions
+        if recordType == PsionWordRecordType.styleDefinition.rawValue {
+            if recordDataLength != 80 {
+                return ProcessResult(text: "Bad style definition record size (\(recordDataLength) not 80 bytes", errorCode: .badRecordLengthStyleDefinition)
+            }
+            
+            let style: PsionWordStyle = getStyle(data, byteIndex, true)
+            styles[style.code] = style
+        }
+        
+        // Emphasis Definitions
+        if recordType == PsionWordRecordType.emphasisDefinition.rawValue {
+            if recordDataLength != 28 {
+                return ProcessResult(text: "Bad emphasis definition record size (\(recordDataLength) not 80 bytes", errorCode: .badRecordLengthStyleDefinition)
+            }
+            
+            let emphasis: PsionWordStyle = getStyle(data, byteIndex, false)
+            emphases[emphasis.code] = emphasis
+        }
+        
         // Text data record
-        if recordType == RECORD_TYPE_TEXT {
+        if recordType == PsionWordRecordType.bodyText.rawValue {
             // Process the text record
             for i in 0..<recordDataLength {
                 let currentByte = byteIndex + RECORD_HEADER_LENGTH + i
@@ -227,17 +258,25 @@ func processFile(_ filepath: String) -> ProcessResult {
         }
         
         // Style application record
-        if recordType == RECORD_TYPE_BLOCKS {
+        if recordType == PsionWordRecordType.blockInfo.rawValue {
             var recordByteCount = 0
             var textByteCount = 0
             while recordByteCount < recordDataLength {
                 let blockStartByteIndex = byteIndex + RECORD_HEADER_LENGTH + recordByteCount
                 let length: Int = getWordValue(data, blockStartByteIndex)
-                let style: Int = getWordValue(data, blockStartByteIndex + 2)
-                let emphasis: Int = getWordValue(data, blockStartByteIndex + 4)
+                let styleCode: String = String(bytes: [UInt8](data[blockStartByteIndex + 2..<blockStartByteIndex + 4]), encoding: .ascii)!
+                let emphasisCode: String = String(bytes: [UInt8](data[blockStartByteIndex + 4..<blockStartByteIndex + 6]), encoding: .ascii)!
                 
-                if doShowInfo {
-                    writeToStderr("  Text bytes range \(textByteCount)-\(textByteCount + length) has style code \(style) and emphasis code \(emphasis)")
+                if let style: PsionWordStyle = styles[styleCode] {
+                    if let emphasis: PsionWordStyle = emphases[emphasisCode] {
+                        if doShowInfo {
+                            writeToStderr("  Text bytes range \(textByteCount)-\(textByteCount + length) has style \(style.name) and emphasis \(emphasis.name)")
+                        }
+                    }
+                } else {
+                    if doShowInfo {
+                        writeToStderr("  Text bytes range \(textByteCount)-\(textByteCount + length) has style code \(styleCode) and emphasis code \(emphasisCode)")
+                    }
                 }
                 
                 textByteCount += length
@@ -261,15 +300,156 @@ func processFile(_ filepath: String) -> ProcessResult {
 }
 
 
-func getWordValue(_ data: Data, _ index: Int) -> Int {
+/**
+    @Brief Parse a Psion Word Style or Emphasis record.
+ 
+    @Parameters
+        - data:  The word file bytes.
+        - index: The particular byte at which to start processing.
+        - isStyle: `true` if the record holds a Style; `false` if it is an Emphasis.
     
-    return Int(data[index]) * 0xFF + Int(data[index + 1])
+    @Returns PsionWordStyle containing the record's information.
+*/
+func getStyle(_ data: Data, _ index: Int, _ isStyle: Bool) -> PsionWordStyle {
+    
+    let index: Int = index + 4
+    var style: PsionWordStyle = PsionWordStyle()
+    
+    // Code and name
+    style.code = String(bytes: [UInt8](data[index..<index + 2]), encoding: .ascii)!
+    for i in index + 2..<index + 18 {
+        if data[i] == 0 {
+            style.name = String(bytes: [UInt8](data[(index + 2)..<i]), encoding: .ascii)!
+            break
+        }
+    }
+    
+    if style.name.isEmpty {
+        style.name = "Unknown"
+    }
+    
+    // Type
+    style.isStyle = ((data[index + 18] & 0x01) == 0)
+    style.isUndeletable = ((data[index + 18] & 0x02) > 0)
+    style.isDefault = ((data[index + 18] & 0x04) > 0)
+    
+    // Font type and size
+    style.fontCode = getWordValue(data, index + 20)
+    style.fontSize = getWordValue(data, index + 24)
+    
+    // Textual properties
+    style.underlined = ((data[index + 22] & 0x01) > 0)
+    style.bold = ((data[index + 22] & 0x02) > 0)
+    style.italic = ((data[index + 22] & 0x04) > 0)
+    style.superScript = ((data[index + 22] & 0x08) > 0)
+    style.subScript = ((data[index + 22] & 0x10) > 0)
+    
+    // Property inheritance
+    style.inheritUnderline = ((data[index + 26] & 0x01) > 0)
+    style.inheritBold = ((data[index + 26] & 0x02) > 0)
+    style.inheritItalic = ((data[index + 26] & 0x04) > 0)
+    style.inheritSuperScript = ((data[index + 26] & 0x08) > 0)
+    style.inheritSubScript = ((data[index + 26] & 0x10) > 0)
+    
+    // The following properties apply to Styles only so exit if it's an Emphasis
+    if !style.isStyle {
+        if doShowInfo {
+            writeToStderr("  Emphasis code: \(style.code) (\(style.name))")
+        }
+        
+        return style
+    }
+    
+    // Indents
+    style.leftIndent = getWordValue(data, index + 28)
+    style.rightIndent = getWordValue(data, index + 30)
+    style.firstIdent = getWordValue(data, index + 32)
+    
+    // Text alignment
+    let alignValue: Int = getWordValue(data, index + 34)
+    switch alignValue {
+        case 1:
+            style.alignment = .right
+        case 2:
+            style.alignment = .centered
+        case 3:
+            style.alignment = .justified
+        default:
+            style.alignment = .left
+    }
+    
+    // Spacing values
+    style.lineSpacing = getWordValue(data, index + 36)
+    style.spaceAbovePara = getWordValue(data, index + 38)
+    style.spaceBelowPara = getWordValue(data, index + 40)
+    
+    let spacingValue = data[index + 42]
+    if spacingValue & 0x01 > 0 {
+        style.spacing = .keepWithNext
+    } else if spacingValue & 0x02 > 0 {
+        style.spacing = .keepTogether
+    } else if spacingValue & 0x04 > 0 {
+        style.spacing = .newPage
+    } else {
+        style.spacing = .none
+    }
+    
+    // Outline level
+    style.outlineLevel = getWordValue(data, index + 44)
+    
+    // Tabs
+    let tabCount: Int = getWordValue(data, index + 46)
+    if tabCount > 0 {
+        var tabIndex: Int = index + 48
+        for _ in 0..<tabCount {
+            style.tabPostions.append(getWordValue(data, tabIndex))
+            
+            let tabType: Int = getWordValue(data, tabIndex + 2)
+            switch tabType {
+                case 1:
+                    style.tabTypes.append(.right)
+                case 2:
+                    style.tabTypes.append(.centered)
+                default:
+                    style.tabTypes.append(.left)
+            }
+            
+            tabIndex += 4
+        }
+    }
+    
+    if doShowInfo {
+        writeToStderr("  Style code: \(style.code) (\(style.name))")
+    }
+    
+    return style
 }
 
 
-func reportErrorAndExit(_ message: String, _ code: Int32 = EXIT_FAILURE) {
+/**
+    @Brief Read a 16-bit little endian value from the Word file byte store.
+ 
+    @Parameters
+        - data:  The word file bytes.
+        - index: The particular byte holding the LSB.
+    
+    @Returns The value as an full integer.
+*/
+func getWordValue(_ data: Data, _ index: Int) -> Int {
+    
+    //print("\(String.init(format: "0x%02x", arguments: [data[index]])), \(String.init(format: "0x%02x", arguments: [data[index + 1]]))")
+    return Int(data[index]) + (Int(data[index + 1]) << 8)
+}
 
-    // Generic error display routine that also quits the app
+
+/**
+    @Brief Generic error display routine that also quits the app.
+ 
+    @Parameters
+        - message: The error message text.
+        - code:    The error code (and app exit code).
+*/
+func reportErrorAndExit(_ message: String, _ code: Int32 = EXIT_FAILURE) {
 
     writeToStderr(RED + BOLD + "ERROR" + RESET + " " + message + " -- exiting")
     dss.cancel()
@@ -277,41 +457,62 @@ func reportErrorAndExit(_ message: String, _ code: Int32 = EXIT_FAILURE) {
 }
 
 
+/**
+    @Brief Generic error display routine that does not quit the app.
+ 
+    @Parameters
+        - message: The error message text.
+*/
 func reportError(_ message: String) {
-
-    // Generic error display routine
 
     writeToStderr(RED + BOLD + "ERROR" + RESET + " " + message)
 }
 
 
+/**
+    @Brief Generic warning display routine.
+ 
+    @Parameters
+        - message: The warning's text.
+*/
 func reportWarning(_ message: String) {
-
-    // Generic warning display routine
 
     writeToStderr(YELLOW + BOLD + "WARNING" + RESET + " " + message)
 }
 
 
+/**
+    @Brief Write errors and other messages to `stderr`.
+ 
+    @Parameters
+        - message: The text to emit.
+*/
 func writeToStderr(_ message: String) {
-
-    // Write errors and other messages to stderr
 
     writeOut(message, STD_ERR)
 }
 
 
+/**
+    @Brief Write output and other messages to `stdout`.
+ 
+    @Parameters
+        - message: The text to emit.
+*/
 func writeToStdout(_ message: String) {
-
-    // Write errors and other messages to stderr
 
     writeOut(message, STD_OUT)
 }
 
 
+/**
+    @Brief Write output to any standard file.
+ 
+    @Parameters
+        - message:          The text to emit.
+        - targetFileHandle: Where to emit the message.
+*/
 func writeOut(_ message: String, _ targetFileHandle: FileHandle) {
-
-    // Write errors and other messages to `target`
 
     let messageAsString = message + "\r\n"
     if let messageAsData: Data = messageAsString.data(using: .utf8) {
@@ -320,9 +521,10 @@ func writeOut(_ message: String, _ targetFileHandle: FileHandle) {
 }
 
 
+/**
+    @Brief Display the help text.
+*/
 func showHelp() {
-
-    // Display the help screen
 
     showHeader()
 
@@ -338,18 +540,20 @@ func showHelp() {
 }
 
 
+/**
+    @Brief Display the app version.
+*/
 func showVersion() {
-
-    // Display the utility's version
 
     showHeader()
     writeToStdout("Copyright © 2024, Tony Smith (@smittytone).\r\nSource code available under the MIT licence.")
 }
 
 
+/**
+    @Brief Display the app's version number.
+*/
 func showHeader() {
-
-    // Display the utility's version number
 
     let version: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
     let build: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as! String
