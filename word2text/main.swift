@@ -554,11 +554,15 @@ func showVersion() {
     @Brief Display the app's version number.
 */
 func showHeader() {
-
+    
+    #if os(macOS) 
     let version: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
     let build: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as! String
     let name:String = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as! String
     writeToStdout("\(name) \(version) (\(build))")
+    #else
+    writeToStdout("word2text 0.0.2 (2)")
+    #endif
 }
 
 
