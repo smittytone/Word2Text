@@ -27,9 +27,6 @@
 import Foundation
 
 
-
-
-
 // MARK: - Constants
 
 let BLOCK_RECORD_UNIT_LENGTH: Int   = 6
@@ -58,18 +55,13 @@ var argType: Int            = -1
 var argCount: Int           = 0
 var prevArg: String         = ""
 var doShowInfo: Bool        = false
-var haltOnFirstError: Bool  = false
 var doIncludeHeader: Bool   = false
+var doReturnMarkdown: Bool  = false
+var haltOnFirstError: Bool  = false
 var files: [String]         = []
 
 
 // MARK: - Functions
-
-func processPaths() {
-    
-    
-}
-
 
 /**
     @Brief Convert an individual Word file to plain text.
@@ -87,6 +79,7 @@ func processFile(_ filepath: String) -> ProcessResult {
     var outerText: [String] = ["", ""]
     var styles: [String:PsionWordStyle] = [:]
     var emphases: [String:PsionWordStyle] = [:]
+    var blocks: [PsionWordFormatBlock] = []
     var byteIndex: Int = 40
     
     // Read in the file if we can
@@ -132,58 +125,8 @@ func processFile(_ filepath: String) -> ProcessResult {
         
         // File record
         // NOTE We don't require this for text conversion
-        if recordType == PsionWordRecordType.fileInfo.rawValue {
-            
-            if recordDataLength != 10 {
-                return ProcessResult(text: "Bad file info record size (\(recordDataLength) not 10 bytes", errorCode: .badRecordLengthFileInfo)
-            }
-            
-            if doShowInfo {
-                let recordByteIndex: Int = byteIndex + RECORD_HEADER_LENGTH
-                let cursorLocation: Int = getWordValue(data, recordByteIndex)
-                let shownSymbols: UInt8 = data[recordByteIndex + 2]
-                let statusWindow: UInt8 = data[recordByteIndex + 3]
-                let showStyleBar: UInt8 = data[recordByteIndex + 4]
-                let fileType: UInt8 = data[recordByteIndex + 5]
-                let outlineLevel: UInt8 = data[recordByteIndex + 6]
-                
-                writeToStderr("  Cursor location: \(cursorLocation), outline level: \(outlineLevel)")
-                writeToStderr("  Show style bar: \(showStyleBar == 1 ? "yes" : "no"), File type: \(fileType == 1 ? "line" : "paragraph")")
-                
-                var symbolsShown: [String] = []
-                var symbolText: String = ""
-                if shownSymbols & 0x01 > 0 { symbolsShown.append("tabs") }
-                if shownSymbols & 0x02 > 0 { symbolsShown.append("spaces") }
-                if shownSymbols & 0x04 > 0 { symbolsShown.append("newlines") }
-                if shownSymbols & 0x08 > 0 { symbolsShown.append("soft hyphens") }
-                if shownSymbols & 0x10 > 0 { symbolsShown.append("forced line breaks") }
-                
-                if symbolsShown.count >  0 {
-                    for symbol in symbolsShown {
-                        symbolText += "\(symbol), "
-                    }
-                } else {
-                    symbolText = "none"
-                }
-                
-                writeToStderr("  Symbols shown: \(symbolText)")
-                
-                var windowState: UInt8 = statusWindow & 0x03
-                var windowText: String
-                switch windowState {
-                    case 1:
-                        windowText = "narrow"
-                    case 2:
-                        windowText = "wide"
-                    default:
-                        windowText = "none"
-                }
-                
-                writeToStderr("  Status window: \(windowText)")
-                
-                windowState = (statusWindow & 0x30) >> 4
-                writeToStderr("  Zoom level: \(windowState + 1)x")
-            }
+        if recordType == PsionWordRecordType.fileInfo.rawValue && recordDataLength != 10 {
+            return ProcessResult(text: "Bad file info record size (\(recordDataLength) not 10 bytes", errorCode: .badRecordLengthFileInfo)
         }
         
         // Printer Settings
@@ -232,6 +175,8 @@ func processFile(_ filepath: String) -> ProcessResult {
             // Process the text record
             for i in 0..<recordDataLength {
                 let currentByte = byteIndex + RECORD_HEADER_LENGTH + i
+                
+                // Process Psion's special character values
                 let character: UInt8 = UInt8(data[currentByte])
                 switch character {
                     case 0:
@@ -253,7 +198,7 @@ func processFile(_ filepath: String) -> ProcessResult {
             }
             
             if doShowInfo {
-                writeToStderr("  Text length \(text.count) byte\(text.count == 1 ? "" : "s")")
+                writeToStderr("  Processed text length \(text.count) characters\(text.count == 1 ? "" : "s")")
             }
         }
         
@@ -279,6 +224,13 @@ func processFile(_ filepath: String) -> ProcessResult {
                     }
                 }
                 
+                var block: PsionWordFormatBlock = PsionWordFormatBlock()
+                block.startIndex = textByteCount
+                block.endIndex = textByteCount + length
+                block.styleCode = styleCode
+                block.emphasisCode = emphasisCode
+                blocks.append(block)
+                
                 textByteCount += length
                 recordByteCount += BLOCK_RECORD_UNIT_LENGTH
                 
@@ -289,6 +241,11 @@ func processFile(_ filepath: String) -> ProcessResult {
         }
         
         byteIndex += (RECORD_HEADER_LENGTH + recordDataLength)
+    }
+    
+    // Process to Markdown if that's required
+    if doReturnMarkdown {
+        text = convertToMarkdown(text, blocks, styles, emphases)
     }
     
     // Add the header and foot if requested
@@ -439,6 +396,89 @@ func getWordValue(_ data: Data, _ index: Int) -> Int {
     
     //print("\(String.init(format: "0x%02x", arguments: [data[index]])), \(String.init(format: "0x%02x", arguments: [data[index + 1]]))")
     return Int(data[index]) + (Int(data[index + 1]) << 8)
+}
+
+
+func convertToMarkdown(_ rawText: String, _ blocks: [PsionWordFormatBlock], _ styles: [String:PsionWordStyle], _ emphases: [String:PsionWordStyle]) -> String {
+    
+    var markdown: String = ""
+    for block in blocks {
+        var tag: String = ""
+        switch block.emphasisCode {
+            case "BB":
+                tag = "**"
+            case "II":
+                tag = "*"
+            default:
+                tag = ""
+        }
+        
+        switch block.styleCode {
+            case "HA":
+                if let style: PsionWordStyle = styles["HA"] {
+                    tag = "#"
+                }
+            case "HB":
+                if let style: PsionWordStyle = styles["HA"] {
+                    tag = "###"
+                }
+            case "ZA":
+                if  let style: PsionWordStyle = styles["ZA"] {
+                    if style.bold {
+                        tag = "**"
+                    }
+                }
+            default:
+                tag = ""
+        }
+        
+        let si = rawText.index(rawText.startIndex, offsetBy: block.startIndex)
+        let ei = rawText.index(rawText.startIndex, offsetBy: block.endIndex)
+        markdown += (tag + String(rawText[si..<ei]) + tag)
+    }
+    
+    return markdown
+}
+
+
+/**
+    @Brief Convert a user-supplied possibly partial path to an absolute path.
+ 
+    @Parameters:
+        - relativePath: A possible relative path.
+ 
+    @Returns: The absolute path.
+ */
+func getFullPath(_ relativePath: String) -> String {
+
+    // Standardise the path as best as we can (this covers most cases)
+    var absolutePath: String = (relativePath as NSString).standardizingPath
+
+    // Check for a unresolved relative path -- and if it is one, resolve it
+    // NOTE This includes raw filenames
+    if (absolutePath as NSString).contains("..") || !(absolutePath as NSString).hasPrefix("/") {
+        absolutePath = processRelativePath(absolutePath)
+    }
+
+    // Return the absolute path
+    return absolutePath
+}
+
+
+/**
+    @Brief Convert a relative path to an absolute path.
+ 
+    @Parameters:
+        - relativePath: A relative path.
+ 
+    @Returns: The absolute path.
+ */
+func processRelativePath(_ relativePath: String) -> String {
+
+    // Add the basepath (the current working directory of the call) to the
+    // supplied relative path - and then resolve it
+    let absolutePath = FileManager.default.currentDirectoryPath + "/" + relativePath
+    return (absolutePath as NSString).standardizingPath
 }
 
 
@@ -617,6 +657,10 @@ for argument in args {
             fallthrough
         case "--outer":
             doIncludeHeader = true
+        case "-m":
+            fallthrough
+        case "--markdown":
+            doReturnMarkdown = true
         case "-h":
             fallthrough
         case "--help":
@@ -644,12 +688,9 @@ for argument in args {
     }
 }
 
-// Process paths
-processPaths()
-
 // Convert the file(s)
 for filepath in files {
-    let result: ProcessResult = processFile(filepath)
+    let result: ProcessResult = processFile(getFullPath(filepath))
     if result.errorCode != .none {
         if haltOnFirstError {
             reportErrorAndExit("File \(filepath) could not be processed: \(result.text)", Int32(result.errorCode.rawValue))

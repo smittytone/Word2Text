@@ -80,6 +80,17 @@ struct PsionWordStyle {
 
 
 /*
+    Text section formattting information.
+*/
+struct PsionWordFormatBlock {
+    var startIndex: Int = 0
+    var endIndex: Int = 0
+    var styleCode: String = "BT"
+    var emphasisCode: String = "NN"
+}
+
+
+/*
     Text alignment options
 */
 enum PsionWordAlignment: Int {
