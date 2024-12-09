@@ -37,7 +37,7 @@ word2text $HOME/Psion/MAGOPUS.WRD > ~/Desktop/MyMagnumOpus.txt
 
 ### Linux
 
-* 
+* [Install Swift](https://www.swift.org/install/linux/)
 * Clone this repo.
 * `cd /path/to/repo`
 * `swift build`
@@ -47,4 +47,3 @@ Binary located in `.build/aarch64-unknown-linux-gnu/debug/`
 ## Future Work
 
 * Convert *Word* formatting to Markdown.
-
