@@ -26,7 +26,24 @@ word2text $HOME/Psion/MAGOPUS.WRD > ~/Desktop/MyMagnumOpus.txt
 * `-o`/`--outer` — Include ‘outer’ text, ie. header and footer text, in addition to the body text. Default: `false`.
 * `-v`/`--verbose` — Show file and content discovery information during file processing.
 
+## Compiling
+
+### macOS
+
+* Clone this repo.
+* Open the `.xcodeproj` file.
+* Set your team under **Signing & Capabilities** for the *word2text* target.
+* Select **Build** from the **Product** menu.
+
+### Linux
+
+* [Install Swift](https://www.swift.org/install/linux/)
+* Clone this repo.
+* `cd /path/to/repo`
+* `swift build`
+
+Binary located in `.build/aarch64-unknown-linux-gnu/debug/`
+
 ## Future Work
 
 * Convert *Word* formatting to Markdown.
-
