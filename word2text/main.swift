@@ -29,22 +29,27 @@ import Foundation
 
 // MARK: - Constants
 
-let BLOCK_RECORD_UNIT_LENGTH: Int   = 6
-let RECORD_HEADER_LENGTH: Int       = 4
-
 // Use stderr, stdout for output
-let STD_ERR: FileHandle = FileHandle.standardError
-let STD_OUT: FileHandle = FileHandle.standardOutput
+let STD_ERR: FileHandle                     = FileHandle.standardError
+let STD_OUT: FileHandle                     = FileHandle.standardOutput
 
 // TTY formatting
-let RED: String             = "\u{001B}[0;31m"
-let YELLOW: String          = "\u{001B}[0;33m"
-let RESET: String           = "\u{001B}[0m"
-let BOLD: String            = "\u{001B}[1m"
-let ITALIC: String          = "\u{001B}[3m"
-let BSP: String             = String(UnicodeScalar(8))
-let EXIT_CTRL_C_CODE: Int32 = 130
-let CTRL_C_MSG: String      = "\(BSP)\(BSP)\rword2text interrupted -- halting"
+let RED: String                             = "\u{001B}[0;31m"
+let YELLOW: String                          = "\u{001B}[0;33m"
+let RESET: String                           = "\u{001B}[0m"
+let BOLD: String                            = "\u{001B}[1m"
+let ITALIC: String                          = "\u{001B}[3m"
+let BSP: String                             = String(UnicodeScalar(8))
+let EXIT_CTRL_C_CODE: Int32                 = 130
+let CTRL_C_MSG: String                      = "\(BSP)\(BSP)\rword2text interrupted -- halting"
+
+// Psion
+let PSION_WORD_BLOCK_UNIT_LENGTH: Int       = 6
+let PSION_WORD_RECORD_HEADER_LENGTH: Int    = 4
+let PSION_WORD_RECORD_TYPES: [String]       = [
+    "FILE INFO", "PRINTER CONFIG", "PRINTER DRIVER INFO", "HEADER TEXT", "FOOTER TEXT",
+    "STYLE DEFINITION", "EMPHASIS DEFINITION", "BODY TEXT", "STYLE APPLICATION"
+]
 
 
 // MARK: - Global Variables
@@ -107,20 +112,18 @@ func processFile(_ filepath: String) -> ProcessResult {
     // NOTE We can't handle these yet as the decode algorithm remains unknown
     let encrypted: Bool = (getWordValue(data, 16) == 256)
     if encrypted {
-        return ProcessResult.init(text: "Word file is encrypted", errorCode: .badPsionFileType)
+        return ProcessResult.init(text: "Word file is encrypted", errorCode: .badFileEncrypted)
     }
     
-    // Decode the file's records, one by one
-    let RECORD_TYPES = ["FILE INFO", "PRINTER CONFIG", "PRINTER DRIVER INFO", "HEADER TEXT", "FOOTER TEXT", "STYLE DEFINITION", "EMPHASIS DEFINITION", "BODY TEXT", "STYLE APPLICATION"]
-    
     // Iterate over the file's bytes to extract the records
-    while byteIndex < data.count - RECORD_HEADER_LENGTH {
+    while byteIndex < data.count - PSION_WORD_RECORD_HEADER_LENGTH {
         let recordType: Int = getWordValue(data, byteIndex)
         let recordDataLength: Int = getWordValue(data, byteIndex + 2)
         
-        assert(recordType - 1 <= RECORD_TYPES.count, "UNKNOWN RECORD TYPE (\(recordType) @ \(String.init(format: "0x%04x", arguments: [byteIndex]))")
+        assert(recordType - 1 <= PSION_WORD_RECORD_TYPES.count, "UNKNOWN RECORD TYPE (\(recordType) @ \(String.init(format: "0x%04x", arguments: [byteIndex]))")
+        
         if doShowInfo {
-            writeToStderr("Record of type \(RECORD_TYPES[recordType - 1]) found at offset \(String.init(format: "0x%04x", arguments: [byteIndex])). Size: \(recordDataLength) bytes")
+            writeToStderr("Record of type \(PSION_WORD_RECORD_TYPES[recordType - 1]) found at offset \(String.init(format: "0x%04x", arguments: [byteIndex])). Size: \(recordDataLength) bytes")
         }
         
         // File record
@@ -142,7 +145,7 @@ func processFile(_ filepath: String) -> ProcessResult {
             
             // Allow for the trailing NUL
             let stringLength = recordDataLength - 1
-            let asciiBytes: [UInt8] = [UInt8](data[byteIndex + RECORD_HEADER_LENGTH..<byteIndex + RECORD_HEADER_LENGTH + stringLength])
+            let asciiBytes: [UInt8] = [UInt8](data[byteIndex + PSION_WORD_RECORD_HEADER_LENGTH..<byteIndex + PSION_WORD_RECORD_HEADER_LENGTH + stringLength])
             outerText[index] = String(bytes: asciiBytes, encoding: .ascii)!
             
             if doShowInfo {
@@ -174,7 +177,7 @@ func processFile(_ filepath: String) -> ProcessResult {
         if recordType == PsionWordRecordType.bodyText.rawValue {
             // Process the text record
             for i in 0..<recordDataLength {
-                let currentByte = byteIndex + RECORD_HEADER_LENGTH + i
+                let currentByte = byteIndex + PSION_WORD_RECORD_HEADER_LENGTH + i
                 
                 // Process Psion's special character values
                 let character: UInt8 = UInt8(data[currentByte])
@@ -207,7 +210,7 @@ func processFile(_ filepath: String) -> ProcessResult {
             var recordByteCount = 0
             var textByteCount = 0
             while recordByteCount < recordDataLength {
-                let blockStartByteIndex = byteIndex + RECORD_HEADER_LENGTH + recordByteCount
+                let blockStartByteIndex = byteIndex + PSION_WORD_RECORD_HEADER_LENGTH + recordByteCount
                 let length: Int = getWordValue(data, blockStartByteIndex)
                 let styleCode: String = String(bytes: [UInt8](data[blockStartByteIndex + 2..<blockStartByteIndex + 4]), encoding: .ascii)!
                 let emphasisCode: String = String(bytes: [UInt8](data[blockStartByteIndex + 4..<blockStartByteIndex + 6]), encoding: .ascii)!
@@ -232,7 +235,7 @@ func processFile(_ filepath: String) -> ProcessResult {
                 blocks.append(block)
                 
                 textByteCount += length
-                recordByteCount += BLOCK_RECORD_UNIT_LENGTH
+                recordByteCount += PSION_WORD_BLOCK_UNIT_LENGTH
                 
                 if textByteCount >= text.count {
                     break
@@ -240,7 +243,7 @@ func processFile(_ filepath: String) -> ProcessResult {
             }
         }
         
-        byteIndex += (RECORD_HEADER_LENGTH + recordDataLength)
+        byteIndex += (PSION_WORD_RECORD_HEADER_LENGTH + recordDataLength)
     }
     
     // Process to Markdown if that's required
@@ -284,6 +287,9 @@ func getStyle(_ data: Data, _ index: Int, _ isStyle: Bool) -> PsionWordStyle {
     if style.name.isEmpty {
         style.name = "Unknown"
     }
+    
+    // NOTE Many of these properties are irrelevant to text or even Markdown output, so
+    //      I may remove unneeded properties at a later time. Do not rely on their presence!
     
     // Type
     style.isStyle = ((data[index + 18] & 0x01) == 0)
@@ -399,42 +405,104 @@ func getWordValue(_ data: Data, _ index: Int) -> Int {
 }
 
 
+/**
+    @Brief Convert plain text to Markdown by parsing the block formatting data in
+           conjunction with the document's stored Style and Emphasis data.
+ 
+    @Parameters
+        - rawText: The basic Ascii text.
+        - blocks: The block formatting data extracted from the document.
+        - styles: The styles extracted from the document.
+        - emphases: The emphases extracted from the document.
+ 
+    @Returns: A Markdown-formatted version of the base text.
+ */
 func convertToMarkdown(_ rawText: String, _ blocks: [PsionWordFormatBlock], _ styles: [String:PsionWordStyle], _ emphases: [String:PsionWordStyle]) -> String {
     
+    // The rawtext is a series of paragraphs separated by NEWLINE.
+    // A block will contain a style AND an emphasis over a range of characters, in sequence.
+    // Emphasis can be anywhere (ie. character level); styles are paragraph level.
+    // Initially we will support STANDARD Styles and Emphases. Only a subset of each require
+    // tagging with Markdown (eg. `HA` -> `#`, `BB` -> `**`.
+    
+    // NOTE This all assumes that the doc only contains standard styles, but what if it has, say,
+    //      a headline set to bold text, ie. a custom style? A bold headline in Markdown would be
+    //      `# **headline**, but this would not comprise separate blocks. So we need to set the `#`
+    //      on the paragraph start and (separately) the `**` at the start and end of the actual text.
+    
     var markdown: String = ""
+    var paraStyleSet: Bool = false
+    var textEndTag: String = ""
+    
+    // Blocks are in stored in sequence, so we just need to iterate over them
     for block in blocks {
+        // Create Range values for the section of the raw text that we are formatting
+        let startIndex = rawText.index(rawText.startIndex, offsetBy: block.startIndex)
+        let endIndex = rawText.index(rawText.startIndex, offsetBy: block.endIndex)
+        
+        // The
         var tag: String = ""
-        switch block.emphasisCode {
-            case "BB":
-                tag = "**"
-            case "II":
-                tag = "*"
-            default:
-                tag = ""
-        }
+        var isEmphasisTag: Bool = false
         
-        switch block.styleCode {
-            case "HA":
-                if let style: PsionWordStyle = styles["HA"] {
-                    tag = "#"
-                }
-            case "HB":
-                if let style: PsionWordStyle = styles["HA"] {
-                    tag = "###"
-                }
-            case "ZA":
-                if  let style: PsionWordStyle = styles["ZA"] {
-                    if style.bold {
-                        tag = "**"
+        if !paraStyleSet {
+            // Starting a new para, so the Style should not change
+            paraStyleSet = true
+            
+            // Look for
+            switch block.styleCode {
+                case "HA":
+                    tag = "# "
+                case "HB":
+                    tag = "### "
+                case "BL":
+                    // Bullet list
+                    tag = "- "
+                default:
+                    if block.styleCode != "NN" {
+                        if let style: PsionWordStyle = styles[block.styleCode] {
+                            if style.bold {
+                                tag += "**"
+                                textEndTag = "**"
+                            } else if style.italic {
+                                textEndTag = "*"
+                            }
+                        }
                     }
-                }
-            default:
-                tag = ""
+            }
         }
         
-        let si = rawText.index(rawText.startIndex, offsetBy: block.startIndex)
-        let ei = rawText.index(rawText.startIndex, offsetBy: block.endIndex)
-        markdown += (tag + String(rawText[si..<ei]) + tag)
+        // Look for in-paragraph tags.
+        // NOTE BB (Bold) and II (Italic) are the only ones relevant to Markdown
+        if tag == "" {
+            switch block.emphasisCode {
+                case "BB":
+                    tag = "**"
+                    isEmphasisTag = true
+                case "II":
+                    tag = "*"
+                    isEmphasisTag = true
+                default:
+                    tag = ""
+            }
+        }
+        
+        // Add the tagged text to the string store. We only duplicate the tag at the end
+        // of the block if it is a character-level tag, ie. an Emphasis
+        markdown += (tag + String(rawText[startIndex..<endIndex]))
+        if isEmphasisTag {
+            markdown += tag
+        }
+        
+        // Check if we've come to the end of a paragraph. If so, reset the flag
+        if rawText[startIndex..<endIndex].hasSuffix("\n") {
+            paraStyleSet = false
+            
+            // NOTE This tag should reall come BEFORE the NEWLINE...
+            if !textEndTag.isEmpty {
+                markdown += textEndTag
+                textEndTag = ""
+            }
+        }
     }
     
     return markdown
@@ -595,14 +663,16 @@ func showVersion() {
 */
 func showHeader() {
     
-    #if os(macOS) 
+#if os(macOS)
     let version: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
     let build: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as! String
     let name:String = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as! String
     writeToStdout("\(name) \(version) (\(build))")
-    #else
+#else
+    // Linux output
+    // TODO Automate based on build settings
     writeToStdout("word2text 0.0.2 (2)")
-    #endif
+#endif
 }
 
 
@@ -693,6 +763,7 @@ for argument in args {
 }
 
 // Convert the file(s)
+let outputToFile: Bool = (files.count > 1)
 for filepath in files {
     let result: ProcessResult = processFile(getFullPath(filepath))
     if result.errorCode != .none {
@@ -702,9 +773,22 @@ for filepath in files {
             reportWarning("File \(filepath) could not be processed: \(result.text)")
         }
     } else {
-        // Output processed text to STDOUT so it's available for piping or redirection
-        writeToStderr("File \(filepath) processed")
-        writeToStdout(result.text)
+        if !outputToFile {
+            // Output processed text to STDOUT so it's available for piping or redirection
+            writeToStderr("File \(filepath) processed")
+            writeToStdout(result.text)
+        } else {
+            // Output to a file
+            // TODO Check for directories!!!!
+            var outFilepath: String = (filepath as NSString).deletingPathExtension
+            outFilepath += (doReturnMarkdown ? ".md" : ".txt")
+            do {
+                try result.text.write(toFile: outFilepath, atomically: true, encoding: .utf8)
+            } catch {
+                reportWarning("File \(outFilepath) could not be processed: writing to stdout instead")
+                writeToStdout(result.text)
+            }
+        }
     }
 }
 
