@@ -95,17 +95,17 @@ func processFile(_ filepath: String) -> ProcessResult {
         return ProcessResult.init(text: "Could not locate file", errorCode: .badFile)
     }
     
-    // Check the data preamble
-    let preamble: String? = String.init(data: data.prefix(15), encoding: .ascii)
-    if let p: String = preamble {
-        if p != "PSIONWPDATAFILE" {
-            // TODO Report actual file type
-            return ProcessResult.init(text: "Not a Psion Series 3 Word file", errorCode: .badPsionFileType)
-        }
-        
-        if doShowInfo {
-            writeToStderr("File \(filepath) is a Psion Series 3 Word document")
-        }
+    // Check the data preamble (C String of up to 15 chars plus `NUL`)
+    let preambleBytes = UnsafeMutablePointer<UInt8>.allocate(capacity: 16)
+    data.copyBytes(to: preambleBytes, from: 0..<16)
+    let preamble = String.init(cString: preambleBytes)
+    if preamble != "PSIONWPDATAFILE" {
+        // TODO Report actual file type
+        return ProcessResult.init(text: "Not a Psion Series 3 Word file", errorCode: .badPsionFileType)
+    }
+    
+    if doShowInfo {
+        writeToStderr("File \(filepath) is a Psion Series 3 Word document")
     }
     
     // Check for encrypted files
@@ -419,7 +419,7 @@ func getWordValue(_ data: Data, _ index: Int) -> Int {
  */
 func convertToMarkdown(_ rawText: String, _ blocks: [PsionWordFormatBlock], _ styles: [String:PsionWordStyle], _ emphases: [String:PsionWordStyle]) -> String {
     
-    // The rawtext is a series of paragraphs separated by NEWLINE.
+    // The raw text is a series of paragraphs separated by NEWLINE.
     // A block will contain a style AND an emphasis over a range of characters, in sequence.
     // Emphasis can be anywhere (ie. character level); styles are paragraph level.
     // Initially we will support STANDARD Styles and Emphases. Only a subset of each require
