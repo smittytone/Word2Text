@@ -671,7 +671,7 @@ func showHeader() {
 #else
     // Linux output
     // TODO Automate based on build settings
-    writeToStdout("word2text 0.0.2 (2)")
+    writeToStdout("word2text \(LINUX_VERSION) (\(LINUX_BUILD))")
 #endif
 }
 

@@ -6,12 +6,11 @@ import PackageDescription
 let package = Package(
     name: "word2text",
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
         .executableTarget(
             name: "word2text",
             path: "word2text",
             exclude: [
+                // File not needed for Linux build (so far...)
                 "Info.plist"    
             ]
         )
