@@ -20,6 +20,18 @@ Use *word2text* to convert into plain text any Psion *Word* documents that you h
 word2text $HOME/Psion/MAGOPUS.WRD > ~/Desktop/MyMagnumOpus.txt
 ```
 
+You can also pass a directory name (or a mix of file names and directories), in which case each `.WRD` file in the directory will be converted to a text file in that directory.
+
+```shell
+word2text $HOME/Psion
+```
+
+```shell
+word2text $HOME/Psion $HOME/Desktop/MY_DOC.WRD
+```
+
+For convenience, files are written using the UTF-8 encoding.
+
 *word2text* accepts the following modifiers:
 
 * `-s`/`--stop` — Stop processing multiple files on the first error. Default: `false`.

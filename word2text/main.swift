@@ -550,6 +550,17 @@ func processRelativePath(_ relativePath: String) -> String {
 }
 
 
+func doesPathReferenceDirectory(_ absolutePath: String) -> Bool {
+    
+    let fileURL = URL.init(fileURLWithPath: absolutePath)
+    if let value = try? fileURL.resourceValues(forKeys: [.isDirectoryKey]) {
+        return value.isDirectory!
+    }
+    
+    return false
+}
+
+
 /**
     @Brief Generic error display routine that also quits the app.
  
@@ -762,10 +773,28 @@ for argument in args {
     }
 }
 
-// Convert the file(s)
-let outputToFile: Bool = (files.count > 1)
+// Pre-process the file list looking for directories.
+// We also take the time to rationalise the paths of passed files
+var finalFiles: [String] = []
 for filepath in files {
-    let result: ProcessResult = processFile(getFullPath(filepath))
+    let absolutePath: String = getFullPath(filepath)
+    if doesPathReferenceDirectory(absolutePath) {
+        // References a directory so get the file list
+        let directoryContentsEnumerator = FileManager.default.enumerator(atPath: absolutePath)
+        while let file = directoryContentsEnumerator?.nextObject() as? String {
+            if file.hasSuffix(".WRD") {
+                finalFiles.append(absolutePath + "/" + file)
+            }
+        }
+    } else {
+        finalFiles.append(absolutePath)
+    }
+}
+
+// Convert the file(s) to text
+let outputToFiles: Bool = (finalFiles.count > 1)
+for filepath in finalFiles {
+    let result: ProcessResult = processFile(filepath)
     if result.errorCode != .none {
         if haltOnFirstError {
             reportErrorAndExit("File \(filepath) could not be processed: \(result.text)", Int32(result.errorCode.rawValue))
@@ -773,17 +802,22 @@ for filepath in files {
             reportWarning("File \(filepath) could not be processed: \(result.text)")
         }
     } else {
-        if !outputToFile {
+        if !outputToFiles {
             // Output processed text to STDOUT so it's available for piping or redirection
-            writeToStderr("File \(filepath) processed")
+            if doShowInfo {
+                writeToStderr("File \(filepath) processed")
+            }
+            
             writeToStdout(result.text)
         } else {
             // Output to a file
-            // TODO Check for directories!!!!
             var outFilepath: String = (filepath as NSString).deletingPathExtension
             outFilepath += (doReturnMarkdown ? ".md" : ".txt")
             do {
                 try result.text.write(toFile: outFilepath, atomically: true, encoding: .utf8)
+                if doShowInfo {
+                    writeToStderr("File \(filepath) processed to \(outFilepath)")
+                }
             } catch {
                 reportWarning("File \(outFilepath) could not be processed: writing to stdout instead")
                 writeToStdout(result.text)
