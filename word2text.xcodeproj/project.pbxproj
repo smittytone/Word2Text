@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		3BF564512D0A270F008E58B6 /* extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5644B2D0A270F008E58B6 /* extensions.swift */; };
+		3BF564532D0A270F008E58B6 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5644E2D0A270F008E58B6 /* main.swift */; };
+		3BF564542D0A270F008E58B6 /* structures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5644F2D0A270F008E58B6 /* structures.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXCopyFilesBuildPhase section */
 		3B4873782D03743C00294F25 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -22,28 +28,12 @@
 		3B198CE92D03B61700FE1EC9 /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
 		3B198CEA2D03B61700FE1EC9 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		3B48737A2D03743C00294F25 /* word2text */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = word2text; sourceTree = BUILT_PRODUCTS_DIR; };
+		3BF5644B2D0A270F008E58B6 /* extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = extensions.swift; sourceTree = "<group>"; };
+		3BF5644C2D0A270F008E58B6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		3BF5644D2D0A270F008E58B6 /* linux_version.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = linux_version.swift; sourceTree = "<group>"; };
+		3BF5644E2D0A270F008E58B6 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		3BF5644F2D0A270F008E58B6 /* structures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = structures.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		3BA0AEE32D088FDA001C892F /* Exceptions for "word2text" folder in "word2text" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				linux_version.swift,
-			);
-			target = 3B4873792D03743C00294F25 /* word2text */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		3B48737C2D03743C00294F25 /* word2text */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				3BA0AEE32D088FDA001C892F /* Exceptions for "word2text" folder in "word2text" target */,
-			);
-			path = word2text;
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		3B4873772D03743C00294F25 /* Frameworks */ = {
@@ -59,7 +49,7 @@
 		3B4873712D03743C00294F25 = {
 			isa = PBXGroup;
 			children = (
-				3B48737C2D03743C00294F25 /* word2text */,
+				3BF564502D0A270F008E58B6 /* word2text */,
 				3B198CEA2D03B61700FE1EC9 /* README.md */,
 				3B198CE92D03B61700FE1EC9 /* LICENSE.md */,
 				3B48737B2D03743C00294F25 /* Products */,
@@ -72,6 +62,18 @@
 				3B48737A2D03743C00294F25 /* word2text */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		3BF564502D0A270F008E58B6 /* word2text */ = {
+			isa = PBXGroup;
+			children = (
+				3BF5644E2D0A270F008E58B6 /* main.swift */,
+				3BF5644B2D0A270F008E58B6 /* extensions.swift */,
+				3BF5644F2D0A270F008E58B6 /* structures.swift */,
+				3BF5644D2D0A270F008E58B6 /* linux_version.swift */,
+				3BF5644C2D0A270F008E58B6 /* Info.plist */,
+			);
+			path = word2text;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -88,9 +90,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				3B48737C2D03743C00294F25 /* word2text */,
 			);
 			name = word2text;
 			packageProductDependencies = (
@@ -138,6 +137,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3BF564512D0A270F008E58B6 /* extensions.swift in Sources */,
+				3BF564532D0A270F008E58B6 /* main.swift in Sources */,
+				3BF564542D0A270F008E58B6 /* structures.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -268,7 +270,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -288,7 +290,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
 				ENABLE_HARDENED_RUNTIME = YES;

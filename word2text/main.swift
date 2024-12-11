@@ -68,18 +68,16 @@ var files: [String]         = []
 
 // MARK: - Functions
 
-/**
-    @Brief Convert an individual Word file to plain text.
- 
-    @Parameters
-        - filepath: Absolute path of the target Word file.
+/// Convert an individual Word file to plain text.
+///
+/// - Parameter data:     Data object containing the file bytes.
+///                       May be better to just pass a byte array.
+/// - Parameter filepath: Absolute path of the target Word file.
+///
+/// - Returns: A ProcessResult containing the text or an error code.
+
+func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
     
-    @Returns ProcessResult containing the text or an error message/code.
-*/
-func processFile(_ filepath: String) -> ProcessResult {
-    
-    // Convert
-    var data: Data
     var text: String = ""
     var outerText: [String] = ["", ""]
     var styles: [String:PsionWordStyle] = [:]
@@ -87,18 +85,8 @@ func processFile(_ filepath: String) -> ProcessResult {
     var blocks: [PsionWordFormatBlock] = []
     var byteIndex: Int = 40
     
-    // Read in the file if we can
-    let fileURL: URL = URL.init(fileURLWithPath: filepath)
-    do {
-       data  = try Data(contentsOf: fileURL)
-    } catch {
-        return ProcessResult.init(text: "Could not locate file", errorCode: .badFile)
-    }
-    
     // Check the data preamble (C String of up to 15 chars plus `NUL`)
-    let preambleBytes = UnsafeMutablePointer<UInt8>.allocate(capacity: 16)
-    data.copyBytes(to: preambleBytes, from: 0..<16)
-    let preamble = String.init(cString: preambleBytes)
+    let preamble = String.init(cString: data)
     if preamble != "PSIONWPDATAFILE" {
         // TODO Report actual file type
         return ProcessResult.init(text: "Not a Psion Series 3 Word file", errorCode: .badPsionFileType)
@@ -180,7 +168,7 @@ func processFile(_ filepath: String) -> ProcessResult {
                 let currentByte = byteIndex + PSION_WORD_RECORD_HEADER_LENGTH + i
                 
                 // Process Psion's special character values
-                let character: UInt8 = UInt8(data[currentByte])
+                let character = data[currentByte]
                 switch character {
                     case 0:
                         // 0 = paragraph separator
@@ -214,22 +202,25 @@ func processFile(_ filepath: String) -> ProcessResult {
                 let length: Int = getWordValue(data, blockStartByteIndex)
                 let styleCode: String = String(bytes: [UInt8](data[blockStartByteIndex + 2..<blockStartByteIndex + 4]), encoding: .ascii)!
                 let emphasisCode: String = String(bytes: [UInt8](data[blockStartByteIndex + 4..<blockStartByteIndex + 6]), encoding: .ascii)!
+                var block: PsionWordFormatBlock = PsionWordFormatBlock()
+                block.startIndex = textByteCount
+                block.endIndex = textByteCount + length
+                if block.endIndex > text.count {
+                    block.endIndex = text.count
+                }
                 
                 if let style: PsionWordStyle = styles[styleCode] {
                     if let emphasis: PsionWordStyle = emphases[emphasisCode] {
                         if doShowInfo {
-                            writeToStderr("  Text bytes range \(textByteCount)-\(textByteCount + length) has style \(style.name) and emphasis \(emphasis.name)")
+                            writeToStderr("  Text bytes range \(block.startIndex)-\(block.endIndex) has style \(style.name) and emphasis \(emphasis.name)")
                         }
                     }
                 } else {
                     if doShowInfo {
-                        writeToStderr("  Text bytes range \(textByteCount)-\(textByteCount + length) has style code \(styleCode) and emphasis code \(emphasisCode)")
+                        writeToStderr("  Text bytes range \(block.startIndex)-\(block.endIndex) has style code \(styleCode) and emphasis code \(emphasisCode)")
                     }
                 }
                 
-                var block: PsionWordFormatBlock = PsionWordFormatBlock()
-                block.startIndex = textByteCount
-                block.endIndex = textByteCount + length
                 block.styleCode = styleCode
                 block.emphasisCode = emphasisCode
                 blocks.append(block)
@@ -260,17 +251,15 @@ func processFile(_ filepath: String) -> ProcessResult {
 }
 
 
-/**
-    @Brief Parse a Psion Word Style or Emphasis record.
- 
-    @Parameters
-        - data:  The word file bytes.
-        - index: The particular byte at which to start processing.
-        - isStyle: `true` if the record holds a Style; `false` if it is an Emphasis.
-    
-    @Returns PsionWordStyle containing the record's information.
-*/
-func getStyle(_ data: Data, _ index: Int, _ isStyle: Bool) -> PsionWordStyle {
+/// Parse a Psion Word Style or Emphasis record.
+///
+/// - Parameter data:     The word file bytes.
+/// - Parameter index:    Absolute path of the target Word file.
+/// - Parameter isStyle: `true` if the record holds a Style; `false` if it is an Emphasis.
+///
+/// - Returns: A PsionWordStyle containing the record's information.
+
+func getStyle(_ data: [UInt8], _ index: Int, _ isStyle: Bool) -> PsionWordStyle {
     
     let index: Int = index + 4
     var style: PsionWordStyle = PsionWordStyle()
@@ -389,34 +378,30 @@ func getStyle(_ data: Data, _ index: Int, _ isStyle: Bool) -> PsionWordStyle {
 }
 
 
-/**
-    @Brief Read a 16-bit little endian value from the Word file byte store.
- 
-    @Parameters
-        - data:  The word file bytes.
-        - index: The particular byte holding the LSB.
-    
-    @Returns The value as an full integer.
-*/
-func getWordValue(_ data: Data, _ index: Int) -> Int {
+/// Read a 16-bit little endian value from the Word file byte store.
+///
+/// - Parameter data:   The word file bytes.
+/// - Parameter index:  The particular byte holding the LSB.
+///
+/// - Returns: The value as an full integer.
+
+func getWordValue(_ data: [UInt8], _ index: Int) -> Int {
     
     //print("\(String.init(format: "0x%02x", arguments: [data[index]])), \(String.init(format: "0x%02x", arguments: [data[index + 1]]))")
     return Int(data[index]) + (Int(data[index + 1]) << 8)
 }
 
 
-/**
-    @Brief Convert plain text to Markdown by parsing the block formatting data in
-           conjunction with the document's stored Style and Emphasis data.
- 
-    @Parameters
-        - rawText: The basic Ascii text.
-        - blocks: The block formatting data extracted from the document.
-        - styles: The styles extracted from the document.
-        - emphases: The emphases extracted from the document.
- 
-    @Returns: A Markdown-formatted version of the base text.
- */
+/// Convert plain text to Markdown by parsing the block formatting data in
+/// conjunction with the document's stored Style and Emphasis data.
+///
+/// - Parameter rawText:  The basic Ascii text.
+/// - Parameter blocks:   The block formatting data extracted from the document.
+/// - Parameter styles:   The styles extracted from the document.
+/// - Parameter emphases: The emphases extracted from the document.
+///
+/// - Returns: A Markdown-formatted version of the base text.
+
 func convertToMarkdown(_ rawText: String, _ blocks: [PsionWordFormatBlock], _ styles: [String:PsionWordStyle], _ emphases: [String:PsionWordStyle]) -> String {
     
     // The raw text is a series of paragraphs separated by NEWLINE.
@@ -509,14 +494,12 @@ func convertToMarkdown(_ rawText: String, _ blocks: [PsionWordFormatBlock], _ st
 }
 
 
-/**
-    @Brief Convert a user-supplied possibly partial path to an absolute path.
- 
-    @Parameters:
-        - relativePath: A possible relative path.
- 
-    @Returns: The absolute path.
- */
+/// Convert a user-supplied possibly partial path to an absolute path.
+///
+/// - Parameter relativePath: A possible relative path.
+///
+/// - Returns: The absolute path.
+
 func getFullPath(_ relativePath: String) -> String {
 
     // Standardise the path as best as we can (this covers most cases)
@@ -533,14 +516,12 @@ func getFullPath(_ relativePath: String) -> String {
 }
 
 
-/**
-    @Brief Convert a relative path to an absolute path.
- 
-    @Parameters:
-        - relativePath: A relative path.
- 
-    @Returns: The absolute path.
- */
+/// Convert a relative path to an absolute path.
+///
+/// - Parameter relativePath: A relative path.
+///
+/// - Returns: The absolute path.
+
 func processRelativePath(_ relativePath: String) -> String {
 
     // Add the basepath (the current working directory of the call) to the
@@ -549,6 +530,12 @@ func processRelativePath(_ relativePath: String) -> String {
     return (absolutePath as NSString).standardizingPath
 }
 
+
+/// Convert a relative path to an absolute path.
+///
+/// - Parameter absolutePath: An absolute path to a file or directory.
+///
+/// - Returns: `true` of the path references an existing directory, otherwise `false`.
 
 func doesPathReferenceDirectory(_ absolutePath: String) -> Bool {
     
@@ -561,13 +548,31 @@ func doesPathReferenceDirectory(_ absolutePath: String) -> Bool {
 }
 
 
-/**
-    @Brief Generic error display routine that also quits the app.
- 
-    @Parameters
-        - message: The error message text.
-        - code:    The error code (and app exit code).
-*/
+/// Load a named file's contents into Data.
+///
+/// - Parameter filePath: An absolute path to a file.
+///
+/// - Returns: The file data, or an empty array on error.
+
+func getFileContents(_ filepath: String) -> [UInt8] {
+    
+    var data: Data
+    let fileURL: URL = URL.init(fileURLWithPath: filepath)
+    do {
+       data  = try Data(contentsOf: fileURL)
+    } catch {
+        return []
+    }
+    
+    return data.bytes
+}
+
+
+/// Generic error display routine that also quits the app.
+///
+/// - Parameter message: The error message text.
+/// - Parameter code:    The error code (and app exit code).
+
 func reportErrorAndExit(_ message: String, _ code: Int32 = EXIT_FAILURE) {
 
     writeToStderr(RED + BOLD + "ERROR" + RESET + " " + message + " -- exiting")
@@ -576,61 +581,51 @@ func reportErrorAndExit(_ message: String, _ code: Int32 = EXIT_FAILURE) {
 }
 
 
-/**
-    @Brief Generic error display routine that does not quit the app.
- 
-    @Parameters
-        - message: The error message text.
-*/
+/// Generic error display routine that does not quit the app.
+///
+/// - Parameter message: The error message text.
+
 func reportError(_ message: String) {
 
     writeToStderr(RED + BOLD + "ERROR" + RESET + " " + message)
 }
 
 
-/**
-    @Brief Generic warning display routine.
- 
-    @Parameters
-        - message: The warning's text.
-*/
+/// Generic warning display routine.
+///
+/// - Parameter message: The warning's text.
+
 func reportWarning(_ message: String) {
 
     writeToStderr(YELLOW + BOLD + "WARNING" + RESET + " " + message)
 }
 
 
-/**
-    @Brief Write errors and other messages to `stderr`.
- 
-    @Parameters
-        - message: The text to emit.
-*/
+/// Write errors and other messages to `stderr`.
+///
+/// - Parameter message: The text to emit.
+
 func writeToStderr(_ message: String) {
 
     writeOut(message, STD_ERR)
 }
 
 
-/**
-    @Brief Write output and other messages to `stdout`.
- 
-    @Parameters
-        - message: The text to emit.
-*/
+/// Write output and other messages to `stdout`.
+///
+/// - Parameter message: The text to emit.
+
 func writeToStdout(_ message: String) {
 
     writeOut(message, STD_OUT)
 }
 
 
-/**
-    @Brief Write output to any standard file.
- 
-    @Parameters
-        - message:          The text to emit.
-        - targetFileHandle: Where to emit the message.
-*/
+/// Write output to any standard file.
+///
+/// - Parameter message:          The text to emit.
+/// - Parameter targetFileHandle: Where to emit the message
+
 func writeOut(_ message: String, _ targetFileHandle: FileHandle) {
 
     let messageAsString = message + "\r\n"
@@ -640,9 +635,8 @@ func writeOut(_ message: String, _ targetFileHandle: FileHandle) {
 }
 
 
-/**
-    @Brief Display the help text.
-*/
+/// Display the help text.
+
 func showHelp() {
 
     showHeader()
@@ -659,9 +653,8 @@ func showHelp() {
 }
 
 
-/**
-    @Brief Display the app version.
-*/
+/// Display the app version.
+
 func showVersion() {
 
     showHeader()
@@ -669,9 +662,8 @@ func showVersion() {
 }
 
 
-/**
-    @Brief Display the app's version number.
-*/
+/// Display the app's version number.
+
 func showHeader() {
     
 #if os(macOS)
@@ -794,14 +786,24 @@ for filepath in files {
 // Convert the file(s) to text
 let outputToFiles: Bool = (finalFiles.count > 1)
 for filepath in finalFiles {
-    let result: ProcessResult = processFile(filepath)
+    var result: ProcessResult
+    let data = getFileContents(filepath)
+    if !data.isEmpty {
+        result = processFile(data, filepath)
+    } else {
+        result = ProcessResult.init(text: "file not found", errorCode: .badFile)
+    }
+    
+    // Handle the outcome of processing
     if result.errorCode != .none {
+        // Report the error and, if required, bail
         if haltOnFirstError {
             reportErrorAndExit("File \(filepath) could not be processed: \(result.text)", Int32(result.errorCode.rawValue))
         } else {
             reportWarning("File \(filepath) could not be processed: \(result.text)")
         }
     } else {
+        // Report the processed text
         if !outputToFiles {
             // Output processed text to STDOUT so it's available for piping or redirection
             if doShowInfo {
@@ -810,9 +812,11 @@ for filepath in finalFiles {
             
             writeToStdout(result.text)
         } else {
-            // Output to a file
+            // Output to a file: generate the name and extension...
             var outFilepath: String = (filepath as NSString).deletingPathExtension
             outFilepath += (doReturnMarkdown ? ".md" : ".txt")
+            
+            // ...and attempt to write it out
             do {
                 try result.text.write(toFile: outFilepath, atomically: true, encoding: .utf8)
                 if doShowInfo {

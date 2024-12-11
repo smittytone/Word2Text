@@ -1,6 +1,6 @@
 /*
     word2text
-    linux_version.swift
+    extensions.swift
 
     Copyright © 2024 Tony Smith. All rights reserved.
 
@@ -24,8 +24,12 @@
     SOFTWARE.
 */
 
-#if os(Linux)
-    //TODO Update from macOS Info.plist
-    let LINUX_VERSION: String = "0.0.2"
-    let LINUX_BUILD: Int = 4
-#endif
+import Foundation
+
+
+extension Data {
+    var bytes: [UInt8] {
+        return [UInt8](self)
+    }
+}
+
