@@ -78,7 +78,8 @@ var files: [String]         = []
 
 func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
     
-    var text: String = ""
+    var textBytes: [UInt8] = []
+    var bodyText: String = ""
     var outerText: [String] = ["", ""]
     var styles: [String:PsionWordStyle] = [:]
     var emphases: [String:PsionWordStyle] = [:]
@@ -98,8 +99,7 @@ func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
     
     // Check for encrypted files
     // NOTE We can't handle these yet as the decode algorithm remains unknown
-    let encrypted: Bool = (getWordValue(data, 16) == 256)
-    if encrypted {
+    if getWordValue(data, 16) == 256 {
         return ProcessResult.init(text: "Word file is encrypted", errorCode: .badFileEncrypted)
     }
     
@@ -139,6 +139,10 @@ func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
             if doShowInfo {
                 writeToStderr("  \(index == 0 ? "Header" : "Footer") text length \(outerText[index].count) byte\(outerText[index].count == 1 ? "" : "s")")
             }
+
+            if outerText[index].count == 0 {
+                outerText[index] = "None"
+            }
         }
         
         // Style Definitions
@@ -168,28 +172,29 @@ func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
                 let currentByte = byteIndex + PSION_WORD_RECORD_HEADER_LENGTH + i
                 
                 // Process Psion's special character values
-                let character = data[currentByte]
-                switch character {
+                let characterByte = data[currentByte]
+                switch characterByte {
                     case 0:
                         // 0 = paragraph separator
-                        text += "\n"
+                        textBytes.append(0x0A)
                     case 7:
                         // 7 = unbreakable hyphen
-                        text += "-"
+                        textBytes.append(0x2D)
                     case 14:
                         // 14 = soft hyphen (displayed only if used to break line)
+                        // NOTE This may be problematic: removing a character may invalidate
+                        //      the range values provided in the block format records below.
                         continue
                     case 15:
                         // 15 = unbreakable space
-                        text += " "
+                        textBytes.append(0x20)
                     default:
-                        let asciiBytes: [UInt8] = [character]
-                        text += String(bytes: asciiBytes, encoding: .ascii)!
+                        textBytes.append(characterByte)
                 }
             }
             
             if doShowInfo {
-                writeToStderr("  Processed text length \(text.count) characters\(text.count == 1 ? "" : "s")")
+                writeToStderr("  Processed text length \(textBytes.count) characters\(textBytes.count == 1 ? "" : "s")")
             }
         }
         
@@ -205,8 +210,8 @@ func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
                 var block: PsionWordFormatBlock = PsionWordFormatBlock()
                 block.startIndex = textByteCount
                 block.endIndex = textByteCount + length
-                if block.endIndex > text.count {
-                    block.endIndex = text.count
+                if block.endIndex > textBytes.count {
+                    block.endIndex = textBytes.count
                 }
                 
                 if let style: PsionWordStyle = styles[styleCode] {
@@ -228,7 +233,7 @@ func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
                 textByteCount += length
                 recordByteCount += PSION_WORD_BLOCK_UNIT_LENGTH
                 
-                if textByteCount >= text.count {
+                if textByteCount >= textBytes.count {
                     break
                 }
             }
@@ -239,15 +244,17 @@ func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
     
     // Process to Markdown if that's required
     if doReturnMarkdown {
-        text = convertToMarkdown(text, blocks, styles, emphases)
+        bodyText = convertToMarkdown(textBytes, blocks, styles, emphases)
+    } else {
+        bodyText = String(bytes: textBytes, encoding: .ascii)!
     }
     
     // Add the header and foot if requested
     if doIncludeHeader {
-        text = "HEADER: \(outerText[0])\nBODY: \(text)\nFOOTER: \(outerText[1])"
+        bodyText = "\(outerText[0])\n\(String(repeating: "-", count: outerText[0].count))\n\(bodyText)\n\(String(repeating: "-", count: outerText[1].count))\n\(outerText[1])"
     }
     
-    return ProcessResult(text: text, errorCode: .none)
+    return ProcessResult(text: bodyText, errorCode: .none)
 }
 
 
@@ -354,7 +361,7 @@ func getStyle(_ data: [UInt8], _ index: Int, _ isStyle: Bool) -> PsionWordStyle 
     if tabCount > 0 {
         var tabIndex: Int = index + 48
         for _ in 0..<tabCount {
-            style.tabPostions.append(getWordValue(data, tabIndex))
+            style.tabPositions.append(getWordValue(data, tabIndex))
             
             let tabType: Int = getWordValue(data, tabIndex + 2)
             switch tabType {
@@ -402,7 +409,7 @@ func getWordValue(_ data: [UInt8], _ index: Int) -> Int {
 ///
 /// - Returns: A Markdown-formatted version of the base text.
 
-func convertToMarkdown(_ rawText: String, _ blocks: [PsionWordFormatBlock], _ styles: [String:PsionWordStyle], _ emphases: [String:PsionWordStyle]) -> String {
+func convertToMarkdown(_ rawText: [UInt8], _ blocks: [PsionWordFormatBlock], _ styles: [String:PsionWordStyle], _ emphases: [String:PsionWordStyle]) -> String {
     
     // The raw text is a series of paragraphs separated by NEWLINE.
     // A block will contain a style AND an emphasis over a range of characters, in sequence.
@@ -422,8 +429,8 @@ func convertToMarkdown(_ rawText: String, _ blocks: [PsionWordFormatBlock], _ st
     // Blocks are in stored in sequence, so we just need to iterate over them
     for block in blocks {
         // Create Range values for the section of the raw text that we are formatting
-        let startIndex = rawText.index(rawText.startIndex, offsetBy: block.startIndex)
-        let endIndex = rawText.index(rawText.startIndex, offsetBy: block.endIndex)
+        //let startIndex = rawText.index(rawText.startIndex, offsetBy: block.startIndex)
+        //let endIndex = rawText.index(rawText.startIndex, offsetBy: block.endIndex)
         
         // The
         var tag: String = ""
@@ -473,16 +480,14 @@ func convertToMarkdown(_ rawText: String, _ blocks: [PsionWordFormatBlock], _ st
         
         // Add the tagged text to the string store. We only duplicate the tag at the end
         // of the block if it is a character-level tag, ie. an Emphasis
-        markdown += (tag + String(rawText[startIndex..<endIndex]))
-        if isEmphasisTag {
-            markdown += tag
-        }
+        let addition = String(bytes: rawText[block.startIndex..<block.endIndex], encoding: .ascii)!
+        markdown += (tag + addition + (isEmphasisTag ? tag :""))
         
         // Check if we've come to the end of a paragraph. If so, reset the flag
-        if rawText[startIndex..<endIndex].hasSuffix("\n") {
+        if addition.hasSuffix("\n") {
             paraStyleSet = false
             
-            // NOTE This tag should reall come BEFORE the NEWLINE...
+            // NOTE This tag should really come BEFORE the NEWLINE...
             if !textEndTag.isEmpty {
                 markdown += textEndTag
                 textEndTag = ""
@@ -540,11 +545,8 @@ func processRelativePath(_ relativePath: String) -> String {
 func doesPathReferenceDirectory(_ absolutePath: String) -> Bool {
     
     let fileURL = URL.init(fileURLWithPath: absolutePath)
-    if let value = try? fileURL.resourceValues(forKeys: [.isDirectoryKey]) {
-        return value.isDirectory!
-    }
-    
-    return false
+    guard let value = try? fileURL.resourceValues(forKeys: [.isDirectoryKey]) else { return false }
+    return value.isDirectory!
 }
 
 
@@ -556,14 +558,8 @@ func doesPathReferenceDirectory(_ absolutePath: String) -> Bool {
 
 func getFileContents(_ filepath: String) -> [UInt8] {
     
-    var data: Data
     let fileURL: URL = URL.init(fileURLWithPath: filepath)
-    do {
-       data  = try Data(contentsOf: fileURL)
-    } catch {
-        return []
-    }
-    
+    guard let data = try? Data(contentsOf: fileURL) else { return [] }
     return data.bytes
 }
 
@@ -707,7 +703,7 @@ if args.count == 1 {
 
 for argument in args {
 
-    // Ignore the first comand line argument
+    // Ignore the first command line argument
     if argCount == 0 {
         argCount += 1
         continue
@@ -787,7 +783,7 @@ for filepath in files {
 let outputToFiles: Bool = (finalFiles.count > 1)
 for filepath in finalFiles {
     var result: ProcessResult
-    let data = getFileContents(filepath)
+    let data: [UInt8] = getFileContents(filepath)
     if !data.isEmpty {
         result = processFile(data, filepath)
     } else {
