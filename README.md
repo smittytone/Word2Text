@@ -38,6 +38,17 @@ For convenience, files are written using the UTF-8 encoding.
 * `-o`/`--outer` — Include ‘outer’ text, ie. header and footer text, in addition to the body text. Default: `false`.
 * `-v`/`--verbose` — Show file and content discovery information during file processing.
 
+For example:
+
+```shell
+word2text $HOME/Psion/BIDDRAFT.WRD -o
+Our Bid for Major Project
+-------------------------
+Bid text to go here...
+-------
+Page %P
+```
+
 ## Compiling
 
 ### macOS
