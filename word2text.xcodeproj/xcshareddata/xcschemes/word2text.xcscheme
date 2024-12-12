@@ -53,7 +53,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "$HOME/Psion/WORDA.WRD"
+            argument = "$HOME/Psion/WORD03.WRD"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

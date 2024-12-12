@@ -211,12 +211,13 @@ func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
                 var block: PsionWordFormatBlock = PsionWordFormatBlock()
                 block.styleCode = styleCode
                 block.emphasisCode = emphasisCode
-                blocks.append(block)
                 block.startIndex = textByteCount
                 block.endIndex = textByteCount + length
                 if block.endIndex > textBytes.count {
                     block.endIndex = textBytes.count
                 }
+                
+                blocks.append(block)
                 
                 if doShowInfo {
                     if let style: PsionWordStyle = styles[styleCode], let emphasis: PsionWordStyle = emphases[emphasisCode] {
@@ -440,8 +441,16 @@ func convertToMarkdown(_ rawText: [UInt8], _ blocks: [PsionWordFormatBlock], _ s
                     // Bullet list
                     tag = "- "
                 default:
-                    if block.styleCode != "NN" {
+                    if block.styleCode != "BT" {
+                        // NOTE User-defined style may have any name
                         if let style: PsionWordStyle = styles[block.styleCode] {
+                            // Use font size
+                            if style.fontSize > 400 {
+                                tag = "# "
+                            } else if style.fontSize > 240 {
+                                tag = "### "
+                            }
+                            
                             if style.bold {
                                 tag += "**"
                                 textEndTag = "**"
@@ -470,17 +479,29 @@ func convertToMarkdown(_ rawText: [UInt8], _ blocks: [PsionWordFormatBlock], _ s
         
         // Add the tagged text to the string store. We only duplicate the tag at the end
         // of the block if it is a character-level tag, ie. an Emphasis
-        let addition = String(bytes: rawText[block.startIndex..<block.endIndex], encoding: .ascii) ?? ""
-        markdown += (tag + addition + (isEmphasisTag ? tag :""))
-        
-        // Check if we've come to the end of a paragraph. If so, reset the flag
-        if addition.hasSuffix("\n") {
-            paraStyleSet = false
-            
-            // NOTE This tag should really come BEFORE the NEWLINE...
-            if !textEndTag.isEmpty {
-                markdown += textEndTag
-                textEndTag = ""
+        if var addition = String(bytes: rawText[block.startIndex..<block.endIndex], encoding: .ascii) {
+            // Check if we've come to the end of a paragraph - but not empty ones
+            if addition.hasSuffix("\n") && addition.count > 1 {
+                // Remove the NEWLINE
+                _ = addition.removeLast()
+                markdown += (tag + addition + (isEmphasisTag ? tag : ""))
+                
+                if !textEndTag.isEmpty {
+                    markdown += textEndTag
+                    textEndTag = ""
+                }
+                
+                // Add the NEWLINE back, after the tags
+                markdown += "\n"
+                
+                // Reset the paragraph found flag
+                paraStyleSet = false
+            } else if addition.hasSuffix("\n") && addition.count ==  1 {
+                paraStyleSet = false
+                markdown += "\n"
+            } else {
+                // Just add the tags
+                markdown += (tag + addition + (isEmphasisTag ? tag : ""))
             }
         }
     }
