@@ -26,6 +26,6 @@
 
 #if os(Linux)
     //TODO Update from macOS Info.plist
-    let LINUX_VERSION: String = "0.0.2"
-    let LINUX_BUILD: Int = 4
+    let LINUX_VERSION: String = "0.0.3"
+    let LINUX_BUILD: Int = 5
 #endif

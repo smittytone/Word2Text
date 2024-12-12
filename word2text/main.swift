@@ -108,6 +108,7 @@ func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
         let recordType: Int = getWordValue(data, byteIndex)
         let recordDataLength: Int = getWordValue(data, byteIndex + 2)
         
+        // Won't be included in release builds
         assert(recordType - 1 <= PSION_WORD_RECORD_TYPES.count, "UNKNOWN RECORD TYPE (\(recordType) @ \(String.init(format: "0x%04x", arguments: [byteIndex]))")
         
         if doShowInfo {
@@ -134,13 +135,14 @@ func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
             // Allow for the trailing NUL
             let stringLength = recordDataLength - 1
             let asciiBytes: [UInt8] = [UInt8](data[byteIndex + PSION_WORD_RECORD_HEADER_LENGTH..<byteIndex + PSION_WORD_RECORD_HEADER_LENGTH + stringLength])
-            outerText[index] = String(bytes: asciiBytes, encoding: .ascii)!
+            outerText[index] = String(bytes: asciiBytes, encoding: .ascii) ?? "None"
             
             if doShowInfo {
                 writeToStderr("  \(index == 0 ? "Header" : "Footer") text length \(outerText[index].count) byte\(outerText[index].count == 1 ? "" : "s")")
             }
 
-            if outerText[index].count == 0 {
+            // Set default on empty string
+            if outerText[index].isEmpty {
                 outerText[index] = "None"
             }
         }
@@ -169,10 +171,8 @@ func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
         if recordType == PsionWordRecordType.bodyText.rawValue {
             // Process the text record
             for i in 0..<recordDataLength {
-                let currentByte = byteIndex + PSION_WORD_RECORD_HEADER_LENGTH + i
-                
                 // Process Psion's special character values
-                let characterByte = data[currentByte]
+                let characterByte = data[byteIndex + PSION_WORD_RECORD_HEADER_LENGTH + i]
                 switch characterByte {
                     case 0:
                         // 0 = paragraph separator
@@ -205,30 +205,26 @@ func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
             while recordByteCount < recordDataLength {
                 let blockStartByteIndex = byteIndex + PSION_WORD_RECORD_HEADER_LENGTH + recordByteCount
                 let length: Int = getWordValue(data, blockStartByteIndex)
-                let styleCode: String = String(bytes: [UInt8](data[blockStartByteIndex + 2..<blockStartByteIndex + 4]), encoding: .ascii)!
-                let emphasisCode: String = String(bytes: [UInt8](data[blockStartByteIndex + 4..<blockStartByteIndex + 6]), encoding: .ascii)!
+                let styleCode: String = String(bytes: [UInt8](data[blockStartByteIndex + 2..<blockStartByteIndex + 4]), encoding: .ascii) ?? ""
+                let emphasisCode: String = String(bytes: [UInt8](data[blockStartByteIndex + 4..<blockStartByteIndex + 6]), encoding: .ascii) ?? ""
+                
                 var block: PsionWordFormatBlock = PsionWordFormatBlock()
+                block.styleCode = styleCode
+                block.emphasisCode = emphasisCode
+                blocks.append(block)
                 block.startIndex = textByteCount
                 block.endIndex = textByteCount + length
                 if block.endIndex > textBytes.count {
                     block.endIndex = textBytes.count
                 }
                 
-                if let style: PsionWordStyle = styles[styleCode] {
-                    if let emphasis: PsionWordStyle = emphases[emphasisCode] {
-                        if doShowInfo {
-                            writeToStderr("  Text bytes range \(block.startIndex)-\(block.endIndex) has style \(style.name) and emphasis \(emphasis.name)")
-                        }
-                    }
-                } else {
-                    if doShowInfo {
+                if doShowInfo {
+                    if let style: PsionWordStyle = styles[styleCode], let emphasis: PsionWordStyle = emphases[emphasisCode] {
+                        writeToStderr("  Text bytes range \(block.startIndex)-\(block.endIndex) has style \(style.name) and emphasis \(emphasis.name)")
+                    } else {
                         writeToStderr("  Text bytes range \(block.startIndex)-\(block.endIndex) has style code \(styleCode) and emphasis code \(emphasisCode)")
                     }
                 }
-                
-                block.styleCode = styleCode
-                block.emphasisCode = emphasisCode
-                blocks.append(block)
                 
                 textByteCount += length
                 recordByteCount += PSION_WORD_BLOCK_UNIT_LENGTH
@@ -246,7 +242,7 @@ func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
     if doReturnMarkdown {
         bodyText = convertToMarkdown(textBytes, blocks, styles, emphases)
     } else {
-        bodyText = String(bytes: textBytes, encoding: .ascii)!
+        bodyText = String(bytes: textBytes, encoding: .ascii) ?? "None"
     }
     
     // Add the header and foot if requested
@@ -261,24 +257,19 @@ func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
 /// Parse a Psion Word Style or Emphasis record.
 ///
 /// - Parameter data:     The word file bytes.
-/// - Parameter index:    Absolute path of the target Word file.
+/// - Parameter index:    Index of the record in the data.
 /// - Parameter isStyle: `true` if the record holds a Style; `false` if it is an Emphasis.
 ///
 /// - Returns: A PsionWordStyle containing the record's information.
 
-func getStyle(_ data: [UInt8], _ index: Int, _ isStyle: Bool) -> PsionWordStyle {
+func getStyle(_ data: [UInt8], _ baseIndex: Int, _ isStyle: Bool) -> PsionWordStyle {
     
-    let index: Int = index + 4
+    let index: Int = baseIndex + 4
     var style: PsionWordStyle = PsionWordStyle()
     
     // Code and name
-    style.code = String(bytes: [UInt8](data[index..<index + 2]), encoding: .ascii)!
-    for i in index + 2..<index + 18 {
-        if data[i] == 0 {
-            style.name = String(bytes: [UInt8](data[(index + 2)..<i]), encoding: .ascii)!
-            break
-        }
-    }
+    style.code = String.init(bytes: data[index..<index + 2], encoding: .ascii) ?? ""
+    style.name = String.init(cString: [UInt8](data[index + 2..<index + 18]))
     
     if style.name.isEmpty {
         style.name = "Unknown"
@@ -394,7 +385,6 @@ func getStyle(_ data: [UInt8], _ index: Int, _ isStyle: Bool) -> PsionWordStyle 
 
 func getWordValue(_ data: [UInt8], _ index: Int) -> Int {
     
-    //print("\(String.init(format: "0x%02x", arguments: [data[index]])), \(String.init(format: "0x%02x", arguments: [data[index + 1]]))")
     return Int(data[index]) + (Int(data[index + 1]) << 8)
 }
 
@@ -480,7 +470,7 @@ func convertToMarkdown(_ rawText: [UInt8], _ blocks: [PsionWordFormatBlock], _ s
         
         // Add the tagged text to the string store. We only duplicate the tag at the end
         // of the block if it is a character-level tag, ie. an Emphasis
-        let addition = String(bytes: rawText[block.startIndex..<block.endIndex], encoding: .ascii)!
+        let addition = String(bytes: rawText[block.startIndex..<block.endIndex], encoding: .ascii) ?? ""
         markdown += (tag + addition + (isEmphasisTag ? tag :""))
         
         // Check if we've come to the end of a paragraph. If so, reset the flag
@@ -782,13 +772,10 @@ for filepath in files {
 // Convert the file(s) to text
 let outputToFiles: Bool = (finalFiles.count > 1)
 for filepath in finalFiles {
-    var result: ProcessResult
     let data: [UInt8] = getFileContents(filepath)
-    if !data.isEmpty {
-        result = processFile(data, filepath)
-    } else {
-        result = ProcessResult.init(text: "file not found", errorCode: .badFile)
-    }
+    let result: ProcessResult = !data.isEmpty 
+        ? processFile(data, filepath) 
+        : ProcessResult.init(text: "file not found", errorCode: .badFile)
     
     // Handle the outcome of processing
     if result.errorCode != .none {
