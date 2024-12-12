@@ -74,7 +74,7 @@ struct PsionWordStyle {
     var spaceBelowPara: Int = 0
     var spacing: PsionWordSpacing = .keepTogether
     var outlineLevel: Int = 0
-    var tabPostions: [Int] = []
+    var tabPositions: [Int] = []
     var tabTypes: [PsionWordTabType] = []
 }
 
