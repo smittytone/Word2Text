@@ -76,7 +76,7 @@ var files: [String]         = []
 ///
 /// - Returns: A ProcessResult containing the text or an error code.
 
-func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
+func processFile(_ data: ArraySlice<UInt8>, _ filepath: String) -> ProcessResult {
     
     var textBytes: [UInt8] = []
     var bodyText: String = ""
@@ -86,9 +86,14 @@ func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
     var blocks: [PsionWordFormatBlock] = []
     var byteIndex: Int = 40
     
+    // Check minimum file size: enough bytes to at least check the preamble
+    if data.count < 16 {
+        return ProcessResult.init(text: "Not a Psion Series 3 Word file", errorCode: .badPsionFileType)
+    }
+    
     // Check the data preamble (C String of up to 15 chars plus `NUL`)
-    let preamble = String.init(cString: data)
-    if preamble != "PSIONWPDATAFILE" {
+    let preamble = String.init(decoding: data[0..<15], as: UTF8.self)
+    if preamble != "PSIONWPDATAFILE" || data.count < 40 {
         // TODO Report actual file type
         return ProcessResult.init(text: "Not a Psion Series 3 Word file", errorCode: .badPsionFileType)
     }
@@ -97,54 +102,63 @@ func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
         writeToStderr("File \(filepath) is a Psion Series 3 Word document")
     }
     
-    // Check for encrypted files
+    // Check for encrypted files: look at file bytes 16 and 17
     // NOTE We can't handle these yet as the decode algorithm remains unknown
-    if getWordValue(data, 16) == 256 {
+    if getWordValue(data[16..<18]) == 256 {
         return ProcessResult.init(text: "Word file is encrypted", errorCode: .badFileEncrypted)
     }
     
     // Iterate over the file's bytes to extract the records
+    var recordCounter: UInt16 = 0
     while byteIndex < data.count - PSION_WORD_RECORD_HEADER_LENGTH {
-        let recordType: Int = getWordValue(data, byteIndex)
-        let recordDataLength: Int = getWordValue(data, byteIndex + 2)
+        // Get the 16-bit record type and 16-bit data length
+        let recordType: Int = getWordValue(data[byteIndex..<byteIndex + 2])
+        let recordDataLength: Int = getWordValue(data[byteIndex + 2..<byteIndex + 4])
         
-        // Won't be included in release builds
-        assert(recordType - 1 <= PSION_WORD_RECORD_TYPES.count, "UNKNOWN RECORD TYPE (\(recordType) @ \(String.init(format: "0x%04x", arguments: [byteIndex]))")
+        // Is the record type a legitimate value?
+        let range = 1..<10
+        if !range.contains(recordType) {
+            return ProcessResult.init(text: "Bad Word file record type (\(recordType) at  \(String.init(format: "0x%04x", arguments: [byteIndex]))", errorCode: .badRecordType)
+        }
         
         if doShowInfo {
             writeToStderr("Record of type \(PSION_WORD_RECORD_TYPES[recordType - 1]) found at offset \(String.init(format: "0x%04x", arguments: [byteIndex])). Size: \(recordDataLength) bytes")
         }
         
         // File record
-        // NOTE We don't require this for text conversion
-        if recordType == PsionWordRecordType.fileInfo.rawValue && recordDataLength != 10 {
-            return ProcessResult(text: "Bad file info record size (\(recordDataLength) not 10 bytes", errorCode: .badRecordLengthFileInfo)
+        // NOTE We don't care about this beyond its size
+        if recordType == PsionWordRecordType.fileInfo.rawValue {
+            if recordDataLength != 10 {
+                return ProcessResult(text: "Bad file info record size (\(recordDataLength) not 10 bytes", errorCode: .badRecordLengthFileInfo)
+            }
+            
+            recordCounter |= (1 << recordType)
         }
         
         // Printer Settings
         // NOTE We don't care about this beyond its size
-        if recordType == PsionWordRecordType.printerConfig.rawValue && recordDataLength != 58 {
-            return ProcessResult(text: "Bad printer config record size (\(recordDataLength) not 58 bytes", errorCode: .badRecordLengthPrinterConfig)
+        if recordType == PsionWordRecordType.printerConfig.rawValue {
+            if recordDataLength != 58 {
+                return ProcessResult(text: "Bad printer config record size (\(recordDataLength) not 58 bytes", errorCode: .badRecordLengthPrinterConfig)
+            }
+            
+            recordCounter |= (1 << recordType)
         }
+        
+        // Printer Driver
+        // NOTE We don't care about this beyond its presence
+        if recordType == PsionWordRecordType.printerDriver.rawValue {
+            recordCounter |= (1 << recordType)
+        }
+        
         
         // Header and footer records
         // Data are NUL-terminated strings
         if recordType == PsionWordRecordType.headerText.rawValue || recordType == PsionWordRecordType.footerText.rawValue {
+            // Index in strings store is 0 for header, 1 for footer
             let index: Int = recordType - PsionWordRecordType.headerText.rawValue
-            
-            // Allow for the trailing NUL
-            let stringLength = recordDataLength - 1
-            let asciiBytes: [UInt8] = [UInt8](data[byteIndex + PSION_WORD_RECORD_HEADER_LENGTH..<byteIndex + PSION_WORD_RECORD_HEADER_LENGTH + stringLength])
-            outerText[index] = String(bytes: asciiBytes, encoding: .ascii) ?? "None"
-            
-            if doShowInfo {
-                writeToStderr("  \(index == 0 ? "Header" : "Footer") text length \(outerText[index].count) byte\(outerText[index].count == 1 ? "" : "s")")
-            }
-
-            // Set default on empty string
-            if outerText[index].isEmpty {
-                outerText[index] = "None"
-            }
+            outerText[index] = getOuterText(data[(byteIndex + PSION_WORD_RECORD_HEADER_LENGTH)..<byteIndex + PSION_WORD_RECORD_HEADER_LENGTH + recordDataLength - 1], recordDataLength, index == 0)
+            recordCounter |= (1 << recordType)
         }
         
         // Style Definitions
@@ -153,8 +167,10 @@ func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
                 return ProcessResult(text: "Bad style definition record size (\(recordDataLength) not 80 bytes", errorCode: .badRecordLengthStyleDefinition)
             }
             
-            let style: PsionWordStyle = getStyle(data, byteIndex, true)
+            let dataIndex = byteIndex + PSION_WORD_RECORD_HEADER_LENGTH
+            let style: PsionWordStyle = getStyle(data[dataIndex..<dataIndex + 80], dataIndex, true)
             styles[style.code] = style
+            recordCounter |= (1 << recordType)
         }
         
         // Emphasis Definitions
@@ -163,80 +179,33 @@ func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
                 return ProcessResult(text: "Bad emphasis definition record size (\(recordDataLength) not 80 bytes", errorCode: .badRecordLengthStyleDefinition)
             }
             
-            let emphasis: PsionWordStyle = getStyle(data, byteIndex, false)
+            let dataIndex = byteIndex + PSION_WORD_RECORD_HEADER_LENGTH
+            let emphasis: PsionWordStyle = getStyle(data[dataIndex..<dataIndex + 28], dataIndex, false)
             emphases[emphasis.code] = emphasis
+            recordCounter |= (1 << recordType)
         }
         
         // Text data record
         if recordType == PsionWordRecordType.bodyText.rawValue {
             // Process the text record
-            for i in 0..<recordDataLength {
-                // Process Psion's special character values
-                let characterByte = data[byteIndex + PSION_WORD_RECORD_HEADER_LENGTH + i]
-                switch characterByte {
-                    case 0:
-                        // 0 = paragraph separator
-                        textBytes.append(0x0A)
-                    case 7:
-                        // 7 = unbreakable hyphen
-                        textBytes.append(0x2D)
-                    case 14:
-                        // 14 = soft hyphen (displayed only if used to break line)
-                        // NOTE This may be problematic: removing a character may invalidate
-                        //      the range values provided in the block format records below.
-                        continue
-                    case 15:
-                        // 15 = unbreakable space
-                        textBytes.append(0x20)
-                    default:
-                        textBytes.append(characterByte)
-                }
-            }
-            
-            if doShowInfo {
-                writeToStderr("  Processed text length \(textBytes.count) characters\(textBytes.count == 1 ? "" : "s")")
-            }
+            let dataIndex = byteIndex + PSION_WORD_RECORD_HEADER_LENGTH
+            textBytes = getBodyText(data[dataIndex..<dataIndex + recordDataLength], dataIndex)
+            recordCounter |= (1 << recordType)
         }
         
         // Style application record
         if recordType == PsionWordRecordType.blockInfo.rawValue {
-            var recordByteCount = 0
-            var textByteCount = 0
-            while recordByteCount < recordDataLength {
-                let blockStartByteIndex = byteIndex + PSION_WORD_RECORD_HEADER_LENGTH + recordByteCount
-                let length: Int = getWordValue(data, blockStartByteIndex)
-                let styleCode: String = String(bytes: [UInt8](data[blockStartByteIndex + 2..<blockStartByteIndex + 4]), encoding: .ascii) ?? ""
-                let emphasisCode: String = String(bytes: [UInt8](data[blockStartByteIndex + 4..<blockStartByteIndex + 6]), encoding: .ascii) ?? ""
-                
-                var block: PsionWordFormatBlock = PsionWordFormatBlock()
-                block.styleCode = styleCode
-                block.emphasisCode = emphasisCode
-                block.startIndex = textByteCount
-                block.endIndex = textByteCount + length
-                if block.endIndex > textBytes.count {
-                    block.endIndex = textBytes.count
-                }
-                
-                blocks.append(block)
-                
-                if doShowInfo {
-                    if let style: PsionWordStyle = styles[styleCode], let emphasis: PsionWordStyle = emphases[emphasisCode] {
-                        writeToStderr("  Text bytes range \(block.startIndex)-\(block.endIndex) has style \(style.name) and emphasis \(emphasis.name)")
-                    } else {
-                        writeToStderr("  Text bytes range \(block.startIndex)-\(block.endIndex) has style code \(styleCode) and emphasis code \(emphasisCode)")
-                    }
-                }
-                
-                textByteCount += length
-                recordByteCount += PSION_WORD_BLOCK_UNIT_LENGTH
-                
-                if textByteCount >= textBytes.count {
-                    break
-                }
-            }
+            blocks = getStyleBlocks(data[byteIndex..<data.endIndex], recordDataLength, textBytes.count)
+            recordCounter |= (1 << recordType)
         }
         
         byteIndex += (PSION_WORD_RECORD_HEADER_LENGTH + recordDataLength)
+    }
+    
+    // Check we have at least one of every record
+    if recordCounter != 1022 {
+        // Processing ended, but without a complete set of records
+        return ProcessResult(text: "File did not include required records", errorCode: .badFileMissingRecords)
     }
     
     // Process to Markdown if that's required
@@ -257,18 +226,19 @@ func processFile(_ data: [UInt8], _ filepath: String) -> ProcessResult {
 
 /// Parse a Psion Word Style or Emphasis record.
 ///
-/// - Parameter data:     The word file bytes.
-/// - Parameter index:    Index of the record in the data.
+/// - Parameter data:     A slice of the word file bytes.
+/// - Parameter index:    Index of the data portion of the record.
 /// - Parameter isStyle: `true` if the record holds a Style; `false` if it is an Emphasis.
 ///
 /// - Returns: A PsionWordStyle containing the record's information.
 
-func getStyle(_ data: [UInt8], _ baseIndex: Int, _ isStyle: Bool) -> PsionWordStyle {
+func getStyle(_ data: ArraySlice<UInt8>, _ index: Int, _ isStyle: Bool) -> PsionWordStyle {
     
-    let index: Int = baseIndex + 4
     var style: PsionWordStyle = PsionWordStyle()
     
     // Code and name
+    // NOTE `String.init(cstring:...)` is deprecated so we'll eventually need to scan the bytes
+    //      for the NUL terminator and turn the rest into a Swift string
     style.code = String.init(bytes: data[index..<index + 2], encoding: .ascii) ?? ""
     style.name = String.init(cString: [UInt8](data[index + 2..<index + 18]))
     
@@ -285,8 +255,8 @@ func getStyle(_ data: [UInt8], _ baseIndex: Int, _ isStyle: Bool) -> PsionWordSt
     style.isDefault = ((data[index + 18] & 0x04) > 0)
     
     // Font type and size
-    style.fontCode = getWordValue(data, index + 20)
-    style.fontSize = getWordValue(data, index + 24)
+    style.fontCode = getWordValue(data[index + 20..<index + 22])
+    style.fontSize = getWordValue(data[index + 24..<index + 26])
     
     // Textual properties
     style.underlined = ((data[index + 22] & 0x01) > 0)
@@ -312,12 +282,12 @@ func getStyle(_ data: [UInt8], _ baseIndex: Int, _ isStyle: Bool) -> PsionWordSt
     }
     
     // Indents
-    style.leftIndent = getWordValue(data, index + 28)
-    style.rightIndent = getWordValue(data, index + 30)
-    style.firstIdent = getWordValue(data, index + 32)
+    style.leftIndent = getWordValue(data[index + 28..<index + 30])
+    style.rightIndent = getWordValue(data[index + 30..<index + 32])
+    style.firstIdent = getWordValue(data[index + 32..<index + 34])
     
     // Text alignment
-    let alignValue: Int = getWordValue(data, index + 34)
+    let alignValue: Int = getWordValue(data[index + 34..<index + 36])
     switch alignValue {
         case 1:
             style.alignment = .right
@@ -330,9 +300,9 @@ func getStyle(_ data: [UInt8], _ baseIndex: Int, _ isStyle: Bool) -> PsionWordSt
     }
     
     // Spacing values
-    style.lineSpacing = getWordValue(data, index + 36)
-    style.spaceAbovePara = getWordValue(data, index + 38)
-    style.spaceBelowPara = getWordValue(data, index + 40)
+    style.lineSpacing = getWordValue(data[index + 36..<index + 38])
+    style.spaceAbovePara = getWordValue(data[index + 38..<index + 40])
+    style.spaceBelowPara = getWordValue(data[index + 40..<index + 42])
     
     let spacingValue = data[index + 42]
     if spacingValue & 0x01 > 0 {
@@ -346,16 +316,15 @@ func getStyle(_ data: [UInt8], _ baseIndex: Int, _ isStyle: Bool) -> PsionWordSt
     }
     
     // Outline level
-    style.outlineLevel = getWordValue(data, index + 44)
+    style.outlineLevel = getWordValue(data[index + 44..<index + 46])
     
     // Tabs
-    let tabCount: Int = getWordValue(data, index + 46)
+    let tabCount: Int = getWordValue(data[index + 46..<index + 48])
     if tabCount > 0 {
         var tabIndex: Int = index + 48
         for _ in 0..<tabCount {
-            style.tabPositions.append(getWordValue(data, tabIndex))
-            
-            let tabType: Int = getWordValue(data, tabIndex + 2)
+            style.tabPositions.append(getWordValue(data[tabIndex..<tabIndex + 2]))
+            let tabType: Int = getWordValue(data[tabIndex + 2..<tabIndex + 4])
             switch tabType {
                 case 1:
                     style.tabTypes.append(.right)
@@ -377,10 +346,123 @@ func getStyle(_ data: [UInt8], _ baseIndex: Int, _ isStyle: Bool) -> PsionWordSt
 }
 
 
+/// Read a C string of known length from the word file byte store
+///
+/// - Parameter data:      A slice of the word file bytes.
+/// - Parameter rawlength: The length of the data (from the record header).
+/// - Paramteer isHeader:  `true` if the record contains header text, otherwise `false`.
+///
+/// - Returns: The text as a string.
+
+func getOuterText(_ data: ArraySlice<UInt8>, _ rawlength: Int, _ isHeader: Bool) -> String {
+    
+    var outerText: String
+    
+    if rawlength > 1 {
+        // There's at least one character in addition to the C String NUL terminator
+        outerText = String.init(decoding: data[..<(data.endIndex - 1)], as: UTF8.self)
+    } else {
+        // String is empty (NUL only)
+        outerText = "None"
+    }
+    
+    if doShowInfo {
+        writeToStderr("  \(isHeader ? "Header" : "Footer") text length \(rawlength - 1) byte\(rawlength == 1 ? "" : "s")")
+    }
+
+    return outerText
+}
+
+
+/// Read body text known length from the word file byte store.
+///
+/// - Parameter data:  A slice of the word file bytes containing the body text.
+/// - Parameter inded: Index of the slice in the main data.
+///
+/// - Returns: The text as a byte array.
+
+func getBodyText(_ data: ArraySlice<UInt8>, _ index: Int) -> [UInt8] {
+    
+    var textBytes: [UInt8] = []
+    for i in 0..<(data.endIndex - data.startIndex) {
+        // Process Psion's special character values
+        let characterByte = data[index + i]
+        switch characterByte {
+            case 0:
+                // 0 = paragraph separator
+                textBytes.append(0x0A)
+            case 7:
+                // 7 = unbreakable hyphen
+                textBytes.append(0x2D)
+            case 14:
+                // 14 = soft hyphen (displayed only if used to break line)
+                // NOTE This may be problematic: removing a character may invalidate
+                //      the range values provided in the block format records below.
+                continue
+            case 15:
+                // 15 = unbreakable space
+                textBytes.append(0x20)
+            default:
+                textBytes.append(characterByte)
+        }
+    }
+    
+    if doShowInfo {
+        writeToStderr("  Processed text length \(textBytes.count) characters\(textBytes.count == 1 ? "" : "s")")
+    }
+    
+    return textBytes
+}
+
+
+/// Parse a Psion Word block styling record and extract the formatting blocks.
+///
+/// -Paramater data: A slice of the Word file bytes containing the block formatting data.
+/// -Parameter length: The number of bytes to process.
+///
+func getStyleBlocks(_ data: ArraySlice<UInt8>, _ length: Int, _ textLength: Int) -> [PsionWordFormatBlock] {
+    
+    var blocks: [PsionWordFormatBlock] = []
+    var recordByteCount = 0
+    var textByteCount = 0
+    while recordByteCount < length {
+        let blockStartByteIndex = data.startIndex + recordByteCount
+        let blockLength: Int = getWordValue(data[blockStartByteIndex..<blockStartByteIndex + 2])
+        let styleCode: String = String(bytes: [UInt8](data[blockStartByteIndex + 2..<blockStartByteIndex + 4]), encoding: .ascii) ?? ""
+        let emphasisCode: String = String(bytes: [UInt8](data[blockStartByteIndex + 4..<blockStartByteIndex + 6]), encoding: .ascii) ?? ""
+        
+        var block: PsionWordFormatBlock = PsionWordFormatBlock()
+        block.styleCode = styleCode
+        block.emphasisCode = emphasisCode
+        block.startIndex = textByteCount
+        block.endIndex = textByteCount + blockLength
+        if block.endIndex > textLength {
+            block.endIndex = textLength
+        }
+        
+        blocks.append(block)
+        
+        if doShowInfo {
+            writeToStderr("  Text bytes range \(block.startIndex)-\(block.endIndex) has style code \(styleCode) and emphasis code \(emphasisCode)")
+        }
+        
+        textByteCount += length
+        recordByteCount += PSION_WORD_BLOCK_UNIT_LENGTH
+        
+        if textByteCount >= textLength {
+            break
+        }
+    }
+    
+    return blocks
+}
+
+
+/*
 /// Read a 16-bit little endian value from the Word file byte store.
 ///
-/// - Parameter data:   The word file bytes.
-/// - Parameter index:  The particular byte holding the LSB.
+/// - Parameter data:  The word file bytes.
+/// - Parameter index: The particular byte holding the LSB.
 ///
 /// - Returns: The value as an full integer.
 
@@ -388,6 +470,25 @@ func getWordValue(_ data: [UInt8], _ index: Int) -> Int {
     
     return Int(data[index]) + (Int(data[index + 1]) << 8)
 }
+*/
+
+
+/// Read a 16-bit little endian value from the Word file byte store.
+///
+/// - Parameter data:  Two-byte slice of the word file bytes.
+///
+/// - Returns: The value as an (unsinged) integer, or -1 on error.
+
+func getWordValue(_ data: ArraySlice<UInt8>) -> Int {
+    
+    // Make sure data slice is correctly dimensioned
+    if data.isEmpty || data.count == 1 {
+        return -1
+    }
+    
+    return Int(data[data.startIndex]) + (Int(data[data.startIndex + 1]) << 8)
+}
+
 
 
 /// Convert plain text to Markdown by parsing the block formatting data in
@@ -567,11 +668,11 @@ func doesPathReferenceDirectory(_ absolutePath: String) -> Bool {
 ///
 /// - Returns: The file data, or an empty array on error.
 
-func getFileContents(_ filepath: String) -> [UInt8] {
+func getFileContents(_ filepath: String) -> ArraySlice<UInt8> {
     
     let fileURL: URL = URL.init(fileURLWithPath: filepath)
     guard let data = try? Data(contentsOf: fileURL) else { return [] }
-    return data.bytes
+    return data.bytes[...]
 }
 
 
@@ -793,8 +894,8 @@ for filepath in files {
 // Convert the file(s) to text
 let outputToFiles: Bool = (finalFiles.count > 1)
 for filepath in finalFiles {
-    let data: [UInt8] = getFileContents(filepath)
-    let result: ProcessResult = !data.isEmpty 
+    let data = getFileContents(filepath)
+    let result: ProcessResult = !data.isEmpty
         ? processFile(data, filepath) 
         : ProcessResult.init(text: "file not found", errorCode: .badFile)
     

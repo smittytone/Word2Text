@@ -135,6 +135,8 @@ enum ProcessError: Int {
     case badRecordLengthPrinterConfig = 5
     case badRecordLengthStyleDefinition = 6
     case badRecordLengthEmphahsisDefinition = 7
+    case badRecordType = 8
+    case badFileMissingRecords = 9
 }
 
 

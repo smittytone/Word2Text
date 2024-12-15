@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3BE01B7A2D0F3CCB00E1D2F4 /* word2textTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BE01B782D0F3CCB00E1D2F4 /* word2textTests.swift */; };
+		3BE01B7B2D0F3D5300E1D2F4 /* structures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5644F2D0A270F008E58B6 /* structures.swift */; };
+		3BE01B7C2D0F3D5800E1D2F4 /* extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5644B2D0A270F008E58B6 /* extensions.swift */; };
+		3BE01B7D2D0F3D6000E1D2F4 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5644E2D0A270F008E58B6 /* main.swift */; };
 		3BF564512D0A270F008E58B6 /* extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5644B2D0A270F008E58B6 /* extensions.swift */; };
 		3BF564532D0A270F008E58B6 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5644E2D0A270F008E58B6 /* main.swift */; };
 		3BF564542D0A270F008E58B6 /* structures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5644F2D0A270F008E58B6 /* structures.swift */; };
@@ -28,6 +32,8 @@
 		3B198CE92D03B61700FE1EC9 /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
 		3B198CEA2D03B61700FE1EC9 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		3B48737A2D03743C00294F25 /* word2text */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = word2text; sourceTree = BUILT_PRODUCTS_DIR; };
+		3BE01B712D0F3CB900E1D2F4 /* word2textTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = word2textTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3BE01B782D0F3CCB00E1D2F4 /* word2textTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = word2textTests.swift; sourceTree = "<group>"; };
 		3BF5644B2D0A270F008E58B6 /* extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = extensions.swift; sourceTree = "<group>"; };
 		3BF5644C2D0A270F008E58B6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3BF5644D2D0A270F008E58B6 /* linux_version.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = linux_version.swift; sourceTree = "<group>"; };
@@ -43,6 +49,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3BE01B6E2D0F3CB900E1D2F4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -50,6 +63,7 @@
 			isa = PBXGroup;
 			children = (
 				3BF564502D0A270F008E58B6 /* word2text */,
+				3BE01B792D0F3CCB00E1D2F4 /* word2textTests */,
 				3B198CEA2D03B61700FE1EC9 /* README.md */,
 				3B198CE92D03B61700FE1EC9 /* LICENSE.md */,
 				3B48737B2D03743C00294F25 /* Products */,
@@ -60,8 +74,17 @@
 			isa = PBXGroup;
 			children = (
 				3B48737A2D03743C00294F25 /* word2text */,
+				3BE01B712D0F3CB900E1D2F4 /* word2textTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		3BE01B792D0F3CCB00E1D2F4 /* word2textTests */ = {
+			isa = PBXGroup;
+			children = (
+				3BE01B782D0F3CCB00E1D2F4 /* word2textTests.swift */,
+			);
+			path = word2textTests;
 			sourceTree = "<group>";
 		};
 		3BF564502D0A270F008E58B6 /* word2text */ = {
@@ -98,6 +121,25 @@
 			productReference = 3B48737A2D03743C00294F25 /* word2text */;
 			productType = "com.apple.product-type.tool";
 		};
+		3BE01B702D0F3CB900E1D2F4 /* word2textTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3BE01B752D0F3CB900E1D2F4 /* Build configuration list for PBXNativeTarget "word2textTests" */;
+			buildPhases = (
+				3BE01B6D2D0F3CB900E1D2F4 /* Sources */,
+				3BE01B6E2D0F3CB900E1D2F4 /* Frameworks */,
+				3BE01B6F2D0F3CB900E1D2F4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = word2textTests;
+			packageProductDependencies = (
+			);
+			productName = word2textTests;
+			productReference = 3BE01B712D0F3CB900E1D2F4 /* word2textTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -105,11 +147,14 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1610;
+				LastSwiftUpdateCheck = 1620;
 				LastUpgradeCheck = 1610;
 				TargetAttributes = {
 					3B4873792D03743C00294F25 = {
 						CreatedOnToolsVersion = 16.1;
+					};
+					3BE01B702D0F3CB900E1D2F4 = {
+						CreatedOnToolsVersion = 16.2;
 					};
 				};
 			};
@@ -128,9 +173,20 @@
 			projectRoot = "";
 			targets = (
 				3B4873792D03743C00294F25 /* word2text */,
+				3BE01B702D0F3CB900E1D2F4 /* word2textTests */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		3BE01B6F2D0F3CB900E1D2F4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		3B4873762D03743C00294F25 /* Sources */ = {
@@ -140,6 +196,17 @@
 				3BF564512D0A270F008E58B6 /* extensions.swift in Sources */,
 				3BF564532D0A270F008E58B6 /* main.swift in Sources */,
 				3BF564542D0A270F008E58B6 /* structures.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3BE01B6D2D0F3CB900E1D2F4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3BE01B7A2D0F3CCB00E1D2F4 /* word2textTests.swift in Sources */,
+				3BE01B7B2D0F3D5300E1D2F4 /* structures.swift in Sources */,
+				3BE01B7D2D0F3D6000E1D2F4 /* main.swift in Sources */,
+				3BE01B7C2D0F3D5800E1D2F4 /* extensions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -270,7 +337,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -290,7 +357,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -300,6 +367,38 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.bps.word2text;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		3BE01B762D0F3CB900E1D2F4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Y5J3K52DNA;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bps.word2textTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		3BE01B772D0F3CB900E1D2F4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Y5J3K52DNA;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bps.word2textTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
@@ -321,6 +420,15 @@
 			buildConfigurations = (
 				3B4873822D03743C00294F25 /* Debug */,
 				3B4873832D03743C00294F25 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3BE01B752D0F3CB900E1D2F4 /* Build configuration list for PBXNativeTarget "word2textTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3BE01B762D0F3CB900E1D2F4 /* Debug */,
+				3BE01B772D0F3CB900E1D2F4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
