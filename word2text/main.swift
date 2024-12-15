@@ -195,7 +195,8 @@ func processFile(_ data: ArraySlice<UInt8>, _ filepath: String) -> ProcessResult
         
         // Style application record
         if recordType == PsionWordRecordType.blockInfo.rawValue {
-            blocks = getStyleBlocks(data[byteIndex..<data.endIndex], recordDataLength, textBytes.count)
+            let dataIndex = byteIndex + PSION_WORD_RECORD_HEADER_LENGTH
+            blocks = getStyleBlocks(data[dataIndex..<data.endIndex], recordDataLength, textBytes.count)
             recordCounter |= (1 << recordType)
         }
         
@@ -417,8 +418,8 @@ func getBodyText(_ data: ArraySlice<UInt8>, _ index: Int) -> [UInt8] {
 
 /// Parse a Psion Word block styling record and extract the formatting blocks.
 ///
-/// -Paramater data: A slice of the Word file bytes containing the block formatting data.
-/// -Parameter length: The number of bytes to process.
+/// - Parameter data: A slice of the Word file bytes containing the block formatting data.
+/// - Parameter length: The number of bytes to process.
 ///
 func getStyleBlocks(_ data: ArraySlice<UInt8>, _ length: Int, _ textLength: Int) -> [PsionWordFormatBlock] {
     
@@ -428,8 +429,8 @@ func getStyleBlocks(_ data: ArraySlice<UInt8>, _ length: Int, _ textLength: Int)
     while recordByteCount < length {
         let blockStartByteIndex = data.startIndex + recordByteCount
         let blockLength: Int = getWordValue(data[blockStartByteIndex..<blockStartByteIndex + 2])
-        let styleCode: String = String(bytes: [UInt8](data[blockStartByteIndex + 2..<blockStartByteIndex + 4]), encoding: .ascii) ?? ""
-        let emphasisCode: String = String(bytes: [UInt8](data[blockStartByteIndex + 4..<blockStartByteIndex + 6]), encoding: .ascii) ?? ""
+        let styleCode: String = String(bytes: data[blockStartByteIndex + 2..<blockStartByteIndex + 4], encoding: .ascii) ?? ""
+        let emphasisCode: String = String(bytes: data[blockStartByteIndex + 4..<blockStartByteIndex + 6], encoding: .ascii) ?? ""
         
         var block: PsionWordFormatBlock = PsionWordFormatBlock()
         block.styleCode = styleCode
@@ -446,7 +447,7 @@ func getStyleBlocks(_ data: ArraySlice<UInt8>, _ length: Int, _ textLength: Int)
             writeToStderr("  Text bytes range \(block.startIndex)-\(block.endIndex) has style code \(styleCode) and emphasis code \(emphasisCode)")
         }
         
-        textByteCount += length
+        textByteCount += blockLength
         recordByteCount += PSION_WORD_BLOCK_UNIT_LENGTH
         
         if textByteCount >= textLength {

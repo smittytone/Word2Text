@@ -2,8 +2,18 @@
 
 import Testing
 
-struct word2textTests {
 
+/*
+let PSION_WORD_BLOCK_UNIT_LENGTH: Int       = 6
+let PSION_WORD_RECORD_HEADER_LENGTH: Int    = 4
+let PSION_WORD_RECORD_TYPES: [String]       = [
+    "FILE INFO", "PRINTER CONFIG", "PRINTER DRIVER INFO", "HEADER TEXT", "FOOTER TEXT",
+    "STYLE DEFINITION", "EMPHASIS DEFINITION", "BODY TEXT", "STYLE APPLICATION"
+]
+*/
+
+struct word2textTests {
+    
     @Test func testProcessTextBadPreamble() async throws {
         
         let bytes: [UInt8] = [UInt8](repeating: 0, count: 100)
