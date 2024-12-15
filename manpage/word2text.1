@@ -1,0 +1,37 @@
+.TH WORD2TEXT "1" "December 2024" "word2text 0.0.3 (6)"
+
+.SH NAME
+word2text \- Convert Psion Word files to plain text.
+
+.SH SYNOPSIS
+\fBword2text\fR [\fB\-m\fR] [\fB\-s\fR] [\fB\-o\fR] [\fB\-v\fR] [\fB\-h\fR] [\fB\-\-version\fR] {files}
+
+.SH DESCRIPTION
+.P
+\fBword2text\fR is a macOS utility. Use it to convert Psion Word documents transferred from a Psion Series 3 organiser to
+plain text.
+.P
+Optionally, the text may be formatted using Markdown.
+
+Provide a file, a list of files, or a source directory after the options. If multiple files are provided, the output will be written to disk.
+If a single file is specified, it will be output to \fBstdout\fR.
+
+.SH OPTIONS
+.P
+\fB\-m\fR | \fB\-\-markdown\fR      Output in Markdown format. Default: false.
+.P
+\fB\-s\fR | \fB\-\-stop\fR          Stop further processing on the first error. Default: false.
+.P
+\fB\-o\fR | \fB\-\-outer\fR         Include header and footer text in the output. Default: false.
+.P
+\fB\-v\fR | \fB\-\-verbose\fR       Display processing information.
+.P
+\fB\-h\fR | \fB\-\-help\fR          This help screen.
+.P
+     \fB\-\-version\fR       Show \fBword2text\fR Version information.
+
+.SH COPYRIGHT
+Code and design copyright © 2024, Tony Smith (\fB@smittytone\fR). Source code available under the MIT licence.
+
+.SH "SEE ALSO"
+\fIhttps://smittytone.net/word2text/index.html\fR
