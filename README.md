@@ -20,7 +20,9 @@ Use *word2text* to convert into plain text any Psion *Word* documents that you h
 word2text $HOME/Psion/MAGOPUS.WRD > ~/Desktop/MyMagnumOpus.txt
 ```
 
-You can also pass a directory name (or a mix of file names and directories), in which case each `.WRD` file in the directory will be converted to a text file in that directory.
+If you include the `--file` flag, *word2text* will write the processed text to (using the example above) `MAGOPUS.txt` and not emit it to stdout.
+
+You can also pass a directory name (or a mix of file names and directories), in which case each `.WRD` file in the directory will be converted to a text file in that directory. Files generated this way (or with the `--file` flag) are named after the source file.
 
 ```shell
 word2text $HOME/Psion
@@ -34,20 +36,43 @@ For convenience, files are written using the UTF-8 encoding.
 
 *word2text* accepts the following modifiers:
 
-* `-s`/`--stop` — Stop processing multiple files on the first error. Default: `false`.
+* `-m`/`--markdown` — Output the body text in Markdown formatting. Default: `false`.
 * `-o`/`--outer` — Include ‘outer’ text, ie. header and footer text, in addition to the body text. Default: `false`.
+* `-s`/`--stop` — Stop processing multiple files on the first error. Default: `false`.
+* `-f`/`--file` — Output a single input file to a new file. Default: `false`.
 * `-v`/`--verbose` — Show file and content discovery information during file processing.
 
 For example:
 
 ```shell
+word2text $HOME/Psion/BIDDRAFT.WRD
+Bid headline
+Bid text to go here...
+```
+
+```shell
 word2text $HOME/Psion/BIDDRAFT.WRD -o
 Our Bid for Major Project
 -------------------------
+Bid headline
 Bid text to go here...
 -------
 Page %P
 ```
+
+```shell
+word2text $HOME/Psion/BIDDRAFT.WRD -m
+# Bid headline
+Bid text to go here...
+```
+
+### Markdown
+
+*word2text* can use Word files’ styling information to mark up the processed text with Markdown formatting tags. This is necessarily limited: Word has only two standard headline sizes, and the only empahsis options relevant to Markdown are bold and/or italic text. Where these apply, *word2text* will mark up the text accordingly. Text styled as a Word Bulleted List entry will be tagged as a Markdown unordered list.
+
+For custom styles, *word2text* will apply bold and/or italic emphasis where it can. For custome headlines, *word2text* will apply a Markdown headline size based on the style’s font size.
+
+In due course, I hope to support table formatting from Word tables and ultimately to more intelligently parse custom Word styles. 
 
 ## Compiling
 
@@ -66,7 +91,3 @@ Page %P
 * `swift build`
 
 Binary located in `.build/aarch64-unknown-linux-gnu/debug/`
-
-## Future Work
-
-* Convert *Word* formatting to Markdown.
