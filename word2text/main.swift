@@ -63,6 +63,7 @@ var doShowInfo: Bool        = false
 var doIncludeHeader: Bool   = false
 var doReturnMarkdown: Bool  = false
 var haltOnFirstError: Bool  = false
+var outputAsFile: Bool      = false
 var files: [String]         = []
 
 
@@ -541,7 +542,7 @@ func convertToMarkdown(_ rawText: [UInt8], _ blocks: [PsionWordFormatBlock], _ s
                     tag = "### "
                 case "BL":
                     // Bullet list
-                    tag = "- "
+                    tag = "* "
                 default:
                     if block.styleCode != "BT" {
                         // NOTE User-defined style may have any name
@@ -756,6 +757,9 @@ func showHelp() {
     writeToStdout(BOLD + "OPTIONS" + RESET)
     writeToStdout("    -s | --stop          Stop on first file that can't be processed. Default: false")
     writeToStdout("    -o | --outer         Include outer text (header and footer) in output.")
+    writeToStdout("    -m | --markdown      Include outer text (header and footer) in output.")
+    writeToStdout("    -f | --file          Output to file, not stdout. Default: false for one file,")
+    writeToStdout("                         true for multiple files/directories")
     writeToStdout("    -v | --verbose       Show progress information. Otherwise only errors are shown.")
     writeToStdout("    -h | --help          This help screen.")
     writeToStdout("         --version       Show word2text version information.\n")
@@ -847,6 +851,10 @@ for argument in args {
             fallthrough
         case "--markdown":
             doReturnMarkdown = true
+        case "-f":
+            fallthrough
+        case "--file":
+            outputAsFile = true
         case "-h":
             fallthrough
         case "--help":
@@ -893,7 +901,7 @@ for filepath in files {
 }
 
 // Convert the file(s) to text
-let outputToFiles: Bool = (finalFiles.count > 1)
+let outputToFiles: Bool = outputAsFile || finalFiles.count > 1
 for filepath in finalFiles {
     let data = getFileContents(filepath)
     let result: ProcessResult = !data.isEmpty
