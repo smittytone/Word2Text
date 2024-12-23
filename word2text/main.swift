@@ -811,11 +811,31 @@ dss.setEventHandler {
 dss.resume()
 
 // No arguments? Show Help
-var args = CommandLine.arguments
-if args.count == 1 {
+if CommandLine.arguments.count == 1 {
     showHelp()
     dss.cancel()
     exit(EXIT_SUCCESS)
+}
+
+// Expand composite flags
+var args: [String] = []
+for arg in CommandLine.arguments {
+    if arg.prefix(1) == "-" && arg.prefix(2) != "--" {
+        if arg.count > 2 {
+            // arg is of form '-mfs'
+            for sub_arg in arg {
+                if sub_arg == "-" {
+                    continue
+                }
+
+                args.append("-\(sub_arg)")
+            }
+
+            continue
+        }
+    }
+
+    args.append(arg)
 }
 
 for argument in args {
