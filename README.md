@@ -63,7 +63,7 @@ Page %P
 ```shell
 word2text $HOME/Psion/BIDDRAFT.WRD -m
 # Bid headline
-Bid text to go here...
+Bid text **to go here**...
 ```
 
 ### Markdown
@@ -91,3 +91,5 @@ In due course, I hope to support table formatting from Word tables and ultimatel
 * `swift build`
 
 Binary located in `.build/aarch64-unknown-linux-gnu/debug/`
+
+Copyright © 2024 Tony Smith (@smittytone)

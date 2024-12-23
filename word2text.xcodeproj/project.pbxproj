@@ -29,6 +29,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		3B09FFDD2D198CEE00F98C39 /* word2text.1 */ = {isa = PBXFileReference; explicitFileType = text.man; name = word2text.1; path = manpage/word2text.1; sourceTree = "<group>"; };
 		3B198CE92D03B61700FE1EC9 /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
 		3B198CEA2D03B61700FE1EC9 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		3B48737A2D03743C00294F25 /* word2text */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = word2text; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -59,11 +60,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		3B09FFDC2D198CDB00F98C39 /* Man */ = {
+			isa = PBXGroup;
+			children = (
+				3B09FFDD2D198CEE00F98C39 /* word2text.1 */,
+			);
+			name = Man;
+			sourceTree = "<group>";
+		};
 		3B4873712D03743C00294F25 = {
 			isa = PBXGroup;
 			children = (
 				3BF564502D0A270F008E58B6 /* word2text */,
 				3BE01B792D0F3CCB00E1D2F4 /* word2textTests */,
+				3B09FFDC2D198CDB00F98C39 /* Man */,
 				3B198CEA2D03B61700FE1EC9 /* README.md */,
 				3B198CE92D03B61700FE1EC9 /* LICENSE.md */,
 				3B48737B2D03743C00294F25 /* Products */,
@@ -337,7 +347,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -357,7 +367,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
 				ENABLE_HARDENED_RUNTIME = YES;
