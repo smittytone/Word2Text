@@ -1,4 +1,4 @@
-.TH WORD2TEXT "1" "December 2024" "word2text 0.0.3 (6)"
+.TH WORD2TEXT "1" "December 2024" "word2text 0.0.4 (7)"
 
 .SH NAME
 word2text \- Convert Psion Word files to plain text.
@@ -20,11 +20,14 @@ If a single file is specified, it will be output to \fBstdout\fR.
 .P
 \fB\-m\fR | \fB\-\-markdown\fR      Output in Markdown format. Default: false.
 .P
-\fB\-s\fR | \fB\-\-stop\fR          Stop further processing on the first error. Default: false.
-.P
 \fB\-o\fR | \fB\-\-outer\fR         Include header and footer text in the output. Default: false.
 .P
+\fB\-f\fR | \fB\-\-file\fR          Output a single Word file to file, not stdout. Default: false.
+                     Multiple Word files are always written to file.
+.P
 \fB\-v\fR | \fB\-\-verbose\fR       Display processing information.
+.P
+\fB\-s\fR | \fB\-\-stop\fR          Stop further processing on the first error. Default: false.
 .P
 \fB\-h\fR | \fB\-\-help\fR          This help screen.
 .P
