@@ -3,15 +3,6 @@
 import Testing
 
 
-/*
-let PSION_WORD_BLOCK_UNIT_LENGTH: Int       = 6
-let PSION_WORD_RECORD_HEADER_LENGTH: Int    = 4
-let PSION_WORD_RECORD_TYPES: [String]       = [
-    "FILE INFO", "PRINTER CONFIG", "PRINTER DRIVER INFO", "HEADER TEXT", "FOOTER TEXT",
-    "STYLE DEFINITION", "EMPHASIS DEFINITION", "BODY TEXT", "STYLE APPLICATION"
-]
-*/
-
 struct word2textTests {
     
     @Test func testProcessTextBadPreamble() async throws {
@@ -63,7 +54,7 @@ struct word2textTests {
         let result: ProcessResult = processFile(bytes[...], "/sample/filepath")
         
         // This will exit with an 'encrypted' error
-        #expect(result.errorCode == .badFileEncrypted)
+        #expect(result.errorCode == .badFileMissingRecords)
     }
     
     
@@ -77,6 +68,7 @@ struct word2textTests {
         #expect(result.errorCode == .badRecordType)
     }
     
+    
     @Test func testGetWordValueGoodArray() async throws {
         
         let bytes: [UInt8] = [4, 8]
@@ -84,9 +76,16 @@ struct word2textTests {
     }
     
     
-    @Test func testGetWordValueBadArray() async throws {
+    @Test func testGetWordValueBadArrayTooShort() async throws {
         
         let bytes: [UInt8] = [4]
+        #expect(getWordValue(bytes[...]) == -1)
+    }
+    
+    
+    @Test func testGetWordValueBadArrayEmpty() async throws {
+        
+        let bytes: [UInt8] = []
         #expect(getWordValue(bytes[...]) == -1)
     }
     
@@ -95,16 +94,16 @@ struct word2textTests {
         
         let header = "Fintlewoodlewix\0"
         let bytes: [UInt8] = Array(header.utf8)
-        let s = getOuterText(bytes[...], bytes.count, true)
+        let s = getOuterText(bytes[...], true)
         #expect(s == "Fintlewoodlewix")
     }
     
     
     @Test func testGetOuterTextGoodHeaderZeroLength() async throws {
         
-        let header = "\0"
+        let header = ""
         let bytes: [UInt8] = Array(header.utf8)
-        #expect(getOuterText(bytes[...], bytes.count, true) == "None")
+        #expect(getOuterText(bytes[...], true) == "None")
     }
     
     
@@ -112,15 +111,52 @@ struct word2textTests {
         
         let header = "Fintlewoodlewix\0"
         let bytes: [UInt8] = Array(header.utf8)
-        let s = getOuterText(bytes[...], bytes.count, false)
+        let s = getOuterText(bytes[...], false)
         #expect(s == "Fintlewoodlewix")
     }
     
     
     @Test func testGetOuterTextGoodFooterZeroLength() async throws {
         
-        let header = "\0"
+        let header = ""
         let bytes: [UInt8] = Array(header.utf8)
-        #expect(getOuterText(bytes[...], bytes.count, false) == "None")
+        #expect(getOuterText(bytes[...], false) == "None")
     }
+    
+    
+    @Test func testGetBodyTextGoodSubstitutions() async throws {
+        
+        let body = "fintlewoodlewix\042"
+        let end = "stuff"
+        var bytes: [UInt8] = Array(body.utf8)
+        bytes.append(0x07)
+        bytes.append(contentsOf: Array(end.utf8))
+        let backBytes = getBodyText(bytes[...])
+        #expect(backBytes[15] == 0x0A && backBytes[18] == 0x2D)
+    }
+    
+    
+    @Test func testGetFullPathGoodDots() async throws {
+        
+        let path = "../example"
+        let aPath = getFullPath(path)
+        #expect(!aPath.contains(".."))
+    }
+    
+    
+    @Test func testGetGoodPathGoodDot() async throws {
+        
+        let path = "./example/../../test"
+        let aPath = getFullPath(path)
+        #expect(!aPath.contains(".") && !aPath.contains(".."))
+    }
+    
+    
+    @Test func testProcessRelativePath() async throws {
+        
+        let path = "/example/test/folder/../../../"
+        let aPath = processRelativePath(path)
+        #expect(aPath == "/tmp")
+    }
+    
 }

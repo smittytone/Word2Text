@@ -103,8 +103,8 @@
 				3BF5644E2D0A270F008E58B6 /* main.swift */,
 				3BF5644B2D0A270F008E58B6 /* extensions.swift */,
 				3BF5644F2D0A270F008E58B6 /* structures.swift */,
-				3BF5644D2D0A270F008E58B6 /* linux_version.swift */,
 				3BF5644C2D0A270F008E58B6 /* Info.plist */,
+				3BF5644D2D0A270F008E58B6 /* linux_version.swift */,
 			);
 			path = word2text;
 			sourceTree = "<group>";
@@ -347,9 +347,10 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
+				DSTROOT = $SRCROOT/build/pkgroot;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = /Users/smitty/GitHub/word2text/word2text/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
@@ -367,9 +368,10 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
+				DSTROOT = $SRCROOT/build/pkgroot;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = /Users/smitty/GitHub/word2text/word2text/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
