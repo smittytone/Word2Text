@@ -29,6 +29,11 @@ import Foundation
 
 // MARK: - Constants
 
+/*
+    Constants are placed in a struct to ensure they are initialized both for the
+    application itself and, more importantly, for the Swift Testing framework test cases
+    (see `word2textTests.swift`.
+ */
 struct CONSTANTS {
     // Use stderr, stdout for output
     static let STD_ERR: FileHandle                     = FileHandle.standardError
@@ -53,28 +58,6 @@ struct CONSTANTS {
     ]
 }
 
-/*
-let STD_ERR: FileHandle                     = FileHandle.standardError
-let STD_OUT: FileHandle                     = FileHandle.standardOutput
-
-// TTY formatting
-let RED: String                             = "\u{001B}[0;31m"
-let YELLOW: String                          = "\u{001B}[0;33m"
-let RESET: String                           = "\u{001B}[0m"
-let BOLD: String                            = "\u{001B}[1m"
-let ITALIC: String                          = "\u{001B}[3m"
-let BSP: String                             = String(UnicodeScalar(8))
-let EXIT_CTRL_C_CODE: Int32                 = 130
-let CTRL_C_MSG: String                      = "\(BSP)\(BSP)\rword2text interrupted -- halting"
-
-// Psion
-let PSION_WORD_BLOCK_UNIT_LENGTH: Int       = 6
-let PSION_WORD_RECORD_HEADER_LENGTH: Int    = 4
-let PSION_WORD_RECORD_TYPES: [String]       = [
-    "FILE INFO", "PRINTER CONFIG", "PRINTER DRIVER INFO", "HEADER TEXT", "FOOTER TEXT",
-    "STYLE DEFINITION", "EMPHASIS DEFINITION", "BODY TEXT", "STYLE APPLICATION"
-]
-*/
 
 // MARK: - Global Variables
 
@@ -499,7 +482,6 @@ func getWordValue(_ data: ArraySlice<UInt8>) -> Int {
 }
 
 
-
 /// Convert plain text to Markdown by parsing the block formatting data in
 /// conjunction with the document's stored Style and Emphasis data.
 ///
@@ -833,21 +815,27 @@ if CommandLine.arguments.count == 1 {
 // Expand composite flags
 var args: [String] = []
 for arg in CommandLine.arguments {
+    // Look for compound flags, ie. a single dash followed by
+    // more than one flag identifier
     if arg.prefix(1) == "-" && arg.prefix(2) != "--" {
         if arg.count > 2 {
             // arg is of form '-mfs'
             for sub_arg in arg {
+                // Check for and ignore interior dashes
+                // eg. in `-mf-l`
                 if sub_arg == "-" {
                     continue
                 }
-
+                
+                // Retain the flag as a standard arg for subsequent processing
                 args.append("-\(sub_arg)")
             }
 
             continue
         }
     }
-
+    
+    // It's an ordinary arg, so retain it
     args.append(arg)
 }
 
@@ -889,6 +877,8 @@ for argument in args {
         case "--file":
             outputAsFile = true
         case "-h":
+            fallthrough
+        case "-help":
             fallthrough
         case "--help":
             showHelp()
