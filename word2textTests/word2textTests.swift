@@ -1,6 +1,7 @@
 
 
 import Testing
+import Foundation
 
 
 struct word2textTests {

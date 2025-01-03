@@ -2,7 +2,7 @@
     word2text
     main.swift
 
-    Copyright © 2024 Tony Smith. All rights reserved.
+    Copyright © 2025 Tony Smith. All rights reserved.
 
     MIT License
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -32,7 +32,7 @@ import Foundation
 /*
     Constants are placed in a struct to ensure they are initialized both for the
     application itself and, more importantly, for the Swift Testing framework test cases
-    (see `word2textTests.swift`.
+    (see `word2textTests.swift`).
  */
 struct CONSTANTS {
     // Use stderr, stdout for output
@@ -766,7 +766,7 @@ func showHelp() {
 func showVersion() {
 
     showHeader()
-    writeToStdout("Copyright © 2024, Tony Smith (@smittytone).\r\nSource code available under the MIT licence.")
+    writeToStdout("Copyright © 2025, Tony Smith (@smittytone).\r\nSource code available under the MIT licence.")
 }
 
 
