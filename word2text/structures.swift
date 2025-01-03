@@ -91,7 +91,8 @@ struct PsionWordFormatBlock {
 
 
 /*
-    Text alignment options
+    Text alignment options.
+    NOTE We require raw values for these
 */
 enum PsionWordAlignment: Int {
     case left = 0
@@ -105,11 +106,25 @@ enum PsionWordAlignment: Int {
 /*
     Paragraph spacing options
 */
-enum PsionWordSpacing: Int {
-    case keepWithNext = 0
-    case keepTogether = 1
-    case newPage = 2
-    case none = 99
+enum PsionWordSpacing {
+    case keepWithNext
+    case keepTogether
+    case newPage
+    case none
+}
+
+extension PsionWordSpacing {
+    mutating func set(_ value: UInt8) {
+        if value & 0x01 > 0 {
+            self = .keepWithNext
+        } else if value & 0x02 > 0 {
+            self = .keepTogether
+        } else if value & 0x04 > 0 {
+            self = .newPage
+        } else {
+            self = .none
+        }
+    }
 }
 
 
@@ -125,6 +140,7 @@ enum PsionWordTabType: Int {
 
 /*
     Word file processing error codes.
+    NOTE We require raw values for these, for output as stderr codes.
 */
 enum ProcessError: Int {
     case none = 0
@@ -141,7 +157,8 @@ enum ProcessError: Int {
 
 
 /*
-    Word file record types
+    Word file record types.
+    NOTE We require raw values for these, to match to record type bytes.
 */
 enum PsionWordRecordType: Int {
     case fileInfo = 1

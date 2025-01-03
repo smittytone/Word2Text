@@ -120,93 +120,62 @@ func processFile(_ data: ArraySlice<UInt8>, _ filepath: String) -> ProcessResult
     var recordCounter: UInt16 = 0
     while byteIndex < data.count - CONSTANTS.PSION_WORD_RECORD_HEADER_LENGTH {
         // Get the 16-bit record type and 16-bit data length
-        let recordType: Int = getWordValue(data[byteIndex..<byteIndex + 2])
+        let recordType = PsionWordRecordType.init(rawValue: getWordValue(data[byteIndex..<byteIndex + 2])) ?? .unknown
         let recordDataLength: Int = getWordValue(data[byteIndex + 2..<byteIndex + 4])
-        
-        // Is the record type a legitimate value?
-        let range = 1..<10
-        if !range.contains(recordType) {
-            return ProcessResult.init(text: "Bad Word file record type (\(recordType) at  \(String.init(format: "0x%04x", arguments: [byteIndex]))", errorCode: .badRecordType)
-        }
-        
-        if doShowInfo {
-            writeToStderr("Record of type \(CONSTANTS.PSION_WORD_RECORD_TYPES[recordType - 1]) found at offset \(String.init(format: "0x%04x", arguments: [byteIndex])). Size: \(recordDataLength) bytes")
-        }
         
         // Move index to start of record
         byteIndex += CONSTANTS.PSION_WORD_RECORD_HEADER_LENGTH
         
-        // File record
-        // NOTE We don't care about this beyond its size
-        if recordType == PsionWordRecordType.fileInfo.rawValue {
-            if recordDataLength != 10 {
-                return ProcessResult(text: "Bad file info record size (\(recordDataLength) not 10 bytes", errorCode: .badRecordLengthFileInfo)
-            }
-            
-            recordCounter |= (1 << recordType)
+        if doShowInfo {
+            writeToStderr("Record of type \(CONSTANTS.PSION_WORD_RECORD_TYPES[recordType.rawValue - 1]) found at offset \(String.init(format: "0x%04x", arguments: [byteIndex])). Size: \(recordDataLength) bytes")
         }
         
-        // Printer Settings
-        // NOTE We don't care about this beyond its size
-        if recordType == PsionWordRecordType.printerConfig.rawValue {
-            if recordDataLength != 58 {
-                return ProcessResult(text: "Bad printer config record size (\(recordDataLength) not 58 bytes", errorCode: .badRecordLengthPrinterConfig)
-            }
-            
-            recordCounter |= (1 << recordType)
+        // Process the current record
+        switch recordType {
+            case .fileInfo:
+                // We don't care about this beyond its size
+                if recordDataLength != 10 {
+                    return ProcessResult(text: "Bad file info record size (\(recordDataLength) not 10 bytes", errorCode: .badRecordLengthFileInfo)
+                }
+            case .printerConfig:
+                // We don't care about this beyond its size
+                if recordDataLength != 58 {
+                    return ProcessResult(text: "Bad printer config record size (\(recordDataLength) not 58 bytes", errorCode: .badRecordLengthPrinterConfig)
+                }
+            case .printerDriver:
+                // We don't care about this
+                break
+            case .headerText:
+                fallthrough
+            case .footerText:
+                // Index in strings store is 0 for header, 1 for footer
+                let index = recordType.rawValue - PsionWordRecordType.headerText.rawValue
+                outerText[index] = getOuterText(data[byteIndex..<byteIndex + recordDataLength - 1], index == 0)
+            case .styleDefinition:
+                // Check the fixed size
+                if recordDataLength != 80 {
+                    return ProcessResult(text: "Bad style definition record size (\(recordDataLength) not 80 bytes", errorCode: .badRecordLengthStyleDefinition)
+                }
+                
+                let style = getStyle(data[byteIndex..<byteIndex + 80], true)
+                styles[style.code] = style
+            case .emphasisDefinition:
+                // Check the fixed size
+                if recordDataLength != 28 {
+                    return ProcessResult(text: "Bad emphasis definition record size (\(recordDataLength) not 80 bytes", errorCode: .badRecordLengthStyleDefinition)
+                }
+                
+                let emphasis = getStyle(data[byteIndex..<byteIndex + 28], false)
+                emphases[emphasis.code] = emphasis
+            case .bodyText:
+                textBytes = getBodyText(data[byteIndex..<byteIndex + recordDataLength])
+            case .blockInfo:
+                blocks = getStyleBlocks(data[byteIndex..<data.endIndex], textBytes.count)
+            case .unknown:
+                return ProcessResult.init(text: "Bad Word file record type (\(recordType.rawValue) at  \(String.init(format: "0x%04x", arguments: [byteIndex]))", errorCode: .badRecordType)
         }
         
-        // Printer Driver
-        // NOTE We don't care about this beyond its presence
-        if recordType == PsionWordRecordType.printerDriver.rawValue {
-            recordCounter |= (1 << recordType)
-        }
-        
-        
-        // Header and footer records
-        // Data are NUL-terminated strings
-        if recordType == PsionWordRecordType.headerText.rawValue || recordType == PsionWordRecordType.footerText.rawValue {
-            // Index in strings store is 0 for header, 1 for footer
-            let index: Int = recordType - PsionWordRecordType.headerText.rawValue
-            outerText[index] = getOuterText(data[byteIndex..<byteIndex + recordDataLength - 1], index == 0)
-            recordCounter |= (1 << recordType)
-        }
-        
-        // Style Definitions
-        if recordType == PsionWordRecordType.styleDefinition.rawValue {
-            if recordDataLength != 80 {
-                return ProcessResult(text: "Bad style definition record size (\(recordDataLength) not 80 bytes", errorCode: .badRecordLengthStyleDefinition)
-            }
-            
-            let style: PsionWordStyle = getStyle(data[byteIndex..<byteIndex + 80], true)
-            styles[style.code] = style
-            recordCounter |= (1 << recordType)
-        }
-        
-        // Emphasis Definitions
-        if recordType == PsionWordRecordType.emphasisDefinition.rawValue {
-            if recordDataLength != 28 {
-                return ProcessResult(text: "Bad emphasis definition record size (\(recordDataLength) not 80 bytes", errorCode: .badRecordLengthStyleDefinition)
-            }
-            
-            let emphasis: PsionWordStyle = getStyle(data[byteIndex..<byteIndex + 28], false)
-            emphases[emphasis.code] = emphasis
-            recordCounter |= (1 << recordType)
-        }
-        
-        // Text data record
-        if recordType == PsionWordRecordType.bodyText.rawValue {
-            // Process the text record
-            textBytes = getBodyText(data[byteIndex..<byteIndex + recordDataLength])
-            recordCounter |= (1 << recordType)
-        }
-        
-        // Style application record
-        if recordType == PsionWordRecordType.blockInfo.rawValue {
-            blocks = getStyleBlocks(data[byteIndex..<data.endIndex], textBytes.count)
-            recordCounter |= (1 << recordType)
-        }
-        
+        recordCounter |= (1 << recordType.rawValue)
         byteIndex += recordDataLength
     }
     
@@ -296,32 +265,13 @@ func getStyle(_ data: ArraySlice<UInt8>, _ isStyle: Bool) -> PsionWordStyle {
     
     // Text alignment
     let alignValue: Int = getWordValue(data[index + 34..<index + 36])
-    switch alignValue {
-        case 1:
-            style.alignment = .right
-        case 2:
-            style.alignment = .centered
-        case 3:
-            style.alignment = .justified
-        default:
-            style.alignment = .left
-    }
+    style.alignment = PsionWordAlignment(rawValue: alignValue) ?? .left
     
     // Spacing values
     style.lineSpacing = getWordValue(data[index + 36..<index + 38])
     style.spaceAbovePara = getWordValue(data[index + 38..<index + 40])
     style.spaceBelowPara = getWordValue(data[index + 40..<index + 42])
-    
-    let spacingValue = data[index + 42]
-    if spacingValue & 0x01 > 0 {
-        style.spacing = .keepWithNext
-    } else if spacingValue & 0x02 > 0 {
-        style.spacing = .keepTogether
-    } else if spacingValue & 0x04 > 0 {
-        style.spacing = .newPage
-    } else {
-        style.spacing = .none
-    }
+    style.spacing.set(data[index + 42])
     
     // Outline level
     style.outlineLevel = getWordValue(data[index + 44..<index + 46])
@@ -333,15 +283,7 @@ func getStyle(_ data: ArraySlice<UInt8>, _ isStyle: Bool) -> PsionWordStyle {
         for _ in 0..<tabCount {
             style.tabPositions.append(getWordValue(data[tabIndex..<tabIndex + 2]))
             let tabType: Int = getWordValue(data[tabIndex + 2..<tabIndex + 4])
-            switch tabType {
-                case 1:
-                    style.tabTypes.append(.right)
-                case 2:
-                    style.tabTypes.append(.centered)
-                default:
-                    style.tabTypes.append(.left)
-            }
-            
+            style.tabTypes.append(PsionWordTabType.init(rawValue: tabType) ?? .left)
             tabIndex += 4
         }
     }
@@ -430,7 +372,7 @@ func getStyleBlocks(_ data: ArraySlice<UInt8>, _ textLength: Int) -> [PsionWordF
     
     var blocks: [PsionWordFormatBlock] = []
     var recordByteCount = 0
-    var textByteCount = 0
+    var dataByteCount = 0
     let length = data.endIndex - data.startIndex
     while recordByteCount < length {
         let blockStartByteIndex = data.startIndex + recordByteCount
@@ -441,8 +383,8 @@ func getStyleBlocks(_ data: ArraySlice<UInt8>, _ textLength: Int) -> [PsionWordF
         var block: PsionWordFormatBlock = PsionWordFormatBlock()
         block.styleCode = styleCode
         block.emphasisCode = emphasisCode
-        block.startIndex = textByteCount
-        block.endIndex = textByteCount + blockLength
+        block.startIndex = dataByteCount
+        block.endIndex = dataByteCount + blockLength - 1
         if block.endIndex > textLength {
             block.endIndex = textLength
         }
@@ -453,10 +395,10 @@ func getStyleBlocks(_ data: ArraySlice<UInt8>, _ textLength: Int) -> [PsionWordF
             writeToStderr("  Text bytes range \(block.startIndex)-\(block.endIndex) has style code \(styleCode) and emphasis code \(emphasisCode)")
         }
         
-        textByteCount += blockLength
+        dataByteCount += blockLength
         recordByteCount += CONSTANTS.PSION_WORD_BLOCK_UNIT_LENGTH
         
-        if textByteCount >= textLength {
+        if dataByteCount >= textLength {
             break
         }
     }
