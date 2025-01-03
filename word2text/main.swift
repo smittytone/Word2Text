@@ -197,7 +197,7 @@ func processFile(_ data: ArraySlice<UInt8>, _ filepath: String) -> ProcessResult
         bodyText = "\(outerText[0])\n\(String(repeating: "-", count: outerText[0].count))\n\(bodyText)\n\(String(repeating: "-", count: outerText[1].count))\n\(outerText[1])"
     }
     
-    return ProcessResult(text: bodyText, errorCode: .none)
+    return ProcessResult(text: bodyText, errorCode: .noError)
 }
 
 
@@ -874,7 +874,7 @@ for filepath in finalFiles {
         : ProcessResult.init(text: "file not found", errorCode: .badFile)
     
     // Handle the outcome of processing
-    if result.errorCode != .none {
+    if result.errorCode != .noError {
         // Report the error and, if required, bail
         if haltOnFirstError {
             reportErrorAndExit("File \(filepath) could not be processed: \(result.text)", Int32(result.errorCode.rawValue))

@@ -110,7 +110,7 @@ enum PsionWordSpacing {
     case keepWithNext
     case keepTogether
     case newPage
-    case none
+    case noSpacing
 }
 
 extension PsionWordSpacing {
@@ -122,7 +122,7 @@ extension PsionWordSpacing {
         } else if value & 0x04 > 0 {
             self = .newPage
         } else {
-            self = .none
+            self = .noSpacing
         }
     }
 }
@@ -143,7 +143,7 @@ enum PsionWordTabType: Int {
     NOTE We require raw values for these, for output as stderr codes.
 */
 enum ProcessError: Int {
-    case none = 0
+    case noError = 0
     case badFile = 1
     case badPsionFileType = 2
     case badFileEncrypted = 3
