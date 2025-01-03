@@ -2,7 +2,7 @@
     word2text
     linux_version.swift
 
-    Copyright © 2024 Tony Smith. All rights reserved.
+    Copyright © 2025 Tony Smith. All rights reserved.
 
     MIT License
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -26,6 +26,6 @@
 
 #if os(Linux)
     // TODO Update from macOS Info.plist
-    let LINUX_VERSION: String = "0.0.4"
-    let LINUX_BUILD: Int = 10
+    let LINUX_VERSION: String = "0.0.5"
+    let LINUX_BUILD: Int = 11
 #endif

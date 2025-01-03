@@ -2,7 +2,7 @@
     word2text
     extensions.swift
 
-    Copyright © 2024 Tony Smith. All rights reserved.
+    Copyright © 2025 Tony Smith. All rights reserved.
 
     MIT License
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -28,6 +28,7 @@ import Foundation
 
 
 extension Data {
+    // Return data as an array of bytes
     var bytes: [UInt8] {
         return [UInt8](self)
     }

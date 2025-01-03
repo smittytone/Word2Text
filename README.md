@@ -92,4 +92,4 @@ In due course, I hope to support table formatting from Word tables and ultimatel
 
 Binary located in `.build/aarch64-unknown-linux-gnu/debug/`
 
-Copyright © 2024 Tony Smith (@smittytone)
+Copyright © 2025 Tony Smith (@smittytone)

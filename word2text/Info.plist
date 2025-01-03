@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleGetInfoString</key>
-	<string>wrd2text $(MARKETING_VERSION) Copyright © 2024 Tony Smith. All rights reserved.</string>
+	<string>wrd2text $(MARKETING_VERSION) Copyright © 2025 Tony Smith. All rights reserved.</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.bps.word2text</string>
 	<key>CFBundleName</key>
@@ -15,6 +15,6 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2024 Tony Smith. All rights reserved.</string>
+	<string>Copyright © 2025 Tony Smith. All rights reserved.</string>
 </dict>
 </plist>
