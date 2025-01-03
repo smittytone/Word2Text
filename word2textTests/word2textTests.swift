@@ -117,12 +117,19 @@ struct word2textTests {
     }
     
     
-    // MARK: - GetWord()
+    // MARK: - GetWordValue()
     
-    @Test func testGetWordValueGoodArray() async throws {
+    @Test func testGetWordValueGoodArrayLarge() async throws {
         
         let bytes: [UInt8] = [4, 8]
         #expect(getWordValue(bytes[...]) == 2052)
+    }
+    
+    
+    @Test func testGetWordValueGoodArraySmall() async throws {
+        
+        let bytes: [UInt8] = [8, 0]
+        #expect(getWordValue(bytes[...]) == 8)
     }
     
     
@@ -220,14 +227,14 @@ struct word2textTests {
     
     // MARK: - DoesPathReferenceDirectory()
     
-    @Test func textDoesPathReferenceDirectoryWithDir() async throws {
+    @Test func testDoesPathReferenceDirectoryWithDir() async throws {
         
         let path = "/"
         #expect(doesPathReferenceDirectory(path))
     }
     
     
-    @Test func textDoesPathReferenceDirectoryWithFile() async throws {
+    @Test func testDoesPathReferenceDirectoryWithFile() async throws {
         
         let path = "/tmp/test"
         do {
@@ -241,7 +248,7 @@ struct word2textTests {
     
     // MARK: - GetFileContents()
     
-    @Test func textDoesGetFileContentsValidFile() async throws {
+    @Test func testDoesGetFileContentsValidFile() async throws {
         
         let path = "/tmp/test"
         do {
@@ -254,7 +261,7 @@ struct word2textTests {
     }
     
     
-    @Test func textDoesGetFileContentsNonexistentFile() async throws {
+    @Test func testDoesGetFileContentsNonexistentFile() async throws {
         
         let path = "/tmp/testz"
         let readback = getFileContents(path)
@@ -262,10 +269,43 @@ struct word2textTests {
     }
     
     
-    @Test func textDoesGetFileContentsDir() async throws {
+    @Test func testDoesGetFileContentsDir() async throws {
         
         let path = "/tmp"
         let readback = getFileContents(path)
         #expect(readback.isEmpty)
+    }
+    
+    
+    // MARK: - GetStyleBlocks()
+    
+    @Test func testGetStyleBlocksSimpleBlock() async throws {
+        
+        var bytes: [UInt8] = []
+        bytes.append(contentsOf: [100, 0, 65, 66, 67, 68])
+        let blocks = getStyleBlocks(bytes[...], 100)
+        #expect(blocks.count == 1)
+        
+        let block = blocks[0]
+        #expect(block.startIndex == 0 && block.endIndex == 99)
+        #expect(block.styleCode == "AB" && block.emphasisCode == "CD")
+    }
+    
+    
+    @Test func testGetStyleBlocksComplexBlock() async throws {
+        
+        var bytes: [UInt8] = []
+        bytes.append(contentsOf: [50, 00, 77, 77, 72, 72])
+        bytes.append(contentsOf: [50, 00, 69, 69, 66, 66])
+        let blocks = getStyleBlocks(bytes[...], 100)
+        #expect(blocks.count == 2)
+        
+        var block = blocks[0]
+        #expect(block.startIndex == 0 && block.endIndex == 49)
+        #expect(block.styleCode == "MM" && block.emphasisCode == "HH")
+        
+        block = blocks[1]
+        #expect(block.startIndex == 50 && block.endIndex == 99)
+        #expect(block.styleCode == "EE" && block.emphasisCode == "BB")
     }
 }
