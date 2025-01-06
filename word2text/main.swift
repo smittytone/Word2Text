@@ -453,11 +453,6 @@ func convertToMarkdown(_ rawText: [UInt8], _ blocks: [PsionWordFormatBlock], _ s
     
     // Blocks are in stored in sequence, so we just need to iterate over them
     for block in blocks {
-        // Create Range values for the section of the raw text that we are formatting
-        //let startIndex = rawText.index(rawText.startIndex, offsetBy: block.startIndex)
-        //let endIndex = rawText.index(rawText.startIndex, offsetBy: block.endIndex)
-        
-        // The
         var tag: String = ""
         var isEmphasisTag: Bool = false
         
