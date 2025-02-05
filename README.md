@@ -72,7 +72,7 @@ Bid text **to go here**...
 
 For custom styles, *word2text* will apply bold and/or italic emphasis where it can. For custome headlines, *word2text* will apply a Markdown headline size based on the style’s font size.
 
-In due course, I hope to support table formatting from Word tables and ultimately to more intelligently parse custom Word styles. 
+In due course, I hope to support table formatting from Word tables and ultimately to more intelligently parse custom Word styles.
 
 ## Compiling
 
