@@ -190,6 +190,16 @@ func processFile(_ data: ArraySlice<UInt8>, _ filepath: String) -> ProcessResult
         bodyText = convertToMarkdown(textBytes, blocks, styles, emphases)
     } else {
         bodyText = String(bytes: textBytes, encoding: .ascii) ?? "None"
+        // Trap special cases where the above fails even with seemingly valid text.
+        // Valid in as much as it is processed successfully when taking the Markdown path,
+        // and via the following NSString and back route. So, reporting an error when
+        // this happens to help track down the cause
+        if textBytes.count > 0 && bodyText == "None" {
+            reportError("Bytes to String failed; trying NSString route")
+            if let bt: NSString = NSString.init(bytes: textBytes, length: textBytes.count, encoding: NSASCIIStringEncoding) {
+                bodyText = String(bt)
+            }
+        }
     }
     
     // Add the header and foot if requested

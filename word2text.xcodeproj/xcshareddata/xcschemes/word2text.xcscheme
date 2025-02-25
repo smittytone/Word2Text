@@ -54,8 +54,8 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "$HOME/Psion/WORD01.WRD"
-            isEnabled = "NO">
+            argument = "$HOME/Psion/NOTES.WRD"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$HOME/Psion/WORD03.WRD"
@@ -63,7 +63,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$HOME/Psion"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-m"
@@ -75,7 +75,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-s"
