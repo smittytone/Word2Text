@@ -27,5 +27,5 @@
 #if os(Linux)
     // TODO Update from macOS Info.plist
     let LINUX_VERSION: String = "0.1.1"
-    let LINUX_BUILD: Int = 14
+    let LINUX_BUILD: Int = 15
 #endif

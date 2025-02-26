@@ -387,38 +387,42 @@ func convertText(_ textBytes: [UInt8]) -> String {
 }
 
 
-/// Read body text known length from the word file byte store.
-///
-/// - Parameter data:  A slice of the word file bytes containing the body text.
-///
-/// - Returns: The text as a byte array.
+/**
+ Read body text known length from the word file byte store.
 
+ - Parameters
+    - data: A slice of the word file bytes containing the body text.
+
+ - Returns The text as a byte array.
+ */
 func getBodyText(_ data: ArraySlice<UInt8>) -> [UInt8] {
     
     var textBytes: [UInt8] = []
     for i in 0..<(data.endIndex - data.startIndex) {
         // Process Psion's special character values
         let characterByte = data[data.startIndex + i]
-        switch characterByte {
-            case 0:
-                // 0 = paragraph separator
-                textBytes.append(0x0A)
-            case 7:
-                // 7 = unbreakable hyphen
-                textBytes.append(0x2D)
-            case 14:
-                // 14 = soft hyphen (displayed only if used to break line)
-                // NOTE This may be problematic: removing a character may invalidate
-                //      the range values provided in the block format records below.
-                continue
-            case 15:
-                // 15 = unbreakable space
-                textBytes.append(0x20)
-            case 156:
-                // CP850 £ -> WinCP1252 £
-                textBytes.append(0xA3)
-            default:
-                textBytes.append(characterByte)
+        if characterByte > 127 {
+            textBytes.append(charSwap(characterByte))
+        } else {
+            switch characterByte {
+                case 0:
+                    // 0 = paragraph separator
+                    textBytes.append(0x0A)
+                case 7:
+                    // 7 = unbreakable hyphen
+                    textBytes.append(0x2D)
+                case 14:
+                    // 14 = soft hyphen (displayed only if used to break line)
+                    // NOTE This may be problematic: removing a character may invalidate
+                    //      the range values provided in the block format records below.
+                    continue
+                case 15:
+                    // 15 = unbreakable space
+                    textBytes.append(0x20)
+                case 
+                default:
+                    textBytes.append(characterByte)
+            }
         }
     }
     
@@ -427,6 +431,29 @@ func getBodyText(_ data: ArraySlice<UInt8>) -> [UInt8] {
     }
     
     return textBytes
+}
+
+
+/**
+ Swap a CP 850 for a CP 1252.
+
+ -Parameters
+    - char: A CP 850 integer value.
+
+ -Returns The equivalent 1252 code.
+ */ 
+func charSwap(_ char: UInt8) -> UInt8 {
+
+    // £ (r) (c) 1/2 1/4 3/4 Y P S 0 1 2 3 +/- x - o a f | 
+    let cp850: [UInt8]  = [0x9C, 0xA9, 0xB8, 0xAB, 0xAC, 0xF3, 0xBE, 0xF4, 0xF5, 0xF8, 0xFB, 0xFD, 0xFC, 0xF1, 0x9E, 0xF6, 0xA7, 0xA6, 0x9F, 0xDD]
+    let cp1252: [UInt8] = [0xA3, 0xAE, 0xA9, 0xBD, 0xBC, 0xBE, 0xA5, 0xB6, 0xA7, 0xB0, 0xB9, 0xB2, 0xB3, 0xB1, 0xD7, 0xF7, 0xBA, 0xAA, 0x83, 0xA6]
+
+    if let index = cp850.firstIndex(of: char) {
+        return cp1252[index]
+    }
+
+    // Return a ? in all other cases
+    return 0x3F
 }
 
 
