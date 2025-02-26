@@ -12,6 +12,12 @@ Psion *Word* allows you to enter styled text. Back in the Series 3’s heyday �
 
 I write either plain text or, when I require formatting, in Markdown format. Psion *Word*, created long before Markdown’s conception, doesn’t support it, but both types of text file can be created in *Word* and transferred to a Mac. *Word* embeds the plain text in a document that also includes a host of file, formatting and printing related data. *word2text* strips all that away.
 
+## Character Set
+
+The Psion Series 3a uses the IBM Code Page 850 character set. This was used in the DOS days and was superseded first by Windows Code Page 1252 and ultimately UTF-8. 850 and 1252 are not exactly the same, and though Swift can convert from 1252 to UTF-8, it doesn't speak 850. And compiled on Linux, the conversion code has issues with 1252 too, I have found. 
+
+*word2text* converts the UK pound sign `£` from 850 value 156 to 1252’s 163. At some point, I may extend this to the full set of matchable characters. If you have a character that is not being correctly converted (*word2text* should report characters that have issues), please let me know.
+
 ## Usage
 
 Use *word2text* to convert into plain text any Psion *Word* documents that you have transferred to your Mac. Provide a `.WRD` file name as an argument and *word2text* will output a plain text version to stdout. This way you can pipe the result into other command line utilities or redirect output to a file . For example:
