@@ -326,11 +326,22 @@ func getOuterText(_ data: ArraySlice<UInt8>, _ isHeader: Bool) -> String {
 }
 
 
+/**
+ Generate a String from the file's text bytes.
+
+ -Parameters
+    - textBytes: The bytes from the Psion file.
+
+ -Returns The text as a String
+ */
 func convertText(_ textBytes: [UInt8]) -> String {
 
-    var text = String(bytes: textBytes, encoding: .windowsCP1252) ?? ""
+    guard textBytes.count > 0 else { return "" }
 
-    if textBytes.count > 0 && text.isEmpty {
+    if let text = String(bytes: textBytes, encoding: .windowsCP1252) {
+        // Swift String conversion works - return the result
+        return text
+    } else {
         // Calculate the number of 'bad' characters and their locations
         var count = 0
         var index = 0
@@ -367,12 +378,12 @@ func convertText(_ textBytes: [UInt8]) -> String {
 #endif
         
         // This works even when the String conversion doesn't!
-        if let bt: NSString = NSString.init(bytes: textBytes, length: textBytes.count, encoding: encoding) {
-            text = String(bt)
+        if let text: NSString = NSString.init(bytes: textBytes, length: textBytes.count, encoding: encoding) {
+            return String(text)
         }
     }
 
-    return text
+    return ""
 }
 
 
