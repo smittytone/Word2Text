@@ -189,17 +189,10 @@ func processFile(_ data: ArraySlice<UInt8>, _ filepath: String) -> ProcessResult
     if doReturnMarkdown {
         bodyText = convertToMarkdown(textBytes, blocks, styles, emphases)
     } else {
-        bodyText = String(bytes: textBytes, encoding: .ascii) ?? "None"
-        // Trap special cases where the above fails even with seemingly valid text.
-        // Valid in as much as it is processed successfully when taking the Markdown path,
-        // and via the following NSString and back route. So, reporting an error when
-        // this happens to help track down the cause
-        if textBytes.count > 0 && bodyText == "None" {
-            reportError("Bytes to String failed; trying NSString route")
-            if let bt: NSString = NSString.init(bytes: textBytes, length: textBytes.count, encoding: NSASCIIStringEncoding) {
-                bodyText = String(bt)
-            }
-        }
+        // Psion Series 3a character set is IBM CP 850. The closest Swift supports is Windows 1252,
+        // but conversion to UTF-8 using this encoding sometimes fails. So we trap this and try to
+        // convert using the older NSString mechanism
+        bodyText = convertText(textBytes)
     }
     
     // Add the header and foot if requested
@@ -226,7 +219,7 @@ func getStyle(_ data: ArraySlice<UInt8>, _ isStyle: Bool) -> PsionWordStyle {
     // NOTE `String.init(cstring:...)` is deprecated so we'll eventually need to scan the bytes
     //      for the NUL terminator and turn the rest into a Swift string
     let index = data.startIndex
-    style.code = String.init(bytes: data[index..<index + 2], encoding: .ascii) ?? ""
+    style.code = String.init(bytes: data[index..<index + 2], encoding: .windowsCP1252) ?? ""
     style.name = String.init(cString: [UInt8](data[index + 2..<index + 18]))
     
     if style.name.isEmpty {
@@ -309,7 +302,7 @@ func getStyle(_ data: ArraySlice<UInt8>, _ isStyle: Bool) -> PsionWordStyle {
 /// Read a C string of known length from the word file byte store
 ///
 /// - Parameter data:      A slice of the word file bytes.
-/// - Paramteer isHeader:  `true` if the record contains header text, otherwise `false`.
+/// - Parameter isHeader:  `true` if the record contains header text, otherwise `false`.
 ///
 /// - Returns: The text as a string.
 
@@ -330,6 +323,56 @@ func getOuterText(_ data: ArraySlice<UInt8>, _ isHeader: Bool) -> String {
     }
 
     return outerText
+}
+
+
+func convertText(_ textBytes: [UInt8]) -> String {
+
+    var text = String(bytes: textBytes, encoding: .windowsCP1252) ?? ""
+
+    if textBytes.count > 0 && text.isEmpty {
+        // Calculate the number of 'bad' characters and their locations
+        var count = 0
+        var index = 0
+        var badChars: [Int: UInt8] = [:]
+        for byte in textBytes {
+            if byte > 127 {
+                count += 1
+                badChars[index] = byte
+            }
+
+            index += 1
+        }
+
+        // Issue a warning no matter what
+        reportWarning("File contains \(count) invalid Windows CP 1252 character\(count == 1 ? "" : "s")")
+
+        // If the user has selected verbose mode, output the list of 'bad' characters
+        if doShowInfo {
+            var msg = ""
+            for (idx, badChar) in badChars {
+                msg += String(format: "%d @ %d", badChar, idx)
+                msg += " "
+            }
+
+            reportWarning(msg)
+        }
+
+        // Now do the secondary conversion
+        // NOTE Encoding set this way to mitigate Linux build error
+#if os(macOS)
+        let encoding: UInt = NSWindowsCP1252StringEncoding
+#elseif os(Linux)
+        let encoding: UInt = 12
+#endif
+        
+        // This works even when the String conversion doesn't!
+        if let bt: NSString = NSString.init(bytes: textBytes, length: textBytes.count, encoding: encoding) {
+            text = String(bt)
+        }
+    }
+
+    return text
 }
 
 
@@ -360,6 +403,9 @@ func getBodyText(_ data: ArraySlice<UInt8>) -> [UInt8] {
             case 15:
                 // 15 = unbreakable space
                 textBytes.append(0x20)
+            case 156:
+                // CP850 £ -> WinCP1252 £
+                textBytes.append(0xA3)
             default:
                 textBytes.append(characterByte)
         }
@@ -387,8 +433,8 @@ func getStyleBlocks(_ data: ArraySlice<UInt8>, _ textLength: Int) -> [PsionWordF
     while recordByteCount < length {
         let blockStartByteIndex = data.startIndex + recordByteCount
         let blockLength: Int = getWordValue(data[blockStartByteIndex..<blockStartByteIndex + 2])
-        let styleCode: String = String(bytes: data[blockStartByteIndex + 2..<blockStartByteIndex + 4], encoding: .ascii) ?? ""
-        let emphasisCode: String = String(bytes: data[blockStartByteIndex + 4..<blockStartByteIndex + 6], encoding: .ascii) ?? ""
+        let styleCode: String = String(bytes: data[blockStartByteIndex + 2..<blockStartByteIndex + 4], encoding: .windowsCP1252) ?? ""
+        let emphasisCode: String = String(bytes: data[blockStartByteIndex + 4..<blockStartByteIndex + 6], encoding: .windowsCP1252) ?? ""
         
         var block: PsionWordFormatBlock = PsionWordFormatBlock()
         block.styleCode = styleCode
@@ -524,7 +570,7 @@ func convertToMarkdown(_ rawText: [UInt8], _ blocks: [PsionWordFormatBlock], _ s
         
         // Add the tagged text to the string store. We only duplicate the tag at the end
         // of the block if it is a character-level tag, ie. an Emphasis
-        if var addition = String(bytes: rawText[block.startIndex..<block.endIndex], encoding: .ascii) {
+        if var addition = String(bytes: rawText[block.startIndex..<block.endIndex], encoding: .windowsCP1252) {
             // Check if we've come to the end of a paragraph - but not empty ones
             if addition.hasSuffix("\n") && addition.count > 1 {
                 // Remove the NEWLINE
