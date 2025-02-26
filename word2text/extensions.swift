@@ -28,6 +28,7 @@ import Foundation
 
 
 extension Data {
+
     // Return data as an array of bytes
     var bytes: [UInt8] {
         return [UInt8](self)

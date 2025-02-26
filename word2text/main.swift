@@ -76,14 +76,16 @@ var files: [String]         = []
 
 // MARK: - Functions
 
-/// Convert an individual Word file to plain text.
-///
-/// - Parameter data:     Data object containing the file bytes.
-///                       May be better to just pass a byte array.
-/// - Parameter filepath: Absolute path of the target Word file.
-///
-/// - Returns: A ProcessResult containing the text or an error code.
+/**
+ Convert an individual Word file to plain text.
 
+ - Parameters
+    - data:     Data object containing the file bytes.
+                May be better to just pass a byte array.
+    - filepath: Absolute path of the target Word file.
+
+ - Returns: A ProcessResult containing the text or an error code.
+ */
 func processFile(_ data: ArraySlice<UInt8>, _ filepath: String) -> ProcessResult {
     
     var textBytes: [UInt8] = []
@@ -204,13 +206,15 @@ func processFile(_ data: ArraySlice<UInt8>, _ filepath: String) -> ProcessResult
 }
 
 
-/// Parse a Psion Word Style or Emphasis record.
-///
-/// - Parameter data:     A slice of the word file bytes.
-/// - Parameter isStyle: `true` if the record holds a Style; `false` if it is an Emphasis.
-///
-/// - Returns: A PsionWordStyle containing the record's information.
+/**
+ Parse a Psion Word Style or Emphasis record.
 
+ - Parameters
+    - data:     A slice of the word file bytes.
+    - isStyle: `true` if the record holds a Style; `false` if it is an Emphasis.
+
+ - Returns A PsionWordStyle containing the record's information.
+ */
 func getStyle(_ data: ArraySlice<UInt8>, _ isStyle: Bool) -> PsionWordStyle {
     
     var style: PsionWordStyle = PsionWordStyle()
@@ -299,13 +303,15 @@ func getStyle(_ data: ArraySlice<UInt8>, _ isStyle: Bool) -> PsionWordStyle {
 }
 
 
-/// Read a C string of known length from the word file byte store
-///
-/// - Parameter data:      A slice of the word file bytes.
-/// - Parameter isHeader:  `true` if the record contains header text, otherwise `false`.
-///
-/// - Returns: The text as a string.
+/**
+ Read a C string of known length from the word file byte store
 
+ - Parameters
+    - data:      A slice of the word file bytes.
+    - isHeader:  `true` if the record contains header text, otherwise `false`.
+
+ - Returns The text as a string.
+ */
 func getOuterText(_ data: ArraySlice<UInt8>, _ isHeader: Bool) -> String {
     
     var outerText: String
@@ -329,10 +335,10 @@ func getOuterText(_ data: ArraySlice<UInt8>, _ isHeader: Bool) -> String {
 /**
  Generate a String from the file's text bytes.
 
- -Parameters
+ - Parameters
     - textBytes: The bytes from the Psion file.
 
- -Returns The text as a String
+ - Returns The text as a String
  */
 func convertText(_ textBytes: [UInt8]) -> String {
 
@@ -419,7 +425,6 @@ func getBodyText(_ data: ArraySlice<UInt8>) -> [UInt8] {
                 case 15:
                     // 15 = unbreakable space
                     textBytes.append(0x20)
-                case 
                 default:
                     textBytes.append(characterByte)
             }
@@ -437,31 +442,33 @@ func getBodyText(_ data: ArraySlice<UInt8>) -> [UInt8] {
 /**
  Swap a CP 850 for a CP 1252.
 
- -Parameters
+ - Parameters
     - char: A CP 850 integer value.
 
- -Returns The equivalent 1252 code.
+ - Returns The equivalent 1252 code.
  */ 
 func charSwap(_ char: UInt8) -> UInt8 {
-
+    
     // £ (r) (c) 1/2 1/4 3/4 Y P S 0 1 2 3 +/- x - o a f | 
     let cp850: [UInt8]  = [0x9C, 0xA9, 0xB8, 0xAB, 0xAC, 0xF3, 0xBE, 0xF4, 0xF5, 0xF8, 0xFB, 0xFD, 0xFC, 0xF1, 0x9E, 0xF6, 0xA7, 0xA6, 0x9F, 0xDD]
     let cp1252: [UInt8] = [0xA3, 0xAE, 0xA9, 0xBD, 0xBC, 0xBE, 0xA5, 0xB6, 0xA7, 0xB0, 0xB9, 0xB2, 0xB3, 0xB1, 0xD7, 0xF7, 0xBA, 0xAA, 0x83, 0xA6]
-
+    
     if let index = cp850.firstIndex(of: char) {
         return cp1252[index]
     }
-
+    
     // Return a ? in all other cases
     return 0x3F
 }
 
 
-/// Parse a Psion Word block styling record and extract the formatting blocks.
-///
-/// - Parameter data:       A slice of the Word file bytes containing the block formatting data.
-/// - Parameter textLength: The number of bytes in the corresponding body text.
-///
+/**
+ Parse a Psion Word block styling record and extract the formatting blocks.
+
+ - Parameters
+    - data:      A slice of the Word file bytes containing the block formatting data.
+   - textLength: The number of bytes in the corresponding body text.
+ */
 func getStyleBlocks(_ data: ArraySlice<UInt8>, _ textLength: Int) -> [PsionWordFormatBlock] {
     
     var blocks: [PsionWordFormatBlock] = []
@@ -501,12 +508,14 @@ func getStyleBlocks(_ data: ArraySlice<UInt8>, _ textLength: Int) -> [PsionWordF
 }
 
 
-/// Read a 16-bit little endian value from the Word file byte store.
-///
-/// - Parameter data:  Two-byte slice of the word file bytes.
-///
-/// - Returns: The value as an (unsinged) integer, or -1 on error.
+/**
+ Read a 16-bit little endian value from the Word file byte store.
 
+ - Parameters
+    - data:  Two-byte slice of the word file bytes.
+
+ - Returns The value as an (unsinged) integer, or -1 on error.
+ */
 func getWordValue(_ data: ArraySlice<UInt8>) -> Int {
     
     // Make sure data slice is correctly dimensioned
@@ -518,28 +527,30 @@ func getWordValue(_ data: ArraySlice<UInt8>) -> Int {
 }
 
 
-/// Convert plain text to Markdown by parsing the block formatting data in
-/// conjunction with the document's stored Style and Emphasis data.
-///
-/// - Parameter rawText:  The basic Ascii text.
-/// - Parameter blocks:   The block formatting data extracted from the document.
-/// - Parameter styles:   The styles extracted from the document.
-/// - Parameter emphases: The emphases extracted from the document.
-///
-/// - Returns: A Markdown-formatted version of the base text.
+/**
+ Convert plain text to Markdown by parsing the block formatting data in
+ conjunction with the document's stored Style and Emphasis data.
+ 
+ The raw text is a series of paragraphs separated by NEWLINE.
+ A block will contain a style AND an emphasis over a range of characters, in sequence.
+ Emphasis can be anywhere (ie. character level); styles are paragraph level.
+ Initially we will support STANDARD Styles and Emphases. Only a subset of each require
+ tagging with Markdown (eg. `HA` -> `#`, `BB` -> `**`.
+ 
+ - Note This all assumes that the doc only contains standard styles, but what if it has, say,
+        a headline set to bold text, ie. a custom style? A bold headline in Markdown would be
+        `# **headline**, but this would not comprise separate blocks. So we need to set the `#`
+        on the paragraph start and (separately) the `**` at the start and end of the actual text.
 
+ - Parameters
+    - rawText:  The basic Ascii text.
+    - blocks:   The block formatting data extracted from the document.
+    - styles:   The styles extracted from the document.
+    - emphases: The emphases extracted from the document.
+
+ - Returns: A Markdown-formatted version of the base text.
+ */
 func convertToMarkdown(_ rawText: [UInt8], _ blocks: [PsionWordFormatBlock], _ styles: [String:PsionWordStyle], _ emphases: [String:PsionWordStyle]) -> String {
-    
-    // The raw text is a series of paragraphs separated by NEWLINE.
-    // A block will contain a style AND an emphasis over a range of characters, in sequence.
-    // Emphasis can be anywhere (ie. character level); styles are paragraph level.
-    // Initially we will support STANDARD Styles and Emphases. Only a subset of each require
-    // tagging with Markdown (eg. `HA` -> `#`, `BB` -> `**`.
-    
-    // NOTE This all assumes that the doc only contains standard styles, but what if it has, say,
-    //      a headline set to bold text, ie. a custom style? A bold headline in Markdown would be
-    //      `# **headline**, but this would not comprise separate blocks. So we need to set the `#`
-    //      on the paragraph start and (separately) the `**` at the start and end of the actual text.
     
     var markdown: String = ""
     var paraStyleSet: Bool = false
@@ -639,12 +650,14 @@ func convertToMarkdown(_ rawText: [UInt8], _ blocks: [PsionWordFormatBlock], _ s
 }
 
 
-/// Convert a user-supplied possibly partial path to an absolute path.
-///
-/// - Parameter relativePath: A possible relative path.
-///
-/// - Returns: The absolute path.
+/**
+ Convert a user-supplied possibly partial path to an absolute path.
 
+ - Parameters
+    - relativePath: A possible relative path.
+
+ - Returns The absolute path.
+ */
 func getFullPath(_ relativePath: String) -> String {
 
     // Standardise the path as best as we can (this covers most cases)
@@ -661,12 +674,14 @@ func getFullPath(_ relativePath: String) -> String {
 }
 
 
-/// Convert a relative path to an absolute path.
-///
-/// - Parameter relativePath: A relative path.
-///
-/// - Returns: The absolute path.
+/**
+ Convert a relative path to an absolute path.
 
+ - Parameters
+    - relativePath: A relative path.
+
+ - Returns The absolute path.
+ */
 func processRelativePath(_ relativePath: String) -> String {
 
     // Add the basepath (the current working directory of the call) to the
@@ -676,12 +691,14 @@ func processRelativePath(_ relativePath: String) -> String {
 }
 
 
-/// Convert a relative path to an absolute path.
-///
-/// - Parameter absolutePath: An absolute path to a file or directory.
-///
-/// - Returns: `true` of the path references an existing directory, otherwise `false`.
+/**
+ Convert a relative path to an absolute path.
 
+ - Parameters
+    - absolutePath: An absolute path to a file or directory.
+
+ - Returns `true` of the path references an existing directory, otherwise `false`.
+ */
 func doesPathReferenceDirectory(_ absolutePath: String) -> Bool {
     
     let fileURL = URL.init(fileURLWithPath: absolutePath)
@@ -690,12 +707,14 @@ func doesPathReferenceDirectory(_ absolutePath: String) -> Bool {
 }
 
 
-/// Load a named file's contents into Data.
-///
-/// - Parameter filePath: An absolute path to a file.
-///
-/// - Returns: The file data, or an empty array on error.
+/**
+ Load a named file's contents into Data.
 
+ - Parameters
+    - filePath: An absolute path to a file.
+
+ - Returns The file data, or an empty array on error.
+ */
 func getFileContents(_ filepath: String) -> ArraySlice<UInt8> {
     
     let fileURL: URL = URL.init(fileURLWithPath: filepath)
@@ -704,11 +723,13 @@ func getFileContents(_ filepath: String) -> ArraySlice<UInt8> {
 }
 
 
-/// Generic error display routine that also quits the app.
-///
-/// - Parameter message: The error message text.
-/// - Parameter code:    The error code (and app exit code).
+/**
+ Generic error display routine that also quits the app.
 
+ - Parameters
+    - message: The error message text.
+    - code:    The error code (and app exit code).
+ */
 func reportErrorAndExit(_ message: String, _ code: Int32 = EXIT_FAILURE) {
 
     writeToStderr(CONSTANTS.RED + CONSTANTS.BOLD + "ERROR" + CONSTANTS.RESET + " " + message + " -- exiting")
@@ -717,51 +738,61 @@ func reportErrorAndExit(_ message: String, _ code: Int32 = EXIT_FAILURE) {
 }
 
 
-/// Generic error display routine that does not quit the app.
-///
-/// - Parameter message: The error message text.
+/**
+ Generic error display routine that does not quit the app.
 
+ - Parameters
+    - message: The error message text.
+ */
 func reportError(_ message: String) {
 
     writeToStderr(CONSTANTS.RED + CONSTANTS.BOLD + "ERROR" + CONSTANTS.RESET + " " + message)
 }
 
 
-/// Generic warning display routine.
-///
-/// - Parameter message: The warning's text.
+/**
+ Generic warning display routine.
 
+ - Parameters
+    - message: The warning's text.
+ */
 func reportWarning(_ message: String) {
 
     writeToStderr(CONSTANTS.YELLOW + CONSTANTS.BOLD + "WARNING" + CONSTANTS.RESET + " " + message)
 }
 
 
-/// Write errors and other messages to `stderr`.
-///
-/// - Parameter message: The text to emit.
+/**
+ Write errors and other messages to `stderr`.
 
+ - Parameters
+    - message: The text to emit.
+ */
 func writeToStderr(_ message: String) {
 
     writeOut(message, CONSTANTS.STD_ERR)
 }
 
 
-/// Write output and other messages to `stdout`.
-///
-/// - Parameter message: The text to emit.
+/**
+ Write output and other messages to `stdout`.
 
+ - Parameters
+    - message: The text to emit.
+ */
 func writeToStdout(_ message: String) {
 
     writeOut(message, CONSTANTS.STD_OUT)
 }
 
 
-/// Write output to any standard file.
-///
-/// - Parameter message:          The text to emit.
-/// - Parameter targetFileHandle: Where to emit the message
+/**
+ Write output to any standard file.
 
+ - Parameters
+    - message:          The text to emit.
+    - targetFileHandle: Where to emit the message
+ */
 func writeOut(_ message: String, _ targetFileHandle: FileHandle) {
 
     let messageAsString = message + "\r\n"
@@ -771,8 +802,9 @@ func writeOut(_ message: String, _ targetFileHandle: FileHandle) {
 }
 
 
-/// Display the help text.
-
+/**
+ Display the help text.
+ */
 func showHelp() {
 
     showHeader()
@@ -792,8 +824,9 @@ func showHelp() {
 }
 
 
-/// Display the app version.
-
+/**
+ Display the app version.
+ */
 func showVersion() {
 
     showHeader()
@@ -801,8 +834,9 @@ func showVersion() {
 }
 
 
-/// Display the app's version number.
-
+/**
+ Display the app's version number.
+ */
 func showHeader() {
     
 #if os(macOS)
