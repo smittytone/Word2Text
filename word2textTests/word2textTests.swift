@@ -246,8 +246,8 @@ struct word2textTests {
     }
     
     
-    // MARK: - GetFileContents()
-    
+    // MARK: - getFileContents()
+
     @Test func testDoesGetFileContentsValidFile() async throws {
         
         let path = "/tmp/test"
@@ -277,8 +277,8 @@ struct word2textTests {
     }
     
     
-    // MARK: - GetStyleBlocks()
-    
+    // MARK: - getStyleBlocks()
+
     @Test func testGetStyleBlocksSimpleBlock() async throws {
         
         var bytes: [UInt8] = []
@@ -307,5 +307,27 @@ struct word2textTests {
         block = blocks[1]
         #expect(block.startIndex == 50 && block.endIndex == 99)
         #expect(block.styleCode == "EE" && block.emphasisCode == "BB")
+    }
+
+
+    // MARK: - getStyle()
+
+    @Test func testGetStyleNameEmphasis() async throws {
+
+        var bytes: [UInt8] = []
+        bytes.append(contentsOf: [100, 0, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 0, 75, 76, 77])
+        bytes.append(contentsOf: Array(repeating: 255, count: 64))
+        let style = getStyle(bytes[...], false)
+        #expect(style.name == "ABCDEFGHIJ")
+    }
+
+
+    @Test func testGetStyleNameStyle() async throws {
+
+        var bytes: [UInt8] = []
+        bytes.append(contentsOf: [100, 0, 65, 65, 65, 65, 65, 0, 71, 72, 73, 74, 0, 75, 76, 77])
+        bytes.append(contentsOf: Array(repeating: 255, count: 64))
+        let style = getStyle(bytes[...], true)
+        #expect(style.name == "AAAAA")
     }
 }

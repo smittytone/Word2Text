@@ -226,8 +226,8 @@ func getStyle(_ data: ArraySlice<UInt8>, _ isStyle: Bool) -> PsionWordStyle {
     style.code = String(bytes: data[index..<index + 2], encoding: .windowsCP1252) ?? ""
     //style.name = String(cString: [UInt8](data[index + 2..<index + 18]))
     style.name = String(decoding: data[index + 2..<index + 18], as: UTF8.self)
-    let nulIndex = style.name.index(style.name.endIndex, offsetBy: -1)
-    style.name = String(style.name[..<nulIndex])
+    let range: Range<String.Index> = style.name.range(of: "\0")!    // Find the first nul
+    style.name = String(style.name[..<range.lowerBound])
 
     if style.name.isEmpty {
         style.name = "Unknown"
