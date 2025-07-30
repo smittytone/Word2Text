@@ -98,14 +98,14 @@ func processFile(_ data: ArraySlice<UInt8>, _ filepath: String) -> ProcessResult
     
     // Check minimum file size: enough bytes to at least check the preamble
     if data.count < 16 {
-        return ProcessResult.init(text: "Not a Psion Series 3 Word file", errorCode: .badPsionFileType)
+        return ProcessResult(text: "Not a Psion Series 3 Word file", errorCode: .badPsionFileType)
     }
     
     // Check the data preamble (C String of up to 15 chars plus `NUL`)
-    let preamble = String.init(decoding: data[0..<15], as: UTF8.self)
+    let preamble = String(decoding: data[0..<15], as: UTF8.self)
     if preamble != "PSIONWPDATAFILE" || data.count < 40 {
         // TODO Report actual file type
-        return ProcessResult.init(text: "Not a Psion Series 3 Word file", errorCode: .badPsionFileType)
+        return ProcessResult(text: "Not a Psion Series 3 Word file", errorCode: .badPsionFileType)
     }
     
     if doShowInfo {
@@ -115,21 +115,21 @@ func processFile(_ data: ArraySlice<UInt8>, _ filepath: String) -> ProcessResult
     // Check for encrypted files: look at file bytes 16 and 17
     // NOTE We can't handle these yet as the decode algorithm remains unknown
     if getWordValue(data[16..<18]) == 256 {
-        return ProcessResult.init(text: "Word file is encrypted", errorCode: .badFileEncrypted)
+        return ProcessResult(text: "Word file is encrypted", errorCode: .badFileEncrypted)
     }
     
     // Iterate over the file's bytes to extract the records
     var recordCounter: UInt16 = 0
     while byteIndex < data.count - CONSTANTS.PSION_WORD_RECORD_HEADER_LENGTH {
         // Get the 16-bit record type and 16-bit data length
-        let recordType = PsionWordRecordType.init(rawValue: getWordValue(data[byteIndex..<byteIndex + 2])) ?? .unknown
+        let recordType = PsionWordRecordType(rawValue: getWordValue(data[byteIndex..<byteIndex + 2])) ?? .unknown
         let recordDataLength: Int = getWordValue(data[byteIndex + 2..<byteIndex + 4])
         
         // Move index to start of record
         byteIndex += CONSTANTS.PSION_WORD_RECORD_HEADER_LENGTH
         
         if doShowInfo {
-            writeToStderr("Record of type \(CONSTANTS.PSION_WORD_RECORD_TYPES[recordType.rawValue - 1]) found at offset \(String.init(format: "0x%04x", arguments: [byteIndex])). Size: \(recordDataLength) bytes")
+            writeToStderr("Record of type \(CONSTANTS.PSION_WORD_RECORD_TYPES[recordType.rawValue - 1]) found at offset \(String(format: "0x%04x", arguments: [byteIndex])). Size: \(recordDataLength) bytes")
         }
         
         // Process the current record
@@ -174,7 +174,7 @@ func processFile(_ data: ArraySlice<UInt8>, _ filepath: String) -> ProcessResult
             case .blockInfo:
                 blocks = getStyleBlocks(data[byteIndex..<data.endIndex], textBytes.count)
             case .unknown:
-                return ProcessResult.init(text: "Bad Word file record type (\(recordType.rawValue) at  \(String.init(format: "0x%04x", arguments: [byteIndex]))", errorCode: .badRecordType)
+                return ProcessResult(text: "Bad Word file record type (\(recordType.rawValue) at  \(String(format: "0x%04x", arguments: [byteIndex]))", errorCode: .badRecordType)
         }
         
         recordCounter |= (1 << recordType.rawValue)
@@ -220,12 +220,15 @@ func getStyle(_ data: ArraySlice<UInt8>, _ isStyle: Bool) -> PsionWordStyle {
     var style: PsionWordStyle = PsionWordStyle()
     
     // Code and name
-    // NOTE `String.init(cstring:...)` is deprecated so we'll eventually need to scan the bytes
+    // NOTE `String(cstring:...)` is deprecated so we'll eventually need to scan the bytes
     //      for the NUL terminator and turn the rest into a Swift string
     let index = data.startIndex
-    style.code = String.init(bytes: data[index..<index + 2], encoding: .windowsCP1252) ?? ""
-    style.name = String.init(cString: [UInt8](data[index + 2..<index + 18]))
-    
+    style.code = String(bytes: data[index..<index + 2], encoding: .windowsCP1252) ?? ""
+    //style.name = String(cString: [UInt8](data[index + 2..<index + 18]))
+    style.name = String(decoding: data[index + 2..<index + 18], as: UTF8.self)
+    let nulIndex = style.name.index(style.name.endIndex, offsetBy: -1)
+    style.name = String(style.name[..<nulIndex])
+
     if style.name.isEmpty {
         style.name = "Unknown"
     }
@@ -290,7 +293,7 @@ func getStyle(_ data: ArraySlice<UInt8>, _ isStyle: Bool) -> PsionWordStyle {
         for _ in 0..<tabCount {
             style.tabPositions.append(getWordValue(data[tabIndex..<tabIndex + 2]))
             let tabType: Int = getWordValue(data[tabIndex + 2..<tabIndex + 4])
-            style.tabTypes.append(PsionWordTabType.init(rawValue: tabType) ?? .left)
+            style.tabTypes.append(PsionWordTabType(rawValue: tabType) ?? .left)
             tabIndex += 4
         }
     }
@@ -318,7 +321,7 @@ func getOuterText(_ data: ArraySlice<UInt8>, _ isHeader: Bool) -> String {
     let rawLength = data.endIndex - data.startIndex + 1
     if rawLength > 1 {
         // There's at least one character in addition to the C String NUL terminator
-        outerText = String.init(decoding: data[..<(data.endIndex - 1)], as: UTF8.self)
+        outerText = String(decoding: data[..<(data.endIndex - 1)], as: UTF8.self)
     } else {
         // String is empty (NUL only)
         outerText = "None"
@@ -368,8 +371,7 @@ func convertText(_ textBytes: [UInt8]) -> String {
         if doShowInfo {
             var msg = ""
             for (idx, badChar) in badChars {
-                msg += String(format: "%d @ %d", badChar, idx)
-                msg += " "
+                msg += String(format: "%d @ %d ", badChar, idx)
             }
 
             reportWarning(msg)
@@ -384,7 +386,7 @@ func convertText(_ textBytes: [UInt8]) -> String {
 #endif
         
         // This works even when the String conversion doesn't!
-        if let text: NSString = NSString.init(bytes: textBytes, length: textBytes.count, encoding: encoding) {
+        if let text: NSString = NSString(bytes: textBytes, length: textBytes.count, encoding: encoding) {
             return String(text)
         }
     }
@@ -587,7 +589,7 @@ func convertToMarkdown(_ rawText: [UInt8], _ blocks: [PsionWordFormatBlock], _ s
                             // Ignore sizes below 7 (13pt)
                             if size > 6 {
                                 size = 10 - size + 1
-                                tag = String.init(repeating: "#", count: size)
+                                tag = String(repeating: "#", count: size)
                                 tag += " "
                             }
                             
@@ -701,7 +703,7 @@ func processRelativePath(_ relativePath: String) -> String {
  */
 func doesPathReferenceDirectory(_ absolutePath: String) -> Bool {
     
-    let fileURL = URL.init(fileURLWithPath: absolutePath)
+    let fileURL = URL(fileURLWithPath: absolutePath)
     guard let value = try? fileURL.resourceValues(forKeys: [.isDirectoryKey]) else { return false }
     return value.isDirectory!
 }
@@ -717,7 +719,7 @@ func doesPathReferenceDirectory(_ absolutePath: String) -> Bool {
  */
 func getFileContents(_ filepath: String) -> ArraySlice<UInt8> {
     
-    let fileURL: URL = URL.init(fileURLWithPath: filepath)
+    let fileURL: URL = URL(fileURLWithPath: filepath)
     guard let data = try? Data(contentsOf: fileURL) else { return [] }
     return data.bytes[...]
 }
@@ -994,7 +996,7 @@ for filepath in finalFiles {
     let data = getFileContents(filepath)
     let result: ProcessResult = !data.isEmpty
         ? processFile(data, filepath) 
-        : ProcessResult.init(text: "file not found", errorCode: .badFile)
+        : ProcessResult(text: "file not found", errorCode: .badFile)
     
     // Handle the outcome of processing
     if result.errorCode != .noError {
