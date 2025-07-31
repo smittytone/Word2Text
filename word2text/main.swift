@@ -557,7 +557,7 @@ func convertToMarkdown(_ rawText: [UInt8], _ blocks: [PsionWordFormatBlock], _ s
     var markdown: String = ""
     var paraStyleSet: Bool = false
     var textEndTag: String = ""
-    
+
     // Blocks are in stored in sequence, so we just need to iterate over them
     for block in blocks {
         var tag: String = ""
@@ -621,7 +621,7 @@ func convertToMarkdown(_ rawText: [UInt8], _ blocks: [PsionWordFormatBlock], _ s
         
         // Add the tagged text to the string store. We only duplicate the tag at the end
         // of the block if it is a character-level tag, ie. an Emphasis
-        if var addition = String(bytes: rawText[block.startIndex..<block.endIndex], encoding: .windowsCP1252) {
+        if var addition = String(bytes: rawText[block.startIndex...block.endIndex], encoding: .windowsCP1252) {
             // Check if we've come to the end of a paragraph - but not empty ones
             if addition.hasSuffix("\n") && addition.count > 1 {
                 // Remove the NEWLINE
