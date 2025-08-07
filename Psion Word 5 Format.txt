@@ -1,0 +1,324 @@
+Compiled from information produced by Frodo Looojaard (https://frodo.looijaard.name/project/psiconv)
+
+This documentation is in the public domain.
+
+
+
+Word File
+---------
+
+Word files start with a «Header Section» which starts with the following codes:
+
+Offset    Size    Data            Description
+0000      «ID»    37 00 00 10     UID1: Header Section layout
+0004      «ID»    6D 00 00 10     UID2: File kind
+0008      «ID»    7F 00 00 10     UID3: Application ID
+000C      L       FE 9F 08 55     UID4: Checksum of UID1, UID2 and UID 3
+0010    «Section Table Offset Section»
+0014
+
+The «Section Table Section» may contain the following sections, usual in the given order.
+
+Identifier        Section                                    Always found
+CD 00 00 10       Offset of the «Password Section»           No
+43 02 00 10       Offset of the «Word Status Section»        Yes
+04 01 00 10       Offset of the «Word Styles Section»        Yes
+05 01 00 10       Offset of the «Page Layout Section»        Yes
+06 01 00 10       Offset of the «Text Section»               Yes
+43 01 00 10       Offset of the «Text Layout Section»        No
+89 00 00 10       Offset of the «Application ID Section»     Yes
+
+The «Password Section» is only found in encrypted documents. Only the «Text Section» is actually encrypted if it is found.
+If a «Text Layout Section» is not present, all text defaults to style Normal with no further layout.
+
+
+Word Status Section
+-------------------
+
+This section contains most Word editor settings.
+
+Offset    Data    Description
+0000      B       Unknown: Always 02 ?
+0001      B       Display flags
+                    bit 0: Show tabs (1=on, 0=off)
+                    bit 1: Show spaces (1=on, 0=off)
+                    bit 2: Show paragraph ends (1=on, 0=off)
+                    bit 3: Show line breaks (1=on, 0=off)
+                    bit 5: Show hard minus (1=on, 0=off)
+                    bit 6: Show hard spaces (1=on, 0=off)
+0002      B       Display flags
+                    bit 0: Show full picture objects (1) or iconify them (0)
+                    bit 1: Show full graph objects (1) or iconify them (0)
+0003      B       Show top toolbar (01) or hide it (00)
+0004      B       Show side toolbar (01) or hide it (00)
+0005      B       Operational flags:
+                    bit 3: move words to fit on screen (1) or to correspond to page settings (0)
+0006      L       Offset of cursor
+000A      L       Display size
+000E
+
+The offset of the cursor is counted from the start of the «Text Section».
+The display size is the size of the characters on the screen, in percents times A (10 decimal). Lower values mean smaller characters.
+
+
+Word Styles Section
+-------------------
+
+This section contains data about the styles used, both internal default styles and user-defined ones. It consists of the following parts:
+
+    «Word Normal Style»
+    «Word Style Hotkeys»
+    «Word Other Styles»
+    «Word Style Trailer»
+
+Normal Style
+============
+
+The normal style definition is special. All other styles are based upon it (though there seem to be hooks to allow other base styles). It is structured as follows:
+
+
+    Data                            Description
+    «Paragraph Layout List»         Style layout: paragraph codes part
+    «Character Layout List»         Style layout: character codes part
+    L                               Hotkey
+
+The hotkey contains an «ASCII» character encoded in a long. That means that all but the first byte of the long always equal 00.
+
+Hotkeys
+=======
+
+Now follow all the hotkeys used to call up the styles quickly. This is a «BListL» of hotkeys. Each hotkey is  an «ASCII» character encoded in a long. That means that all but the first byte of the long always equal 00.
+
+The hotkeys are given in the same order as the styles in the  «Word Other Styles» section. The amount of hotkeys given here and the amount of styles are always equal.
+
+If no hotkey is defined for a style, a value of 00 00 00 00 is used instead.
+
+Other Styles
+============
+
+This section contains the definitions of all styles, excluding the Normal style, which is defined in the  «Word Normal Style» section.
+
+The hotkeys are given in the same order as the hotkeys in the «Word Style Hotkeys» section. The amount of styles given here and the amount of hotkeys are always equal.
+
+This is a «BListE» of the following elements:
+
+    Data                            Description
+    «String»                        Style name
+    «ID»                            Style kind ID
+    L                               Outline level (5MX only; 00 00 00 00 for others)
+    «Character Layout List»         Style layout: character codes part
+    «Paragraph Layout List»         Style layout: paragraph codes part
+
+Two kind of IDs are found: 4C 00 00 10 for default styles that can not be removed, and 4F 00 00 10 for other, removable styles.
+
+Style IDs
+=========
+
+Styles are numbered from FF down, in the order they are defined in the «Word Other Styles» section. The normal style, as defined in thee «Word Normal Style» section, always has number 00.
+The Word Style ID is a Byte containing this number.
+
+If you use the default Word template file, you will have the non-removable styles below:
+
+    Style ID    Style Name
+    00            Normal
+    FF            Header 1
+    FE            Header 2
+    FD            Header 3
+
+Style Trailer
+=============
+
+For each defined style, excluding the normal style, a FF byte appears at the end of the styles section. Their meaning is unknown.
+
+
+Page Layout Section
+-------------------
+
+This section describes the general page layout, its headers and its footers.
+
+Below the structure of this section is shown.
+
+    Size    Data            Description
+    L                       Page number of first page
+    L        «Length»       Distance of header from the top of the page
+    L        «Length»       Distance of footer from the bottom of the page
+    L        «Length»       Left margin width
+    L        «Length»       Right margin width
+    L        «Length»       Distance of first line from the top of the page
+    L        «Length»       Distance of last line from the bottom of the page
+            «Page Header»   Header
+            «Page Header»   Footer
+    L        «ID»           Always FD 00 00 10  or  0E 01 00 10 ?
+    L        «Length»       Page width
+    L        «Length»       Page height
+
+Most items are self-explanatory. Of course,the header and footer must fit within the top and bottom margins.
+
+Page Header
+===========
+
+Both header and footer data are as follows. Note that, due to the use of a lot of identifiers, it might be permitted to order the elements slightly different. As it is not clear what kinds of reshufflings are right, I have chosen to just present them in the order found.
+
+        Size    Data                       Description
+        B                                  Empty section (00) or with content (01)
+        B                                  Header/footer displayed on first page (00) or suppressed (01)
+        3B                                 Unknown: always 00 00 00 ?
+(*)             «Paragraph Layout List»    Base style definition
+(*)             «Character Layout List»    Base style definition ?
+(*)             «TextEd Section»
+
+If the first byte equals 00, the (*)-marked parts are not present.
+
+The base style definition probably defines a sort of Normal style for all text and layout in this section.
+
+
+Text Section
+------------
+
+A text section simply contains plain text. It is a «XListB» of «ASCII Codes».
+
+
+Text Layout Section
+-------------------
+
+This section describes how the text of a «Text Section» is formatted.
+
+There are a couple of levels on which the layout can be expressed. Most global are the styles. If available, they are described in the «Word Styles Section», and referenced here. But not each Text Layout Section uses styles.
+
+One down is the «Text Layout Paragraph Type List»; it contains a sort of unnamed styles. They are generated automatically.
+Each paragraph is mentioned in the «Text Layout Paragraph Element List». It either contains a reference to a «Text Layout Paragraph Type» or it contains the «Paragraph Layout Codes» and the number of «Character Layout Codes» for this paragraph.
+The whole list of «Character Layout Codes» is found at the end in the «Text Layout Inline List». These are the only way in which in-paragraph layouts can be expressed.
+
+    Data                                  Description
+    W                                     Section with (01 00) or without (00 00) style indicators
+    «Text Layout Paragraph Type List»
+    «Text Layout Paragraph Element List»
+    «Text Layout Inline List»
+
+If the first word indicates that this is  style-less section, the «Text Layout Paragraph Type List» and the «Text Layout Paragraph Element List» contain no style references.
+
+Paragraph Type List
+===================
+
+These are a sort of unnamed styles. They are referenced in the «Text Layout Paragraph Element List». They are only used for paragraphs whose characters all have the same layout.
+
+This is a «BListE» of the following Paragraph Type elements:
+
+    Data                           Description
+    L                              Type number
+    «Paragraph Layout List»        Layout codes
+(*) «Word Style ID»                Style indicator
+    «Character Layout List»        Layout codes
+
+All Paragraph Type elements have a unique number, as expressed in the Type number. Normally, they are simply numbered from 01 00 00 00 upwards.
+
+The Style indicator is only present if this list is part of a «Text Layout Section» with styles. If so, it expresses a style on which this Paragraph Type is based. Anything not overruled here is taken from that style.
+
+Paragraph Element List
+======================
+
+This is a LListE. Each paragraph has an entry here.
+
+        Data                       Description
+        L                          Number of text characters in paragraph
+        B                          Paragraph type, as in the «Text Layout Paragraph Type List»
+(**)    «Paragraph Layout List»
+(*)(**) «Word Style ID»            Style indicator
+(**)    L                          Number of «Text Layout Inline List» elements for this paragraph
+
+Each paragraph of the «Text Section» is mentioned here in order.
+
+The number of text characters for a paragraph should concur with the number of characters as found in the «Text Section»
+
+The entries marked (**) are only present if the paragraph type is set to 00, meaning it is not based on a «Text Layout Paragraph Type».
+
+The Style indicator is only present if this list is part of a «Text Layout Section» with styles. If so, it expresses a style on which this Paragraph Element is based. Anything not overruled here is taken from that style.
+
+It is forbidden for a paragraph to have exactly one inline element.
+
+Inline List
+===========
+
+This is a «LListE» of the following elements:
+
+    Data                         Description
+    B                            Type: 01 for objects, 00 for normal layout
+    L                            Number of characters this layout element applies to
+    «Character Layout List»
+(*) «ID»                         Always 51 00 00 10 ?
+(*) «Offset»                     Offset of «Embedded Object Section»
+(*) «Length»                     Object size horizontal
+(*) «Length»                     Object size vertical
+
+(*) Only for type 01 (objects)
+
+For each paragraph that has inline elements at all, it should have enough elements that each character in the paragraph belongs to exactly one element.
+
+For the layout list, not specified means back to the default for this paragraph, for italic, bold, super/subscript, strike-out and underline (and probably all other layouts too).
+
+The sizes are the size the object will be displayed with. If the object is displayed as an icon, for example, the size of the icon is put here; if it is cropped and/or scaled, the resulting size is found.
+
+The sizes found here are the same as those in the «Object Display Section».
+
+Application ID Section
+----------------------
+
+Application ID sections define objects. Usually, a file has a main Application ID Section, and all inserted objects have one too. This section may actually describe what application should be launched to access the file.
+
+An Application ID section is structured like this:
+
+    Size        Description
+    «ID»        Identifier
+    «String»    Application name
+
+At this time, there seems to be a one-on-one relation between identifiers and application names. But for all I know the identifier might not describe the application, but the file; in that case, there might be more than one identifier associated with an application (though each identifier should still be associated with one single application).
+
+These identifiers are also used for UID3 in the «Header Section».
+
+Identifier         Name
+7D 00 00 10        Paint.app
+7E 00 00 10        RECORD.APP
+7F 00 00 10        Word.app
+84 00 00 10        Agenda.app
+85 00 00 10        TextEd.app
+86 00 00 10        Data.app
+87 00 00 10        Comms.app
+88 00 00 10        Sheet.app
+
+ASCII Codes
+-----------
+
+All text is encoded in ASCII, using the translation below (IBM code page 1252). Some codes below 20 have special uses; they are listed here too, but may not be used in all cases.
+There are Psion's which use different code pages, for cyrillic characters for example.
+
+    Codes     Use
+    06        New Paragraph
+    07        New Line
+    08        Hard Page
+    09        Tab
+    0A        Unbreakable tab
+    0B        Hard hyphen
+    0C        Potential hyphen
+    0D        Unknown (found in one text section). Not displayed
+    0E        Object Placeholder
+    0F        Visible space
+    10        Hard space
+    20        Space
+    21-2F    !"#$%&'()*+,-./
+    30-39    0-9
+    3A-40    :;<=>?@
+    41-5A    A-Z
+    5B-60    [\]^_`
+    61-7A    a-z
+    7B-7E    {|}~
+    80        €
+    82-8C    ‚ƒ„…†‡ˆ‰Š‹Œ
+    8E        Ž
+    91-9C    ‘’“”•–—˜™š›œ
+    9E-9F    žŸ
+    A1-AF    ¡¢£¤¥¦§¨©ª«¬­®¯
+    B0-BF    °±²³´µ¶·¸¹º»¼½¾¿
+    C0-CF    ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏ
+    D0-DF    ÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞß
+    E0-EF    àáâãäåæçèéêëìíîï
+    F0-FF    ðñòóôõö÷øùúûüýþÿ
