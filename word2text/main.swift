@@ -27,31 +27,6 @@
 import Foundation
 
 
-// MARK: - Constants
-
-/*
-    Constants are placed in a struct to ensure they are initialized both for the
-    application itself and, more importantly, for the Swift Testing framework test cases
-    (see `word2textTests.swift`).
- */
-struct CliConstants {
-
-    static let CtrlCExitCode: Int32 = 130
-    static let CtrlCMessage: String = "\(Stdio.ShellCursor.Return)\(Stdio.ShellCursor.Clearline)"
-}
-
-
-struct PsionWordConstants {
-
-    static let BlockUnitLength: Int       = 6
-    static let RecordHeaderLength: Int    = 4
-    static let RecordTypes: [String]       = [
-        "FILE INFO", "PRINTER CONFIG", "PRINTER DRIVER INFO", "HEADER TEXT", "FOOTER TEXT",
-        "STYLE DEFINITION", "EMPHASIS DEFINITION", "BODY TEXT", "STYLE APPLICATION"
-    ]
-}
-
-
 // MARK: - Global Variables
 
 // CLI argument management
@@ -73,28 +48,28 @@ var files: [String]         = []
 signal(SIGINT, SIG_IGN)
 
 // Set up an event source for SIGINT...
-Stdio.dss = DispatchSource.makeSignalSource(signal: SIGINT, queue: DispatchQueue.main)
+Stdio.dispatchSource = DispatchSource.makeSignalSource(signal: SIGINT, queue: DispatchQueue.main)
 
 // ...add an event handler (from above)...
-Stdio.dss?.setEventHandler {
-    Stdio.write(message: CliConstants.CtrlCMessage, to: Stdio.ShellRoutes.Error)
+Stdio.dispatchSource?.setEventHandler {
+    Stdio.write(message: Cli.CtrlCMessage, to: Stdio.ShellRoutes.Error)
     Stdio.reportWarning("word2text interrupted -- halting")
-    Stdio.dss?.cancel()
-    exit(CliConstants.CtrlCExitCode)
+    Stdio.dispatchSource?.cancel()
+    exit(Cli.CtrlCExitCode)
 }
 
 // ...and start the event flow
-Stdio.dss?.resume()
+Stdio.dispatchSource?.resume()
 
 // No arguments? Show Help
 if CommandLine.arguments.count == 1 {
     showHelp()
-    Stdio.dss?.cancel()
+    Stdio.dispatchSource?.cancel()
     exit(EXIT_SUCCESS)
 }
 
 // Expand composite flags
-var args: [String] = unify(args: CommandLine.arguments)
+var args: [String] = Cli.unify(args: CommandLine.arguments)
 
 // Process the (separated) arguments
 for argument in args {
@@ -139,11 +114,11 @@ for argument in args {
             fallthrough
         case "--help":
             showHelp()
-            Stdio.dss?.cancel()
+            Stdio.dispatchSource?.cancel()
             exit(EXIT_SUCCESS)
         case "--version":
             showHeader()
-            Stdio.dss?.cancel()
+            Stdio.dispatchSource?.cancel()
             exit(EXIT_SUCCESS)
         default:
             if argument.prefix(1) == "-" {
@@ -168,8 +143,8 @@ for argument in args {
 // We also take the time to rationalise the paths of passed files
 var finalFiles: [String] = []
 for filepath in files {
-    let absolutePath: String = getFullPath(filepath)
-    if doesPathReferenceDirectory(absolutePath) {
+    let absolutePath: String = Path.getFullPath(filepath)
+    if Path.doesPathReferenceDirectory(absolutePath) {
         // References a directory so get the file list
         let directoryContentsEnumerator = FileManager.default.enumerator(atPath: absolutePath)
         while let file = directoryContentsEnumerator?.nextObject() as? String {
@@ -185,10 +160,10 @@ for filepath in files {
 // Convert the file(s) to text
 let outputToFiles: Bool = outputAsFile || finalFiles.count > 1
 for filepath in finalFiles {
-    let data = getFileContents(filepath)
+    let data = Path.getFileContents(filepath)
     let result: ProcessResult = !data.isEmpty
-        ? processFile(data, filepath) 
-        : ProcessResult(text: "file not found", errorCode: .badFile)
+    ? PsionWord.processFile(data, filepath)
+    : ProcessResult(text: "file not found", errorCode: .badFile)
     
     // Handle the outcome of processing
     if result.errorCode != .noError {
@@ -227,7 +202,7 @@ for filepath in finalFiles {
 }
 
 // Exit gracefully
-Stdio.dss?.cancel()
+Stdio.dispatchSource?.cancel()
 exit(EXIT_SUCCESS)
 
 
@@ -270,7 +245,7 @@ func showHeader() {
     // TODO Automate based on build settings
     Stdio.report("\(String(.bold))word2text \(LINUX_VERSION) (\(LINUX_BUILD))\(String(.normal))")
 #endif
-    Stdio.report("Copyright © 2025, Tony Smith (@smittytone).\r\nSource code available under the MIT licence.")
+    Stdio.report("Copyright © 2025, Tony Smith (@smittytone). Source code available under the MIT licence.")
 }
 
 
