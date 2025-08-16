@@ -7,13 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3BD947C12E50D69800A3245D /* stdio.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BD947C02E50D69800A3245D /* stdio.swift */; };
+		3BD947C22E50D69800A3245D /* stdio.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BD947C02E50D69800A3245D /* stdio.swift */; };
+		3BD947C42E50D99D00A3245D /* word.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BD947C32E50D99D00A3245D /* word.swift */; };
+		3BD947C52E50D99D00A3245D /* word.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BD947C32E50D99D00A3245D /* word.swift */; };
+		3BD947C72E50D9FD00A3245D /* path.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BD947C62E50D9FD00A3245D /* path.swift */; };
+		3BD947C82E50D9FD00A3245D /* path.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BD947C62E50D9FD00A3245D /* path.swift */; };
+		3BD947CA2E50E10900A3245D /* cli.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BD947C92E50E10900A3245D /* cli.swift */; };
+		3BD947CB2E50E10900A3245D /* cli.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BD947C92E50E10900A3245D /* cli.swift */; };
 		3BE01B7A2D0F3CCB00E1D2F4 /* word2textTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BE01B782D0F3CCB00E1D2F4 /* word2textTests.swift */; };
-		3BE01B7B2D0F3D5300E1D2F4 /* structures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5644F2D0A270F008E58B6 /* structures.swift */; };
-		3BE01B7C2D0F3D5800E1D2F4 /* extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5644B2D0A270F008E58B6 /* extensions.swift */; };
+		3BE01B7B2D0F3D5300E1D2F4 /* entities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5644F2D0A270F008E58B6 /* entities.swift */; };
 		3BE01B7D2D0F3D6000E1D2F4 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5644E2D0A270F008E58B6 /* main.swift */; };
-		3BF564512D0A270F008E58B6 /* extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5644B2D0A270F008E58B6 /* extensions.swift */; };
 		3BF564532D0A270F008E58B6 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5644E2D0A270F008E58B6 /* main.swift */; };
-		3BF564542D0A270F008E58B6 /* structures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5644F2D0A270F008E58B6 /* structures.swift */; };
+		3BF564542D0A270F008E58B6 /* entities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5644F2D0A270F008E58B6 /* entities.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -33,14 +39,17 @@
 		3B198CE92D03B61700FE1EC9 /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
 		3B198CEA2D03B61700FE1EC9 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		3B48737A2D03743C00294F25 /* word2text */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = word2text; sourceTree = BUILT_PRODUCTS_DIR; };
+		3BD947C02E50D69800A3245D /* stdio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = stdio.swift; sourceTree = "<group>"; };
+		3BD947C32E50D99D00A3245D /* word.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = word.swift; sourceTree = "<group>"; };
+		3BD947C62E50D9FD00A3245D /* path.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = path.swift; sourceTree = "<group>"; };
+		3BD947C92E50E10900A3245D /* cli.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = cli.swift; sourceTree = "<group>"; };
 		3BE01B712D0F3CB900E1D2F4 /* word2textTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = word2textTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3BE01B782D0F3CCB00E1D2F4 /* word2textTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = word2textTests.swift; sourceTree = "<group>"; };
 		3BF1247B2D22A62300E45F2E /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
-		3BF5644B2D0A270F008E58B6 /* extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = extensions.swift; sourceTree = "<group>"; };
 		3BF5644C2D0A270F008E58B6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3BF5644D2D0A270F008E58B6 /* linux_version.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = linux_version.swift; sourceTree = "<group>"; };
 		3BF5644E2D0A270F008E58B6 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
-		3BF5644F2D0A270F008E58B6 /* structures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = structures.swift; sourceTree = "<group>"; };
+		3BF5644F2D0A270F008E58B6 /* entities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = entities.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -103,8 +112,11 @@
 			isa = PBXGroup;
 			children = (
 				3BF5644E2D0A270F008E58B6 /* main.swift */,
-				3BF5644B2D0A270F008E58B6 /* extensions.swift */,
-				3BF5644F2D0A270F008E58B6 /* structures.swift */,
+				3BD947C92E50E10900A3245D /* cli.swift */,
+				3BD947C32E50D99D00A3245D /* word.swift */,
+				3BF5644F2D0A270F008E58B6 /* entities.swift */,
+				3BD947C62E50D9FD00A3245D /* path.swift */,
+				3BD947C02E50D69800A3245D /* stdio.swift */,
 				3BF5644D2D0A270F008E58B6 /* linux_version.swift */,
 				3BF5644C2D0A270F008E58B6 /* Info.plist */,
 			);
@@ -205,9 +217,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3BF564512D0A270F008E58B6 /* extensions.swift in Sources */,
+				3BD947CB2E50E10900A3245D /* cli.swift in Sources */,
+				3BD947C12E50D69800A3245D /* stdio.swift in Sources */,
 				3BF564532D0A270F008E58B6 /* main.swift in Sources */,
-				3BF564542D0A270F008E58B6 /* structures.swift in Sources */,
+				3BF564542D0A270F008E58B6 /* entities.swift in Sources */,
+				3BD947C82E50D9FD00A3245D /* path.swift in Sources */,
+				3BD947C42E50D99D00A3245D /* word.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -215,10 +230,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3BD947C22E50D69800A3245D /* stdio.swift in Sources */,
 				3BE01B7A2D0F3CCB00E1D2F4 /* word2textTests.swift in Sources */,
-				3BE01B7B2D0F3D5300E1D2F4 /* structures.swift in Sources */,
+				3BE01B7B2D0F3D5300E1D2F4 /* entities.swift in Sources */,
 				3BE01B7D2D0F3D6000E1D2F4 /* main.swift in Sources */,
-				3BE01B7C2D0F3D5800E1D2F4 /* extensions.swift in Sources */,
+				3BD947C52E50D99D00A3245D /* word.swift in Sources */,
+				3BD947C72E50D9FD00A3245D /* path.swift in Sources */,
+				3BD947CA2E50E10900A3245D /* cli.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -351,7 +369,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 17;
+				CURRENT_PROJECT_VERSION = 20;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
@@ -359,7 +377,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = /Users/smitty/GitHub/word2text/word2text/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
-				MARKETING_VERSION = 0.1.1;
+				MARKETING_VERSION = 0.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.bps.word2text;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -373,7 +391,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 17;
+				CURRENT_PROJECT_VERSION = 20;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
@@ -381,7 +399,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = /Users/smitty/GitHub/word2text/word2text/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
-				MARKETING_VERSION = 0.1.1;
+				MARKETING_VERSION = 0.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.bps.word2text;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

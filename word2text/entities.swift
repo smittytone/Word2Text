@@ -1,6 +1,6 @@
 /*
     word2text
-    structures.swift
+    entities.swift
 
     Copyright © 2025 Tony Smith. All rights reserved.
 

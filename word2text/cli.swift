@@ -1,6 +1,6 @@
 /*
-    word2text
-    extensions.swift
+    utitool
+    cli.swift
 
     Copyright © 2025 Tony Smith. All rights reserved.
 
@@ -26,12 +26,34 @@
 
 import Foundation
 
+func unify(args: [String]) -> [String] {
 
-extension Data {
+    var newArgs: [String] = []
 
-    // Return data as an array of bytes
-    var bytes: [UInt8] {
-        return [UInt8](self)
+    for arg in args {
+        // Look for compound flags, ie. a single dash followed by
+        // more than one flag identifier
+        if arg.prefix(1) == "-" && arg.prefix(2) != "--" {
+            if arg.count > 2 {
+                // arg is of form '-mfs'
+                for subArg in arg {
+                    // Check for and ignore interior dashes
+                    // eg. in `-mf-l`
+                    if subArg == "-" {
+                        continue
+                    }
+
+                    // Retain the flag as a standard arg for subsequent processing
+                    newArgs.append("-\(subArg)")
+                }
+
+                continue
+            }
+        }
+
+        // It's an ordinary arg, so retain it
+        newArgs.append(arg)
     }
-}
 
+    return newArgs
+}
