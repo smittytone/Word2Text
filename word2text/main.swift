@@ -215,8 +215,7 @@ func showHelp() {
 
     showHeader()
 
-    Stdio.report("\nConvert a Psion Series 3 Word document to plain text.")
-    Stdio.report("\(String(.italic))https://smittytone.net/word2text/index.html\(String(.normal))\n")
+    Stdio.report("\nConvert a Psion Series 3 Word document to plain text or Markdown.\n")
     Stdio.report("\(String(.bold))USAGE\(String(.normal))\n    word2text [-s] [-o] [-v] [-h] file(s)\n")
     Stdio.report("\(String(.bold))OPTIONS\(String(.normal))")
     Stdio.report("    -s | --stop          Stop on first file that can't be processed. Default: false")
@@ -227,6 +226,7 @@ func showHelp() {
     Stdio.report("    -v | --verbose       Show progress information. Otherwise only errors are shown.")
     Stdio.report("    -h | --help          This help screen.")
     Stdio.report("         --version       Show word2text version information.\n")
+    Stdio.report("\(String(.italic))https://smittytone.net/word2text/index.html\(String(.normal))")
 }
 
 
