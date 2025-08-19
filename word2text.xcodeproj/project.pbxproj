@@ -112,12 +112,12 @@
 			isa = PBXGroup;
 			children = (
 				3BF5644E2D0A270F008E58B6 /* main.swift */,
-				3BD947C92E50E10900A3245D /* cli.swift */,
 				3BD947C32E50D99D00A3245D /* word.swift */,
 				3BF5644F2D0A270F008E58B6 /* entities.swift */,
+				3BF5644D2D0A270F008E58B6 /* linux_version.swift */,
+				3BD947C92E50E10900A3245D /* cli.swift */,
 				3BD947C62E50D9FD00A3245D /* path.swift */,
 				3BD947C02E50D69800A3245D /* stdio.swift */,
-				3BF5644D2D0A270F008E58B6 /* linux_version.swift */,
 				3BF5644C2D0A270F008E58B6 /* Info.plist */,
 			);
 			path = word2text;
@@ -369,7 +369,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 22;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
@@ -377,7 +377,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = /Users/smitty/GitHub/word2text/word2text/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
-				MARKETING_VERSION = 0.1.2;
+				MARKETING_VERSION = 0.1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.bps.word2text;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -391,7 +391,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 22;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
@@ -399,7 +399,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = /Users/smitty/GitHub/word2text/word2text/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
-				MARKETING_VERSION = 0.1.2;
+				MARKETING_VERSION = 0.1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.bps.word2text;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

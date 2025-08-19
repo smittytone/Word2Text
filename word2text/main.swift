@@ -45,26 +45,12 @@ var files: [String]         = []
 // MARK: - Runtime Start
 
 // Make sure the signal does not terminate the application
-signal(SIGINT, SIG_IGN)
-
-// Set up an event source for SIGINT...
-Stdio.dispatchSource = DispatchSource.makeSignalSource(signal: SIGINT, queue: DispatchQueue.main)
-
-// ...add an event handler (from above)...
-Stdio.dispatchSource?.setEventHandler {
-    Stdio.write(message: Cli.CtrlCMessage, to: Stdio.ShellRoutes.Error)
-    Stdio.reportWarning("word2text interrupted -- halting")
-    Stdio.dispatchSource?.cancel()
-    exit(Cli.CtrlCExitCode)
-}
-
-// ...and start the event flow
-Stdio.dispatchSource?.resume()
+Stdio.enableCtrlHandler("word2text interrupted -- halting")
 
 // No arguments? Show Help
 if CommandLine.arguments.count == 1 {
     showHelp()
-    Stdio.dispatchSource?.cancel()
+    Stdio.disableCtrlHandler()
     exit(EXIT_SUCCESS)
 }
 
@@ -114,11 +100,11 @@ for argument in args {
             fallthrough
         case "--help":
             showHelp()
-            Stdio.dispatchSource?.cancel()
+            Stdio.disableCtrlHandler()
             exit(EXIT_SUCCESS)
         case "--version":
             showHeader()
-            Stdio.dispatchSource?.cancel()
+            Stdio.disableCtrlHandler()
             exit(EXIT_SUCCESS)
         default:
             if argument.prefix(1) == "-" {
@@ -202,7 +188,7 @@ for filepath in finalFiles {
 }
 
 // Exit gracefully
-Stdio.dispatchSource?.cancel()
+Stdio.disableCtrlHandler()
 exit(EXIT_SUCCESS)
 
 
