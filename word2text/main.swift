@@ -25,6 +25,7 @@
 */
 
 import Foundation
+import Clicore
 
 
 // MARK: - Global Variables
@@ -42,7 +43,7 @@ var outputAsFile: Bool      = false
 var files: [String]         = []
 
 
-// MARK: - Runtime Start
+// MARK: Runtime Start
 
 // Make sure the signal does not terminate the application
 Stdio.enableCtrlHandler("word2text interrupted -- halting")
@@ -192,7 +193,7 @@ Stdio.disableCtrlHandler()
 exit(EXIT_SUCCESS)
 
 
-// MARK: - Help/Info Functions
+// MARK: Help/Info Functions
 
 /**
  Display the help text.
@@ -232,6 +233,4 @@ func showHeader() {
     Stdio.report("\(String(.bold))word2text \(LINUX_VERSION) (\(LINUX_BUILD))\(String(.normal))")
 #endif
     Stdio.report("Copyright © 2025, Tony Smith (@smittytone). Source code available under the MIT licence.")
-}
-
-
+} 
