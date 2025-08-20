@@ -82,6 +82,8 @@ In due course, I hope to support table formatting from Word tables and ultimatel
 
 ## Compiling
 
+Building *word2text* from source requires my [Clicore Swift Package](https://github.com/smittytone/clicore).
+
 ### macOS
 
 * Clone this repo.
