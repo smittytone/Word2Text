@@ -58,11 +58,11 @@ Bid text to go here...
 
 ```shell
 word2text $HOME/Psion/BIDDRAFT.WRD -o
-Our Bid for Major Project
--------------------------
+%F-%D:%T
+********
 Bid headline
 Bid text to go here...
--------
+*******
 Page %P
 ```
 
@@ -70,6 +70,16 @@ Page %P
 word2text $HOME/Psion/BIDDRAFT.WRD -m
 # Bid headline
 Bid text **to go here**...
+```
+
+```shell
+word2text $HOME/Psion/BIDDRAFT.WRD -mo
+%F-%D:%T
+********
+Bid headline
+Bid text **to go here**...
+********
+Page %P
 ```
 
 ### Markdown
