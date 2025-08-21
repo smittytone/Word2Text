@@ -447,8 +447,20 @@ struct PsionWord {
         while recordByteCount < length {
             let blockStartByteIndex = data.startIndex + recordByteCount
             let blockLength: Int = getWordValue(data[blockStartByteIndex..<blockStartByteIndex + 2])
-            let styleCode: String = String(bytes: data[blockStartByteIndex + 2..<blockStartByteIndex + 4], encoding: .windowsCP1252) ?? ""
-            let emphasisCode: String = String(bytes: data[blockStartByteIndex + 4..<blockStartByteIndex + 6], encoding: .windowsCP1252) ?? ""
+
+            // FROM 0.1.3
+            // Try CP1252 encoding; if it fails (as it does on Linux), try Ascii then default to Body Text
+            var styleCode: String = String(bytes: data[blockStartByteIndex + 2..<blockStartByteIndex + 4], encoding: .windowsCP1252) ?? ""
+            if styleCode == "" {
+                styleCode = String(bytes: data[blockStartByteIndex + 2..<blockStartByteIndex + 4], encoding: .ascii) ?? "BT"
+            }
+
+            // FROM 0.1.3
+            // Try CP1252 encoding; if it fails (as it does on Linux), try Ascii then default to None
+            var emphasisCode: String = String(bytes: data[blockStartByteIndex + 4..<blockStartByteIndex + 6], encoding: .windowsCP1252) ?? ""
+            if emphasisCode == "" {
+                emphasisCode = String(bytes: data[blockStartByteIndex + 4..<blockStartByteIndex + 6], encoding: .ascii) ?? "NN"
+            }
 
             var block: PsionWordFormatBlock = PsionWordFormatBlock()
             block.styleCode = styleCode
@@ -589,31 +601,47 @@ struct PsionWord {
             // Add the tagged text to the string store. We only duplicate the tag at the end
             // of the block if it is a character-level tag, ie. an Emphasis
             var addition = convertText([UInt8](rawText[block.startIndex...block.endIndex])) // String(bytes: rawText[block.startIndex...block.endIndex], encoding: .windowsCP1252) {
-                // Check if we've come to the end of a paragraph - but not empty ones
-                if addition.hasSuffix("\n") && addition.count > 1 {
-                    // Remove the NEWLINE
-                    _ = addition.removeLast()
-                    markdown += (tag + addition + (isEmphasisTag ? tag : ""))
+            // Check if we've come to the end of a paragraph - but not empty ones
+            if addition.hasSuffix("\n") && addition.count > 1 {
+                // Remove the NEWLINE
+                _ = addition.removeLast()
+                markdown += (tag + addition + (isEmphasisTag ? tag : ""))
 
-                    if !textEndTag.isEmpty {
-                        markdown += textEndTag
-                        textEndTag = ""
-                    }
-
-                    // Add the NEWLINE back, after the tags
-                    markdown += "\n"
-
-                    // Reset the paragraph found flag
-                    paraStyleSet = false
-                } else if addition.hasSuffix("\n") && addition.count ==  1 {
-                    paraStyleSet = false
-                    markdown += "\n"
-                } else {
-                    // Just add the tags
-                    markdown += (tag + addition + (isEmphasisTag ? tag : ""))
+                if !textEndTag.isEmpty {
+                    markdown += textEndTag
+                    textEndTag = ""
                 }
+
+                // Add the NEWLINE back, after the tgitsyncags
+                markdown += "\n"
+
+                // Reset the paragraph found flag
+                paraStyleSet = false
+            } else if addition.hasSuffix("\n") && addition.count ==  1 {
+                paraStyleSet = false
+                markdown += "\n"
+            } else {
+                // Just add the tags
+                markdown += (tag + addition + (isEmphasisTag ? tag : ""))
+            }
         }
 
         return markdown
+    }
+
+
+    /**
+     Output raw bytes as hex values.
+
+     Required for debugging ONLY.
+     */
+    static func debugPrintBytes(_ data: ArraySlice<UInt8>) {
+
+        var s = ""
+        for byte in data {
+            s += String(format: "%02X", byte)
+        }
+
+        print(s)
     }
 }
