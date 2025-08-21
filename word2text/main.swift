@@ -212,11 +212,11 @@ func showHeader() {
     let version: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
     let build: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as! String
     let name:String = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as! String
-    Stdio.report("\(String(.bold))\(name) \(version) (\(build))\(String(.normal))")
+    Stdio.report("\(String(.bold))\(name) \(version) (\(build))\(String(.normal)) for macOS")
 #else
     // Linux output
     // TODO Automate based on build settings
-    Stdio.report("\(String(.bold))word2text \(LINUX_VERSION) (\(LINUX_BUILD))\(String(.normal))")
+    Stdio.report("\(String(.bold))word2text \(LINUX_VERSION) (\(LINUX_BUILD))\(String(.normal)) for Linux")
 #endif
     Stdio.report("Copyright © 2025, Tony Smith (@smittytone). Source code available under the MIT licence.")
 }
