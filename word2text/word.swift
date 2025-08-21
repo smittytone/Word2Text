@@ -164,7 +164,17 @@ struct PsionWord {
 
         // Add the header and foot if requested
         if doIncludeHeader {
-            bodyText = "\(outerText[0])\n\(String(repeating: "*", count: outerText[0].count))\n\(bodyText)\n\(String(repeating: "*", count: outerText[1].count))\n\(outerText[1])"
+            // FROM 0.1.3
+            // Do different delimiters for markdown output
+            if doReturnMarkdown {
+                var longest = greater(outerText[0][...], outerText[1][...])
+                longest = greater(longest[...], "****")
+                let stars = String(repeating: "*", count: longest.count)
+                bodyText = "\(outerText[0])\n\(stars)\n\(bodyText)\n\(stars)\n\(outerText[1])"
+            } else {
+                bodyText = "\(outerText[0])\n\(String(repeating: "*", count: outerText[0].count))\n\(bodyText)\n\(String(repeating: "*", count: outerText[1].count))\n\(outerText[1])"
+            }
+
         }
 
         return ProcessResult(text: bodyText, errorCode: .noError)
@@ -180,7 +190,7 @@ struct PsionWord {
 
      - Returns A PsionWordStyle containing the record's information.
      */
-    static func getStyle(_ data: ArraySlice<UInt8>, _ isStyle: Bool) -> PsionWordStyle {
+    private static func getStyle(_ data: ArraySlice<UInt8>, _ isStyle: Bool) -> PsionWordStyle {
 
         var style: PsionWordStyle = PsionWordStyle()
 
@@ -280,7 +290,7 @@ struct PsionWord {
 
      - Returns The text as a string.
      */
-    static func getOuterText(_ data: ArraySlice<UInt8>, _ isHeader: Bool) -> String {
+    private static func getOuterText(_ data: ArraySlice<UInt8>, _ isHeader: Bool) -> String {
 
         var outerText: String = ""
         let rawLength = data.endIndex - data.startIndex + 1
@@ -308,7 +318,7 @@ struct PsionWord {
 
      - Returns The text as a String
      */
-    static func convertText(_ textBytes: [UInt8]) -> String {
+    private static func convertText(_ textBytes: [UInt8]) -> String {
 
         guard textBytes.count > 0 else { return "" }
 
@@ -370,7 +380,7 @@ struct PsionWord {
 
      - Returns The text as a byte array.
      */
-    static func getBodyText(_ data: ArraySlice<UInt8>) -> [UInt8] {
+    private static func getBodyText(_ data: ArraySlice<UInt8>) -> [UInt8] {
 
         var textBytes: [UInt8] = []
         for i in 0..<(data.endIndex - data.startIndex) {
@@ -416,7 +426,7 @@ struct PsionWord {
 
      - Returns The equivalent 1252 code.
      */
-    static func charSwap(_ char: UInt8) -> UInt8 {
+    private static func charSwap(_ char: UInt8) -> UInt8 {
 
         // £ (r) (c) 1/2 1/4 3/4 Y P S 0 1 2 3 +/- x - o a f |
         let cp850: [UInt8]  = [0x9C, 0xA9, 0xB8, 0xAB, 0xAC, 0xF3, 0xBE, 0xF4, 0xF5, 0xF8, 0xFB, 0xFD, 0xFC, 0xF1, 0x9E, 0xF6, 0xA7, 0xA6, 0x9F, 0xDD]
@@ -438,7 +448,7 @@ struct PsionWord {
      - data:      A slice of the Word file bytes containing the block formatting data.
      - textLength: The number of bytes in the corresponding body text.
      */
-    static func getStyleBlocks(_ data: ArraySlice<UInt8>, _ textLength: Int) -> [PsionWordFormatBlock] {
+    private static func getStyleBlocks(_ data: ArraySlice<UInt8>, _ textLength: Int) -> [PsionWordFormatBlock] {
 
         var blocks: [PsionWordFormatBlock] = []
         var recordByteCount = 0
@@ -497,7 +507,7 @@ struct PsionWord {
 
      - Returns The value as an (unsinged) integer, or -1 on error.
      */
-    static func getWordValue(_ data: ArraySlice<UInt8>) -> Int {
+    private static func getWordValue(_ data: ArraySlice<UInt8>) -> Int {
 
         // Make sure data slice is correctly dimensioned
         if data.isEmpty || data.count == 1 {
@@ -531,7 +541,7 @@ struct PsionWord {
 
      - Returns: A Markdown-formatted version of the base text.
      */
-    static func convertToMarkdown(_ rawText: [UInt8], _ blocks: [PsionWordFormatBlock], _ styles: [String:PsionWordStyle], _ emphases: [String:PsionWordStyle]) -> String {
+    private static func convertToMarkdown(_ rawText: [UInt8], _ blocks: [PsionWordFormatBlock], _ styles: [String:PsionWordStyle], _ emphases: [String:PsionWordStyle]) -> String {
 
         var markdown: String = ""
         var paraStyleSet: Bool = false
@@ -631,11 +641,24 @@ struct PsionWord {
 
 
     /**
+     Determine the longest length of two strings
+     */
+    private static func greater(_ a: Substring, _ b: Substring) -> String {
+
+        if a.count > b.count {
+            return String(a)
+        }
+
+        return String(b)
+    }
+
+
+    /**
      Output raw bytes as hex values.
 
      Required for debugging ONLY.
      */
-    static func debugPrintBytes(_ data: ArraySlice<UInt8>) {
+    private static func debugPrintBytes(_ data: ArraySlice<UInt8>) {
 
         var s = ""
         for byte in data {
