@@ -34,6 +34,7 @@
 		3B198CE92D03B61700FE1EC9 /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
 		3B198CEA2D03B61700FE1EC9 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		3B48737A2D03743C00294F25 /* word2text */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = word2text; sourceTree = BUILT_PRODUCTS_DIR; };
+		3B54EF792E57295000292910 /* CHANGELOG.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CHANGELOG.md; sourceTree = "<group>"; };
 		3BD947C32E50D99D00A3245D /* word.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = word.swift; sourceTree = "<group>"; };
 		3BE01B712D0F3CB900E1D2F4 /* word2textTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = word2textTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3BE01B782D0F3CCB00E1D2F4 /* word2textTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = word2textTests.swift; sourceTree = "<group>"; };
@@ -78,6 +79,7 @@
 				3BE01B792D0F3CCB00E1D2F4 /* word2textTests */,
 				3B09FFDC2D198CDB00F98C39 /* Man */,
 				3B198CEA2D03B61700FE1EC9 /* README.md */,
+				3B54EF792E57295000292910 /* CHANGELOG.md */,
 				3B198CE92D03B61700FE1EC9 /* LICENSE.md */,
 				3BF1247B2D22A62300E45F2E /* Package.swift */,
 				3B48737B2D03743C00294F25 /* Products */,
