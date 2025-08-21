@@ -286,7 +286,7 @@ struct PsionWord {
         let rawLength = data.endIndex - data.startIndex + 1
         if rawLength > 1 {
             // There's at least one character in addition to the C String NUL terminator
-            outerText = String(decoding: data[..<(data.endIndex - 1)], as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+            outerText = String(decoding: data[..<(data.endIndex)], as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
         // String is empty (NUL only)?
