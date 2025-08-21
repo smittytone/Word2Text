@@ -164,7 +164,7 @@ struct PsionWord {
 
         // Add the header and foot if requested
         if doIncludeHeader {
-            bodyText = "\(outerText[0])\n\(String(repeating: "-", count: outerText[0].count))\n\(bodyText)\n\(String(repeating: "-", count: outerText[1].count))\n\(outerText[1])"
+            bodyText = "\(outerText[0])\n\(String(repeating: "*", count: outerText[0].count))\n\(bodyText)\n\(String(repeating: "*", count: outerText[1].count))\n\(outerText[1])"
         }
 
         return ProcessResult(text: bodyText, errorCode: .noError)

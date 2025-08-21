@@ -75,31 +75,17 @@ for argument in args {
         argIsAValue = false
     } else {
         switch argument {
-        case "-v":
-            fallthrough
-        case "--verbose":
+        case "-v", "--verbose":
             doShowInfo = true
-        case "-s":
-            fallthrough
-        case "--stop":
+        case "-s", "--stop":
             haltOnFirstError = true
-        case "-o":
-            fallthrough
-        case "--outer":
+        case "-o", "--outer":
             doIncludeHeader = true
-        case "-m":
-            fallthrough
-        case "--markdown":
+        case "-m","--markdown":
             doReturnMarkdown = true
-        case "-f":
-            fallthrough
-        case "--file":
+        case "-f", "--file":
             outputAsFile = true
-        case "-h":
-            fallthrough
-        case "-help":
-            fallthrough
-        case "--help":
+        case "-h", "-help":
             showHelp()
             Stdio.disableCtrlHandler()
             exit(EXIT_SUCCESS)
@@ -151,7 +137,7 @@ for filepath in finalFiles {
     let result: ProcessResult = !data.isEmpty
     ? PsionWord.processFile(data, filepath)
     : ProcessResult(text: "file not found", errorCode: .badFile)
-    
+
     // Handle the outcome of processing
     if result.errorCode != .noError {
         // Report the error and, if required, bail
@@ -167,13 +153,13 @@ for filepath in finalFiles {
             if doShowInfo {
                 Stdio.report("File \(filepath) processed")
             }
-            
+
             Stdio.output(result.text)
         } else {
             // Output to a file: generate the name and extension...
             var outFilepath: String = (filepath as NSString).deletingPathExtension
             outFilepath += (doReturnMarkdown ? ".md" : ".txt")
-            
+
             // ...and attempt to write it out
             do {
                 try result.text.write(toFile: outFilepath, atomically: true, encoding: .utf8)
@@ -233,4 +219,4 @@ func showHeader() {
     Stdio.report("\(String(.bold))word2text \(LINUX_VERSION) (\(LINUX_BUILD))\(String(.normal))")
 #endif
     Stdio.report("Copyright © 2025, Tony Smith (@smittytone). Source code available under the MIT licence.")
-} 
+}
