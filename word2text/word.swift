@@ -282,15 +282,15 @@ struct PsionWord {
      */
     static func getOuterText(_ data: ArraySlice<UInt8>, _ isHeader: Bool) -> String {
 
-        var outerText: String
+        var outerText: String = ""
         let rawLength = data.endIndex - data.startIndex + 1
         if rawLength > 1 {
             // There's at least one character in addition to the C String NUL terminator
-            outerText = String(decoding: data[..<(data.endIndex - 1)], as: UTF8.self)
-        } else {
-            // String is empty (NUL only)
-            outerText = "None"
+            outerText = String(decoding: data[..<(data.endIndex - 1)], as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
         }
+
+        // String is empty (NUL only)?
+        outerText = outerText.count > 0 ? outerText : (isHeader ? "No header" : "No footer")
 
         if doShowInfo {
             Stdio.report("  \(isHeader ? "Header" : "Footer") text length \(rawLength - 1) byte\(rawLength == 1 ? "" : "s")")
@@ -330,7 +330,9 @@ struct PsionWord {
             }
 
             // Issue a warning no matter what
-            Stdio.reportWarning("File contains \(count) invalid Windows CP 1252 character\(count == 1 ? "" : "s")")
+            if count > 0 {
+                Stdio.reportWarning("File contains \(count) invalid Windows CP 1252 character\(count == 1 ? "" : "s")")
+            }
 
             // If the user has selected verbose mode, output the list of 'bad' characters
             if doShowInfo {
@@ -586,7 +588,7 @@ struct PsionWord {
 
             // Add the tagged text to the string store. We only duplicate the tag at the end
             // of the block if it is a character-level tag, ie. an Emphasis
-            if var addition = String(bytes: rawText[block.startIndex...block.endIndex], encoding: .windowsCP1252) {
+            var addition = convertText([UInt8](rawText[block.startIndex...block.endIndex])) // String(bytes: rawText[block.startIndex...block.endIndex], encoding: .windowsCP1252) {
                 // Check if we've come to the end of a paragraph - but not empty ones
                 if addition.hasSuffix("\n") && addition.count > 1 {
                     // Remove the NEWLINE
@@ -610,7 +612,6 @@ struct PsionWord {
                     // Just add the tags
                     markdown += (tag + addition + (isEmphasisTag ? tag : ""))
                 }
-            }
         }
 
         return markdown

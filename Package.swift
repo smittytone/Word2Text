@@ -14,14 +14,17 @@ let package = Package(
                 .product(name: "Clicore", package: "clicore"),
             ],
             path: "word2text",
-            linkerSettings: [
-                .unsafeFlags(
-                    ["-Xlinker", "-sectcreate", "-Xlinker", "__TEXT", "-Xlinker", "__info_plist", "-Xlinker", "word2text/Info.plist"] )
-            ],
-            //exclude: [
+            // macOS only:
+            //linkerSettings: [
+            //    .unsafeFlags(
+            //        ["-Xlinker", "-sectcreate", "-Xlinker", "__TEXT", "-Xlinker", "__info_plist", "-Xlinker", "word2text/Info.plist"]
+            //    )
+            //],
+            // Linux/macOS:
+            exclude: [
                 // File not needed for Linux build (so far...)
-            //    "Info.plist"
-            //]
+                "Info.plist"
+            ]
         )
     ]
 )
