@@ -14,7 +14,7 @@ I write either plain text or, when I require formatting, in Markdown format. Psi
 
 ## Character Set
 
-The Psion Series 3a uses the IBM Code Page 850 character set. This was used in the DOS days and was superseded first by Windows Code Page 1252 and ultimately UTF-8. 850 and 1252 are not exactly the same, and though Swift can convert from 1252 to UTF-8, it doesn't speak 850. And compiled on Linux, the conversion code has issues with 1252 too, I have found. 
+The Psion Series 3a uses the IBM Code Page 850 character set. This was used in the DOS days and was superseded first by Windows Code Page 1252 and ultimately UTF-8. 850 and 1252 are not exactly the same, and though Swift can convert from 1252 to UTF-8, it doesn't speak 850. And compiled on Linux, the conversion code has issues with 1252 too, I have found.
 
 *word2text* converts the UK pound sign `£` from 850 value 156 to 1252’s 163. At some point, I may extend this to the full set of matchable characters. If you have a character that is not being correctly converted (*word2text* should report characters that have issues), please let me know.
 
@@ -89,7 +89,9 @@ Building *word2text* from source requires my [Clicore Swift Package](https://git
 * Clone this repo.
 * Open the `.xcodeproj` file.
 * Set your team under **Signing & Capabilities** for the *word2text* target.
-* Select **Build** from the **Product** menu.
+* Select **Archive** from the **Product** menu.
+* Export the resulting archive using **Distribute Content** > **Custom** > **Build Products** and save to desktop.
+* `sudo cp path/to/exported/binary /usr/local/bin/word2text`.
 
 ### Linux
 
@@ -98,6 +100,6 @@ Building *word2text* from source requires my [Clicore Swift Package](https://git
 * `cd /path/to/repo`
 * `swift build`
 
-Binary located in `.build/aarch64-unknown-linux-gnu/debug/`
+Binary located in `.build/aarch64-unknown-linux-gnu/debug/`. Copy it to a location in your `$PATH`.
 
 Copyright © 2025 Tony Smith (@smittytone)
