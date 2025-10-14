@@ -1,0 +1,519 @@
+PSIONICS FILE - DBF.FMT
+=======================
+Format and use of Data files
+Last modified 1998-08-03
+========================
+
+File format
+-----------
+
+A data file (also called a DBF file) begins with a 22 byte header of the
+following form:
+  Offset  0 to  15: file signature
+  Offset 16 (word): DBF software version number used to create the file
+  Offset 18 (word): size of header in bytes (N)
+  Offset 20 (word): earliest DBF software version number that can use the file
+  Offset 22 to N-1: extended header
+
+The signature is used to verify that the file is applicable to the application
+using it. The version numbers are used to verify that the format is compatible;
+only the top 4 bits are tested.
+
+Files created using the Data or Agenda (Series 3t) applications or the CREATE
+keyword have a signature which is the cstr "OPLDatabaseFile". Series 3c Jotter
+files are also DBF files.
+
+The rest of the file consists of records. All records have the form:
+  Offset  0 (word):
+    Bits  0 to 11: size of data portion (L)
+    Bits 12 to 15: record type
+       0 = deleted record (should be ignored)
+       1 = mergable data record
+       2 = field information record
+       3 = descriptive record
+       4 = private data record
+       5 = private data record
+       6 = private data record
+       7 = private data record
+       8 = mergable data record
+       9 = mergable data record
+      10 = mergable data record
+      11 = mergable data record
+      12 = mergable data record
+      13 = mergable data record
+      14 = mergable voice data record
+      15 = reserved for system use
+  Offset  2 to L+1: data portion
+
+There may be at most 65534 records, and the data portion of each is limited
+to 4094 bytes (so the total record length is limited to 4096 bytes).
+
+When a file is merged into another one, mergable data records will be copied,
+but not private data records, the field information record, or the descriptive
+record.
+
+Data files are based around fields. fields may be words, longs, reals, or
+qstrs (limited to 254 characters). Fields after the first 32 are less usable;
+for example, they must be qstrs, and cannot be accessed through OPL data file
+keywords.
+
+The first record in the file must be a field information record, and all other
+field information records in the file will be ignored. Each byte of the record
+specifies the type of the corresponding field:
+    0 = word
+    1 = long
+    2 = real
+    3 = qstr
+The field information record must define between 1 and 32 fields; if it defines
+exactly 32, then fields 33 onwards are all qstrs, as noted above.
+
+Data records are broken into fields by the DBF software according to the field
+information record; there are no separators between the fields of a record.
+Trailing fields that are empty qstrs or zero numbers may be omitted from a
+record.
+
+The Data application uses the following special character codes within qstr
+fields:
+   5 = diallable telephone number follows
+  20 = (if first character of field) treat this field as joined on to the
+       previous one, which must also be a qstr
+  21 = forced line feed
+
+There should only be one descriptive record in a file, but it can occur
+anywhere in the file. The descriptive record consists of one or more subrecords
+with the same format (length, type, data) as normal records. In general,
+unknown types of subrecord should be copied unchanged, as other applications
+may be using them.
+
+The Data application uses the following types of subrecord. Types 2 and 3 are
+used on the MC and are not described. Types 6 to 11 are not used on the
+Series 3t version of Data, and types 12 to 14 are only used on the Series 3c
+and Siena.
+
+* Subrecord type 1
+This contains 2 bytes:
+  Offset  0 (word): tab size
+
+* Subrecord type 4
+This contains the field labels as qstrs, in order. Trailing blank labels may,
+but need not, be omitted.
+
+* Subrecord type 5
+This contains 2 bytes:
+  Offset  0 (byte):
+    Bit 0:        status window visible (Series 3t)
+    Bit 1:        wrap on
+    Bit 2:        labels visible
+    Bits 3 and 4: status window (Series 3a): 0=none, 1=narrow, 2=full
+    Bits 4 and 5: zoom level (3, 0, 1, 2 from smallest to largest, 0 default)
+  Offset  1 (byte): unused
+
+* Subrecord type 6
+This holds information about printer set-up and is identical to record type 2
+in Word files (see WORD.FMT).
+
+* Subrecord type 7
+This is used to store the printer driver. It is identical to record type 3 in
+Word files:
+  Offset  0 (byte): printer driver model number
+  Offset  1 (cstr): printer driver library
+A printer driver library can support several similar printers; the model number
+specifies which is selected.
+
+* Subrecord type 8
+This holds the header text as a cstr.
+
+* Subrecord type 9
+This holds the footer text as a cstr.
+
+* Subrecord type 10
+This contains 3 bytes and holds diamond settings:
+  Offset  0 (byte): 0=omit Find,   255=include Find
+  Offset  1 (byte): 0=omit Change, 255=include Change
+  Offset  2 (byte): 0=omit Add,    255=include Add
+
+* Subrecord type 11
+This contains 4 bytes and holds the current search status:
+  Offset  0 (word): start field (0 means all fields, 1 means first field, etc.)
+  Offset  2 (word): end field (255 means all from start field)
+
+* Subrecord type 12
+This contains information concerning List view. The first 6 bytes are:
+  Offset  0 (word): number of locked columns
+  Offset  2 (byte): zoom level
+  Offset  3 (byte): status window size
+  Offset  4 (word): 0=no grid lines, 2=grid lines
+This is followed by words giving the width in pixels of the columns in order.
+
+* Subrecord type 13
+This contains 4 bytes and holds diamond settings (overriding those in any
+subrecord type 10):
+  Offset  0 (byte): 0=omit Find,   255=include Find
+  Offset  1 (byte): 0=omit Change, 255=include Change
+  Offset  2 (byte): 0=omit Add,    255=include Add
+  Offset  3 (byte): 0=omit List,   255=include List
+
+* Subrecord type 14
+This contains 16 bytes and holds the sort settings:
+  Offset  0 (word): number of sort keys (1 to 3)
+  Offset  2 (word): field number of sort key 1
+  Offset  4 (word): field number of sort key 2
+  Offset  6 (word): field number of sort key 3
+  Offset  8 (word):
+    Bit @: set if sort is case sensitive, clear if case insensitive
+    Bit @: set if sort key 1 is descending, clear if ascending
+  Offset 10 (word): 0 = sort key 2 is ascending, @ = descending
+  Offset 12 (word): 0 = sort key 3 is ascending, @ = descending
+  Offset 14 (byte): size of sort key to be stored (@@@?)
+  Offset 15 (byte): sort file on opening (0 = no, 1 = ask, 2 = yes)
+
+* Subrecord type 15
+This is used by the Series 3t Agenda. See AGENDA.FMT for more details.
+
+
+Kernel services
+---------------
+
+See the file SYSCALLS.1 for the general notation used. In every case, the
+Fn value is $D8.
+
+Most calls require use of a working buffer. This buffer can be between 512 and
+16384 bytes long, but must be at least as long as the longest record in the
+relevant file (including the header), so a buffer of 4096 bytes is always
+sufficient. In general, file access will be faster with a larger buffer.
+Except where stated, the contents of the buffer may changed by any call on that
+DBF, and must not be altered by the application.
+
+A file may be opened in indexed or unindexed mode. Unindexed mode is faster to
+open, but certain calls (those marked "indexed") can only be made if the file
+was opened in indexed mode. It is not possible to change the mode once the
+file has been opened. It is only possible to access one type of record via a
+given file handle (though, if a read-only-sharing mode is used, more than one
+handle can be open to the same file); to change the type, it is necessary to
+close and reopen the file.
+
+Record numbers are those of the selected record type (starting at 0), ignoring
+all other types. If a file holds more than 65534 records of a given type, those
+beyond that number are ignored unless stated otherwise.
+
+Calls that read a record always read it into the working buffer. The call will
+always return two values: the record length and the record "offset". The
+length is that of the data portion. The offset is the offset, in the working
+buffer, where a copy of the record can be found. This copy includes the size
+and type word, so the data starts two bytes later. This mechanism allows data
+to be read into the buffer ahead of time, improving efficiency.
+
+
+Sub $00
+DbfOpen fails
+    BX: address of control block
+    CX: record type to access (1, or 4 to 14)
+    DX: size of the working buffer
+    SI: address of the working buffer
+    DI: open flag -> new flag
+Opens a DBF file. The open flag may be one of the following:
+  -2 = open in unindexed mode; when the call returns, the file is open
+  -1 = open in indexed mode; when the call returns, the file is open
+   0 = open in indexed mode; when the call returns, the file is not yet open.
+       The call should then be repeated until 0 is returned in DI.
+       Alternatively, the file may be closed before it is completely open.
+       The total number of calls required to open the file is approximately
+       the file size divided by the working buffer size.
+When the file is completely open, the current record is set to record 0.
+
+The control block has the following format:
+  Offset  0 (word): address of a word into which the DBF handle will be written
+  Offset  2 (word): (cstr) file name
+  Offset  4 (word): file open mode
+  Offset  6 (word): address of header block
+The meaning of the file open mode is as for IOOPEN (see Psionics file FILEIO),
+except that the format component is ignored. The header block consists of a 56
+byte block as follows:
+  Offset  0 to  15: file signature
+  Offset 16 (word): DBF software version number used to create the file
+  Offset 18 (word): size of file header in bytes
+  Offset 20 (word): earliest DBF software version number that can use the file
+  Offset 22 (word): header of the field information record ($2000 plus the
+                    number of fields, or $2020 if more than 32 fields)
+  Offset 24 to  55: body of the field information record
+
+If the file is being created or replaced, the entire block will be written to
+the file (with a gap before the field information record if offset 18 is
+greater than 22, and truncated to the length of the field information record).
+The top 4 bits of offset 20 must be consistent with the current DBF software
+version number (see DbfVersion).
+
+If an existing file is being opened, the file signature (all 16 bytes) must be
+identical to that in the file, and the top 4 bits of the software version
+number at offset 20 of the file must be consistent with the current DBF
+software. If both are true, the file header and field information record are
+copied into the header block. Otherwise the open fails.
+
+
+Sub $01
+DbfClose fails
+    BX: DBF handle
+The DBF file is closed.
+
+
+Sub $02
+DbfFlush fails
+    BX: DBF handle
+All buffers associated with the DBF file are flushed.
+
+
+Sub $03
+DbfTrash
+    BX: DBF handle
+Instructs the kernel that the working buffer contents are about to be altered,
+and so will not be valid at the point of the next call on this DBF. The
+application can then use the buffer for other purposes (e.g. to construct the
+record to be written by DbfAppend).
+
+
+Sub $04
+DbfCopyDown
+    AX: -> length of record
+    BX: DBF handle
+    SI: record offset returned by another DBF call
+The record at the given offset is copied to the start of the working buffer,
+and instructs the kernel that the working buffer must not be used.
+
+
+Sub $05
+DbfCompress fails indexed
+    BX: DBF handle
+    DI: compress flag -> new flag
+Compresses the DBF file if on a compressible device. The flag may be:
+  -1 = when the call returns, the file is compressed
+   0 = when the call returns, the file is not yet compressed. The call should
+       then be repeated until 0 is returned in DI. The total number of calls
+       required is approximately the file size divided by the working buffer
+       size.
+When the file is compressed, the current record will be the end of file.
+
+
+Sub $06
+DbfCopyFile fails
+    BX: DBF handle
+    CX: record type to copy (15=all types), plus 256 if copying in, not out
+    DX: open mode for target file (see DbfOpen for details)
+    SI: (cstr) target file name
+    DI: copy flag -> new flag
+Copies all records of the indicated type from the DBF file indicated by the
+handle to the target file (if 256 was added to CX, then copies from the target
+file to the open file).
+
+If the target file is created or replaced, the original file's header and field
+information record are copied to the target file. If an existing file is
+opened (including when copying in), the signatures must be the same and the
+field information records must be compatible. Opening for append only is the
+same as opening for update.
+
+If type 15 is selected, then:
+* if copying to an existing file or copying in, only mergable data records
+  (record types 1 and 8 to 14) are copied;
+* if copying to a new or replaced file, all records (types 1 to 14) are copied.
+
+The copy flag may be:
+  -1 = when the call returns, the copy is complete.
+   0 = when the call returns, the copy is not yet complete. The call should
+       then be repeated until 0 is returned in DI. Alternatively, DI may be
+       set to -2, which will abandon the copy. The total number of calls
+       required is approximately the file size divided by the working buffer
+       size.
+
+
+Sub $07
+DbfFileSize fails
+    BX: DBF handle
+    DX: low half of file size
+    DI: high half of file size
+Returns the size of the file, in bytes.
+
+
+Sub $08
+DbfExtHeaderRead fails
+    AX: 0=start at beginning, 1=continue -> number of bytes read
+    BX: DBF handle
+    CX: number of bytes to read
+    SI: address of buffer
+The indicated number of bytes are read from the extended header of the file
+into the buffer; the call fails when the header is exhausted. If AX is 0, the
+first byte read is from offset 22. If AX is 1, it is that following the last
+byte read by the previous call.
+
+
+Sub $09
+DbfExtHeaderWrite fails
+    AX: 0=start at beginning, 1=continue -> number of bytes written
+    BX: DBF handle
+    CX: number of bytes in buffer
+    SI: address of buffer
+The indicated number of bytes are written from the buffer to the extended
+header of the file. If AX is 0, the first byte is written to offset 22. If AX
+is 1, it is written immediately following the last byte written by the previous
+call. The call fails if offset 18 of the file is 22, or if the previous call
+(when AX is 1) filled the space indicated by offset 18.
+
+
+Sub $0A
+DbfVersion
+    AX: -> version number
+Returns the version of the DBF software. The top 4 bits indicate the major
+version number, which is used to determine compatibility of files.
+
+
+Sub $0B
+DbfAbsReadSense fails
+Sub $0C
+DbfAbsRead fails
+    AX: -> record length
+    BX: DBF handle
+    CX: record number
+    DX: -> low  half of record position within file
+    SI: -> record offset
+    DI: -> high half of record position within file
+Reads the specified record into the working buffer. If the record number is
+too large, the call fails and the current record is set to the end of file.
+Otherwise the current record is set to the record read. DX and DI are only set
+by DbfAbsReadSense, and are unaltered by DbfAbsRead.
+
+
+Sub $0D
+DbfNextRead fails
+Sub $0E
+DbfBackRead fails
+Sub $0F
+DbfFirstRead fails
+Sub $10
+DbfLastRead fails indexed
+    AX: -> record length
+    BX: DBF handle
+    SI: -> record offset
+Reads the next, previous, first, or last record. If the record does not exist,
+the call fails and the current record is set to end of file; if DbfBackRead is
+called when the current record is record 0, the call fails and the current
+record remains record 0. Otherwise the current record is set to the record
+just read.
+
+
+Sub $11
+DbfAppend fails indexed
+    BX: DBF handle
+    CX: record length
+A record built from the data starting at offset 2 of the working buffer is
+appended to the file.
+
+
+Sub $12
+DbfEraseRead fails indexed
+    AX: -> record length
+    BX: DBF handle
+    SI: -> record offset
+    DI: erase flag -> new flag
+The current record is deleted, and the following record is read. The call will
+fail if either the record deleted was the last one (though the record will have
+been deleted) or if the current record was end of file (in which case nothing
+is deleted). The erase flag may be:
+  -1 = when the call returns, the operation is complete.
+   0 = when the call returns, the operation is not yet complete. The call
+       should then be repeated until 0 is returned in DI.
+
+
+Sub $13
+DbfUpdate fails indexed
+    BX: DBF handle
+    CX: record length
+    DI: update flag -> new flag
+A record built from the data starting at offset 2 of the working buffer is
+appended to the file, after which the current record is deleted. When this has
+been done, the current record is set to the newly written record. If there is
+no record to delete, the call will fail without writing anything. If the record
+deleted is the last one in the file, the write and delete will work, but the
+call will still appear to fail.
+
+The update flag may be:
+  -1 = when the call returns, the operation is complete.
+   0 = when the call returns, the operation is not yet complete. The call
+       should then be repeated until 0 is returned in DI.
+
+
+Sub $14
+DbfFindRead fails indexed in some cases
+    AX: number of fields to search -> record length
+    BX: DBF handle
+    CX: length of pattern
+    DX: control flags
+    SI: address of the pattern -> record offset
+    DI: match flag -> new flag
+Searches the file for a record containing a field matching the pattern (which
+can contain wildcards). If a match is found, the corresponding record is read;
+otherwise the call fails. Only the number of string fields indicated are
+examined (non-string fields are ignored), or all string fields if AX is -1.
+The control flags are as follows:
+    Bits  0 to  7: maximum number of characters in the field to examine (255
+                   means the entire field)
+    Bits  8 to 11:
+        0 = backwards starting at current record [not indexed]
+        1 = forwards  starting at current record [not indexed]
+        2 = backwards starting at end of file    [indexed]
+        3 = forwards  starting at record 0       [not indexed]
+    Bits 12 to 15:
+        0 = case independent
+        1 = case dependent
+The match flag may be:
+  -1 = when the call returns, the search is complete.
+   0 = when the call returns, the search is not yet complete. The call should
+       then be repeated until 0 is returned in DI. The total number of calls
+       required is approximately the file size divided by the working buffer
+       size.
+
+
+Sub $15
+DbfSense
+    AX: -> record number
+    BX: DBF handle
+Returns the current record number (the number if records if the current record
+is the end of file).
+
+
+Sub $16
+DbfCount indexed
+    AX: -> number of records
+    BX: DBF handle
+Returns the number of records (of the appropriate type) in the file. The
+current record is unaltered.
+
+
+Sub $17
+DbfDescRecordRead fails indexed
+    AX: -> length of the descriptive record data
+    BX: DBF handle
+Reads the descriptive record into the start of the working buffer.
+
+
+Sub $18
+DbfDescRecordWrite fails indexed
+    BX: DBF handle
+    CX: length of descriptive record data (0 = delete descriptive record)
+Replaces the descriptive record with that in the working buffer. The record
+data should start at offset 2 (the word at offset 0 will be altered).
+
+
+Sub $19
+DbfFindReadField v3 fails indexed in some cases
+    AX: number of fields to search -> record length
+    BX: DBF handle
+    CX: length of pattern
+    DX: control flags
+    SI: address of the pattern -> record offset
+    DI: match flag -> new flag
+This call is identical to DbfFindRead, except that it skips N string fields in
+each record before examining the next AX string fields. The value of N is taken
+from offset 14 of the data segment of the current process. For example, to
+examine only the fourth and fifth string fields, set N to 3 and AX to 2.
+
+Warning: this location is used by many OPL keywords (particularly those for
+dialogs and menus). It should be saved and restored around the call to this
+function.
