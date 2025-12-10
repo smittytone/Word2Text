@@ -1,6 +1,6 @@
 ## Release Notes ##
 
-- 0.1.4 *Unreleased*
+- 0.1.4 *10 December 2025*
     - Update to `Clicore 0.2.0`.
     - Project build structure changes.
 - 0.1.3 *21 August 2025*
@@ -15,6 +15,6 @@
     - Add new tests.
 - 0.1.1 *February 2025*
     - Character set work.
-    - Improve string processing.   
+    - Improve string processing.
 - 0.1.0 *December 2024*
     - Initial release.
