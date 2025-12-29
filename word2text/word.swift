@@ -190,7 +190,7 @@ struct PsionWord {
 
      - Returns A PsionWordStyle containing the record's information.
      */
-    private static func getStyle(_ data: ArraySlice<UInt8>, _ isStyle: Bool) -> PsionWordStyle {
+    internal static func getStyle(_ data: ArraySlice<UInt8>, _ isStyle: Bool) -> PsionWordStyle {
 
         var style: PsionWordStyle = PsionWordStyle()
 
@@ -290,13 +290,14 @@ struct PsionWord {
 
      - Returns The text as a string.
      */
-    private static func getOuterText(_ data: ArraySlice<UInt8>, _ isHeader: Bool) -> String {
+    internal static func getOuterText(_ data: ArraySlice<UInt8>, _ isHeader: Bool) -> String {
 
         var outerText: String = ""
-        let rawLength = data.endIndex - data.startIndex + 1
+        let rawLength = data.endIndex - data.startIndex
         if rawLength > 1 {
             // There's at least one character in addition to the C String NUL terminator
-            outerText = String(decoding: data[..<(data.endIndex)], as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+            // so remove the NUL (plus any whitespace and newlines at either end)
+            outerText = String(decoding: data[..<(data.endIndex - 1)], as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
         // String is empty (NUL only)?
@@ -380,7 +381,7 @@ struct PsionWord {
 
      - Returns The text as a byte array.
      */
-    private static func getBodyText(_ data: ArraySlice<UInt8>) -> [UInt8] {
+    internal static func getBodyText(_ data: ArraySlice<UInt8>) -> [UInt8] {
 
         var textBytes: [UInt8] = []
         for i in 0..<(data.endIndex - data.startIndex) {
@@ -448,7 +449,7 @@ struct PsionWord {
         - data:      A slice of the Word file bytes containing the block formatting data.
         - textLength: The number of bytes in the corresponding body text.
      */
-    private static func getStyleBlocks(_ data: ArraySlice<UInt8>, _ textLength: Int) -> [PsionWordFormatBlock] {
+    internal static func getStyleBlocks(_ data: ArraySlice<UInt8>, _ textLength: Int) -> [PsionWordFormatBlock] {
 
         var blocks: [PsionWordFormatBlock] = []
         var recordByteCount = 0
@@ -507,7 +508,7 @@ struct PsionWord {
 
      - Returns The value as an (unsinged) integer, or -1 on error.
      */
-    private static func getWordValue(_ data: ArraySlice<UInt8>) -> Int {
+    internal static func getWordValue(_ data: ArraySlice<UInt8>) -> Int {
 
         // Make sure data slice is correctly dimensioned
         if data.isEmpty || data.count == 1 {
