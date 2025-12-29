@@ -45,9 +45,9 @@ struct PsionWord {
      Convert an individual Word file to plain text.
 
      - Parameters
-     - data:     Data object containing the file bytes.
-     May be better to just pass a byte array.
-     - filepath: Absolute path of the target Word file.
+        - data:     Data object containing the file bytes.
+                    May be better to just pass a byte array.
+        - filepath: Absolute path of the target Word file.
 
      - Returns: A ProcessResult containing the text or an error code.
      */
@@ -185,8 +185,8 @@ struct PsionWord {
      Parse a Psion Word Style or Emphasis record.
 
      - Parameters
-     - data:     A slice of the word file bytes.
-     - isStyle: `true` if the record holds a Style; `false` if it is an Emphasis.
+        - data:     A slice of the word file bytes.
+        - isStyle: `true` if the record holds a Style; `false` if it is an Emphasis.
 
      - Returns A PsionWordStyle containing the record's information.
      */
@@ -285,8 +285,8 @@ struct PsionWord {
      Read a C string of known length from the word file byte store
 
      - Parameters
-     - data:      A slice of the word file bytes.
-     - isHeader:  `true` if the record contains header text, otherwise `false`.
+        - data:      A slice of the word file bytes.
+        - isHeader:  `true` if the record contains header text, otherwise `false`.
 
      - Returns The text as a string.
      */
@@ -314,7 +314,7 @@ struct PsionWord {
      Generate a String from the file's text bytes.
 
      - Parameters
-     - textBytes: The bytes from the Psion file.
+        - textBytes: The bytes from the Psion file.
 
      - Returns The text as a String
      */
@@ -376,7 +376,7 @@ struct PsionWord {
      Read body text known length from the word file byte store.
 
      - Parameters
-     - data: A slice of the word file bytes containing the body text.
+        - data: A slice of the word file bytes containing the body text.
 
      - Returns The text as a byte array.
      */
@@ -422,7 +422,7 @@ struct PsionWord {
      Swap a CP 850 for a CP 1252.
 
      - Parameters
-     - char: A CP 850 integer value.
+        - char: A CP 850 integer value.
 
      - Returns The equivalent 1252 code.
      */
@@ -445,8 +445,8 @@ struct PsionWord {
      Parse a Psion Word block styling record and extract the formatting blocks.
 
      - Parameters
-     - data:      A slice of the Word file bytes containing the block formatting data.
-     - textLength: The number of bytes in the corresponding body text.
+        - data:      A slice of the Word file bytes containing the block formatting data.
+        - textLength: The number of bytes in the corresponding body text.
      */
     private static func getStyleBlocks(_ data: ArraySlice<UInt8>, _ textLength: Int) -> [PsionWordFormatBlock] {
 
@@ -503,7 +503,7 @@ struct PsionWord {
      Read a 16-bit little endian value from the Word file byte store.
 
      - Parameters
-     - data:  Two-byte slice of the word file bytes.
+        - data:  Two-byte slice of the word file bytes.
 
      - Returns The value as an (unsinged) integer, or -1 on error.
      */
@@ -529,15 +529,15 @@ struct PsionWord {
      tagging with Markdown (eg. `HA` -> `#`, `BB` -> `**`.
 
      - Note This all assumes that the doc only contains standard styles, but what if it has, say,
-     a headline set to bold text, ie. a custom style? A bold headline in Markdown would be
-     `# **headline**, but this would not comprise separate blocks. So we need to set the `#`
-     on the paragraph start and (separately) the `**` at the start and end of the actual text.
+            a headline set to bold text, ie. a custom style? A bold headline in Markdown would be
+            `# **headline**, but this would not comprise separate blocks. So we need to set the `#`
+            on the paragraph start and (separately) the `**` at the start and end of the actual text.
 
      - Parameters
-     - rawText:  The basic Ascii text.
-     - blocks:   The block formatting data extracted from the document.
-     - styles:   The styles extracted from the document.
-     - emphases: The emphases extracted from the document.
+         - rawText:  The basic Ascii text.
+         - blocks:   The block formatting data extracted from the document.
+         - styles:   The styles extracted from the document.
+         - emphases: The emphases extracted from the document.
 
      - Returns: A Markdown-formatted version of the base text.
      */
