@@ -5,13 +5,19 @@ import PackageDescription
 let package = Package(
     name: "word2text",
     dependencies: [
-        .package(url: "https://github.com/smittytone/clicore", branch: "main"),
+        .package(
+            url: "https://github.com/smittytone/clicore",
+            branch: "main"
+        ),
     ],
     targets: [
         .executableTarget(
             name: "word2text",
             dependencies: [
-                .product(name: "Clicore", package: "clicore"),
+                .product(
+                    name: "Clicore",
+                    package: "clicore"
+                ),
             ],
             path: "word2text",
             // macOS only:
