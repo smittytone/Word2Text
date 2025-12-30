@@ -43,6 +43,17 @@ struct ProcessResult {
 
 
 /*
+    Configuration data for Word file processing operations.
+*/
+struct ProcessSettings {
+
+    var doShowInfo: Bool                = false
+    var doIncludeHeader: Bool           = false
+    var doReturnMarkdown: Bool          = false
+}
+
+
+/*
     Structure to hold a Style or Emphasis record.
  
     Not all of the fields are used by each type
@@ -87,17 +98,6 @@ struct PsionWordFormatBlock {
     var endIndex: Int           = 0
     var styleCode: String       = "BT"
     var emphasisCode: String    = "NN"
-}
-
-
-/*
-    Configuration data for Word file processing operations.
-*/
-struct ProcessSettings {
-
-    var doShowInfo: Bool        = false
-    var doIncludeHeader: Bool   = false
-    var doReturnMarkdown: Bool  = false
 }
 
 
