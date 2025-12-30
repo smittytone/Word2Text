@@ -26,7 +26,7 @@
 
 
 import Foundation
-#if RECONNECT
+#if LIBRARY
 
 
 extension PsionWord {

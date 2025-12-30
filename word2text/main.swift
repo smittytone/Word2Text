@@ -35,15 +35,15 @@ var argIsAValue: Bool       = false
 var argType: Int            = -1
 var argCount: Int           = 0
 var prevArg: String         = ""
-var doShowInfo: Bool        = false
-var doIncludeHeader: Bool   = false
-var doReturnMarkdown: Bool  = false
+// CLI operational settings
 var haltOnFirstError: Bool  = false
 var outputAsFile: Bool      = false
 var files: [String]         = []
+// File conversion settings
+var settings: ProcessSettings = ProcessSettings()
 
 
-// MARK: Runtime Start
+// MARK: - Runtime Start
 
 // Make sure the signal does not terminate the application
 Stdio.enableCtrlHandler("word2text interrupted -- halting")
@@ -76,15 +76,15 @@ for argument in args {
     } else {
         switch argument {
         case "-v", "--verbose":
-            doShowInfo = true
-        case "-s", "--stop":
-            haltOnFirstError = true
+            settings.doShowInfo = true
         case "-o", "--outer":
-            doIncludeHeader = true
+            settings.doIncludeHeader = true
         case "-m","--markdown":
-            doReturnMarkdown = true
+            settings.doReturnMarkdown = true
         case "-f", "--file":
             outputAsFile = true
+        case "-s", "--stop":
+            haltOnFirstError = true
         case "-h", "-help":
             showHelp()
             Stdio.disableCtrlHandler()
@@ -135,7 +135,7 @@ let outputToFiles: Bool = outputAsFile || finalFiles.count > 1
 for filepath in finalFiles {
     let data = Path.getFileContents(filepath)
     let result: ProcessResult = !data.isEmpty
-    ? PsionWord.processFile(data, filepath)
+    ? PsionWord.processFile(data, filepath, settings)
     : ProcessResult(text: "file not found", errorCode: .badFile)
 
     // Handle the outcome of processing
@@ -150,7 +150,7 @@ for filepath in finalFiles {
         // Report the processed text
         if !outputToFiles {
             // Output processed text to STDOUT so it's available for piping or redirection
-            if doShowInfo {
+            if settings.doShowInfo {
                 Stdio.report("File \(filepath) processed")
             }
 
@@ -158,12 +158,12 @@ for filepath in finalFiles {
         } else {
             // Output to a file: generate the name and extension...
             var outFilepath: String = (filepath as NSString).deletingPathExtension
-            outFilepath += (doReturnMarkdown ? ".md" : ".txt")
+            outFilepath += (settings.doReturnMarkdown ? ".md" : ".txt")
 
             // ...and attempt to write it out
             do {
                 try result.text.write(toFile: outFilepath, atomically: true, encoding: .utf8)
-                if doShowInfo {
+                if settings.doShowInfo {
                     Stdio.report("File \(filepath) processed to \(outFilepath)")
                 }
             } catch {
@@ -179,7 +179,7 @@ Stdio.disableCtrlHandler()
 exit(EXIT_SUCCESS)
 
 
-// MARK: Help/Info Functions
+// MARK: - Help/Info Functions
 
 /**
  Display the help text.

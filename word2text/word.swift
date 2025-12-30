@@ -25,7 +25,7 @@
 */
 
 import Foundation
-import Clicore
+//import Clicore
 
 
 struct PsionWordConstants {
@@ -48,10 +48,11 @@ struct PsionWord {
         - data:     Data object containing the file bytes.
                     May be better to just pass a byte array.
         - filepath: Absolute path of the target Word file.
+        - settings: File conversion parameters.
 
      - Returns: A ProcessResult containing the text or an error code.
      */
-    static func processFile(_ data: ArraySlice<UInt8>, _ filepath: String) -> ProcessResult {
+    static func processFile(_ data: ArraySlice<UInt8>, _ filepath: String, _ settings: ProcessSettings) -> ProcessResult {
 
         var textBytes: [UInt8] = []
         var bodyText: String = ""
@@ -73,8 +74,8 @@ struct PsionWord {
             return ProcessResult(text: "Not a Psion Series 3 Word file", errorCode: .badPsionFileType)
         }
 
-        if doShowInfo {
-            Stdio.report("File \(filepath) is a Psion Series 3 Word document")
+        if settings.doShowInfo {
+            log("File \(filepath) is a Psion Series 3 Word document")
         }
 
         // Check for encrypted files: look at file bytes 16 and 17
@@ -93,8 +94,8 @@ struct PsionWord {
             // Move index to start of record
             byteIndex += PsionWordConstants.RecordHeaderLength
 
-            if doShowInfo {
-                Stdio.report("Record of type \(PsionWordConstants.RecordTypes[recordType.rawValue - 1]) found at offset \(String(format: "0x%04x", arguments: [byteIndex])). Size: \(recordDataLength) bytes")
+            if settings.doShowInfo {
+                log("Record of type \(PsionWordConstants.RecordTypes[recordType.rawValue - 1]) found at offset \(String(format: "0x%04x", arguments: [byteIndex])). Size: \(recordDataLength) bytes")
             }
 
             // Process the current record
@@ -117,14 +118,14 @@ struct PsionWord {
                 case .footerText:
                     // Index in strings store is 0 for header, 1 for footer
                     let index = recordType.rawValue - PsionWordRecordType.headerText.rawValue
-                    outerText[index] = getOuterText(data[byteIndex..<byteIndex + recordDataLength - 1], index == 0)
+                    outerText[index] = getOuterText(data[byteIndex..<byteIndex + recordDataLength - 1], index == 0, settings)
                 case .styleDefinition:
                     // Check the fixed size
                     if recordDataLength != 80 {
                         return ProcessResult(text: "Bad style definition record size (\(recordDataLength) not 80 bytes", errorCode: .badRecordLengthStyleDefinition)
                     }
 
-                    let style = getStyle(data[byteIndex..<byteIndex + 80], true)
+                    let style = getStyle(data[byteIndex..<byteIndex + 80], true, settings)
                     styles[style.code] = style
                 case .emphasisDefinition:
                     // Check the fixed size
@@ -132,14 +133,14 @@ struct PsionWord {
                         return ProcessResult(text: "Bad emphasis definition record size (\(recordDataLength) not 80 bytes", errorCode: .badRecordLengthStyleDefinition)
                     }
 
-                    let emphasis = getStyle(data[byteIndex..<byteIndex + 28], false)
+                    let emphasis = getStyle(data[byteIndex..<byteIndex + 28], false, settings)
                     emphases[emphasis.code] = emphasis
                 case .bodyText:
-                    textBytes = getBodyText(data[byteIndex..<byteIndex + recordDataLength])
+                    textBytes = getBodyText(data[byteIndex..<byteIndex + recordDataLength], settings)
                 case .blockInfo:
-                    blocks = getStyleBlocks(data[byteIndex..<data.endIndex], textBytes.count)
+                    blocks = getStyleBlocks(data[byteIndex..<data.endIndex], textBytes.count, settings)
                 case .unknown:
-                    return ProcessResult(text: "Bad Word file record type (\(recordType.rawValue) at  \(String(format: "0x%04x", arguments: [byteIndex]))", errorCode: .badRecordType)
+                    return ProcessResult(text: "Bad Word file record type (\(recordType.rawValue) at \(String(format: "0x%04x", arguments: [byteIndex]))", errorCode: .badRecordType)
             }
 
             recordCounter |= (1 << recordType.rawValue)
@@ -153,20 +154,20 @@ struct PsionWord {
         }
 
         // Process to Markdown if that's required
-        if doReturnMarkdown {
-            bodyText = convertToMarkdown(textBytes, blocks, styles, emphases)
+        if settings.doReturnMarkdown {
+            bodyText = convertToMarkdown(textBytes, blocks, styles, emphases, settings)
         } else {
             // Psion Series 3a character set is IBM CP 850. The closest Swift supports is Windows 1252,
             // but conversion to UTF-8 using this encoding sometimes fails. So we trap this and try to
             // convert using the older NSString mechanism
-            bodyText = convertText(textBytes)
+            bodyText = convertText(textBytes, settings)
         }
 
         // Add the header and foot if requested
-        if doIncludeHeader {
+        if settings.doIncludeHeader {
             // FROM 0.1.3
             // Do different delimiters for markdown output
-            if doReturnMarkdown {
+            if settings.doReturnMarkdown {
                 var longest = greater(outerText[0][...], outerText[1][...])
                 longest = greater(longest[...], "****")
                 let stars = String(repeating: "*", count: longest.count)
@@ -174,7 +175,6 @@ struct PsionWord {
             } else {
                 bodyText = "\(outerText[0])\n\(String(repeating: "*", count: outerText[0].count))\n\(bodyText)\n\(String(repeating: "*", count: outerText[1].count))\n\(outerText[1])"
             }
-
         }
 
         return ProcessResult(text: bodyText, errorCode: .noError)
@@ -187,10 +187,11 @@ struct PsionWord {
      - Parameters
         - data:     A slice of the word file bytes.
         - isStyle: `true` if the record holds a Style; `false` if it is an Emphasis.
+        - settings: File conversion parameters.
 
      - Returns A PsionWordStyle containing the record's information.
      */
-    internal static func getStyle(_ data: ArraySlice<UInt8>, _ isStyle: Bool) -> PsionWordStyle {
+    internal static func getStyle(_ data: ArraySlice<UInt8>, _ isStyle: Bool, _ settings: ProcessSettings) -> PsionWordStyle {
 
         var style: PsionWordStyle = PsionWordStyle()
 
@@ -199,7 +200,7 @@ struct PsionWord {
         //      for the NUL terminator and turn the rest into a Swift string
         let index = data.startIndex
         style.code = String(bytes: data[index..<index + 2], encoding: .windowsCP1252) ?? ""
-        //style.name = String(cString: [UInt8](data[index + 2..<index + 18]))
+
         style.name = String(decoding: data[index + 2..<index + 18], as: UTF8.self)
         let range: Range<String.Index> = style.name.range(of: "\0")!    // Find the first nul
         style.name = String(style.name[..<range.lowerBound])
@@ -236,8 +237,8 @@ struct PsionWord {
 
         // The following properties apply to Styles only so exit if it's an Emphasis
         if !style.isStyle {
-            if doShowInfo {
-                Stdio.report("  Emphasis code: \(style.code) (\(style.name))")
+            if settings.doShowInfo {
+                log("  Emphasis code: \(style.code) (\(style.name))")
             }
 
             return style
@@ -273,8 +274,8 @@ struct PsionWord {
             }
         }
 
-        if doShowInfo {
-            Stdio.report("  Style code: \(style.code) (\(style.name))")
+        if settings.doShowInfo {
+            log("  Style code: \(style.code) (\(style.name))")
         }
 
         return style
@@ -285,12 +286,13 @@ struct PsionWord {
      Read a C string of known length from the word file byte store
 
      - Parameters
-        - data:      A slice of the word file bytes.
-        - isHeader:  `true` if the record contains header text, otherwise `false`.
+        - data:     A slice of the word file bytes.
+        - isHeader: `true` if the record contains header text, otherwise `false`.
+        - settings: File conversion parameters.
 
      - Returns The text as a string.
      */
-    internal static func getOuterText(_ data: ArraySlice<UInt8>, _ isHeader: Bool) -> String {
+    internal static func getOuterText(_ data: ArraySlice<UInt8>, _ isHeader: Bool, _ settings: ProcessSettings) -> String {
 
         var outerText: String = ""
         let rawLength = data.endIndex - data.startIndex
@@ -303,8 +305,8 @@ struct PsionWord {
         // String is empty (NUL only)?
         outerText = outerText.count > 0 ? outerText : (isHeader ? "No header" : "No footer")
 
-        if doShowInfo {
-            Stdio.report("  \(isHeader ? "Header" : "Footer") text length \(rawLength - 1) byte\(rawLength == 1 ? "" : "s")")
+        if settings.doShowInfo {
+            log("  \(isHeader ? "Header" : "Footer") text length \(rawLength - 1) byte\(rawLength == 1 ? "" : "s")")
         }
 
         return outerText
@@ -316,10 +318,11 @@ struct PsionWord {
 
      - Parameters
         - textBytes: The bytes from the Psion file.
+        - settings:  File conversion parameters.
 
      - Returns The text as a String
      */
-    private static func convertText(_ textBytes: [UInt8]) -> String {
+    private static func convertText(_ textBytes: [UInt8], _ settings: ProcessSettings) -> String {
 
         guard textBytes.count > 0 else { return "" }
 
@@ -342,17 +345,17 @@ struct PsionWord {
 
             // Issue a warning no matter what
             if count > 0 {
-                Stdio.reportWarning("File contains \(count) invalid Windows CP 1252 character\(count == 1 ? "" : "s")")
+                warning("File contains \(count) invalid Windows CP 1252 character\(count == 1 ? "" : "s")")
             }
 
             // If the user has selected verbose mode, output the list of 'bad' characters
-            if doShowInfo {
+            if settings.doShowInfo {
                 var msg = ""
                 for (idx, badChar) in badChars {
                     msg += String(format: "%d @ %d ", badChar, idx)
                 }
 
-                Stdio.reportWarning(msg)
+                warning(msg)
             }
 
             // Now do the secondary conversion
@@ -377,11 +380,12 @@ struct PsionWord {
      Read body text known length from the word file byte store.
 
      - Parameters
-        - data: A slice of the word file bytes containing the body text.
+        - data:     A slice of the word file bytes containing the body text.
+        - settings: File conversion parameters.
 
      - Returns The text as a byte array.
      */
-    internal static func getBodyText(_ data: ArraySlice<UInt8>) -> [UInt8] {
+    internal static func getBodyText(_ data: ArraySlice<UInt8>, _ settings: ProcessSettings) -> [UInt8] {
 
         var textBytes: [UInt8] = []
         for i in 0..<(data.endIndex - data.startIndex) {
@@ -411,8 +415,8 @@ struct PsionWord {
             }
         }
 
-        if doShowInfo {
-            Stdio.report("  Processed text length \(textBytes.count) characters\(textBytes.count == 1 ? "" : "s")")
+        if settings.doShowInfo {
+            log("  Processed text length \(textBytes.count) characters\(textBytes.count == 1 ? "" : "s")")
         }
 
         return textBytes
@@ -446,10 +450,11 @@ struct PsionWord {
      Parse a Psion Word block styling record and extract the formatting blocks.
 
      - Parameters
-        - data:      A slice of the Word file bytes containing the block formatting data.
+        - data:       A slice of the Word file bytes containing the block formatting data.
         - textLength: The number of bytes in the corresponding body text.
+        - settings:   File conversion parameters.
      */
-    internal static func getStyleBlocks(_ data: ArraySlice<UInt8>, _ textLength: Int) -> [PsionWordFormatBlock] {
+    internal static func getStyleBlocks(_ data: ArraySlice<UInt8>, _ textLength: Int, _ settings: ProcessSettings) -> [PsionWordFormatBlock] {
 
         var blocks: [PsionWordFormatBlock] = []
         var recordByteCount = 0
@@ -484,8 +489,8 @@ struct PsionWord {
 
             blocks.append(block)
 
-            if doShowInfo {
-                Stdio.report("  Text bytes range \(block.startIndex)-\(block.endIndex) has style code \(styleCode) and emphasis code \(emphasisCode)")
+            if settings.doShowInfo {
+                log("  Text bytes range \(block.startIndex)-\(block.endIndex) has style code \(styleCode) and emphasis code \(emphasisCode)")
             }
 
             dataByteCount += blockLength
@@ -539,10 +544,11 @@ struct PsionWord {
          - blocks:   The block formatting data extracted from the document.
          - styles:   The styles extracted from the document.
          - emphases: The emphases extracted from the document.
+         - settings: File conversion parameters.
 
      - Returns: A Markdown-formatted version of the base text.
      */
-    private static func convertToMarkdown(_ rawText: [UInt8], _ blocks: [PsionWordFormatBlock], _ styles: [String:PsionWordStyle], _ emphases: [String:PsionWordStyle]) -> String {
+    private static func convertToMarkdown(_ rawText: [UInt8], _ blocks: [PsionWordFormatBlock], _ styles: [String:PsionWordStyle], _ emphases: [String:PsionWordStyle], _ settings: ProcessSettings) -> String {
 
         var markdown: String = ""
         var paraStyleSet: Bool = false
@@ -611,7 +617,8 @@ struct PsionWord {
 
             // Add the tagged text to the string store. We only duplicate the tag at the end
             // of the block if it is a character-level tag, ie. an Emphasis
-            var addition = convertText([UInt8](rawText[block.startIndex...block.endIndex])) // String(bytes: rawText[block.startIndex...block.endIndex], encoding: .windowsCP1252) {
+            var addition = convertText([UInt8](rawText[block.startIndex...block.endIndex]), settings)
+
             // Check if we've come to the end of a paragraph - but not empty ones
             if addition.hasSuffix("\n") && addition.count > 1 {
                 // Remove the NEWLINE
