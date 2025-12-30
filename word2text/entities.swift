@@ -48,34 +48,34 @@ struct ProcessResult {
     Not all of the fields are used by each type
 */
 struct PsionWordStyle {
-    var code: String = ""
-    var name: String = ""
-    var isStyle: Bool = true                // `true` for a style, `false` for an emphasis
-    var isUndeletable: Bool = false
-    var isDefault: Bool = false
-    var fontCode: Int = 0
-    var underlined: Bool = false
-    var bold: Bool = false
-    var italic: Bool = false
-    var superScript: Bool = false           // Emphasis only
-    var subScript: Bool = false             // Emphasis only
-    var fontSize: Int = 10                  // Multiple of 0.05
-    var inheritUnderline: Bool  = false
-    var inheritBold: Bool = false
-    var inheritItalic: Bool = false
-    var inheritSuperScript: Bool = false
-    var inheritSubScript: Bool = false
-    var leftIndent: Int = 0                 // This and all remaining members
-    var rightIndent: Int = 0                // are Style only
-    var firstIdent: Int = 0
-    var alignment: PsionWordAlignment = .left
-    var lineSpacing: Int = 0
-    var spaceAbovePara: Int = 0
-    var spaceBelowPara: Int = 0
-    var spacing: PsionWordSpacing = .keepTogether
-    var outlineLevel: Int = 0
-    var tabPositions: [Int] = []
-    var tabTypes: [PsionWordTabType] = []
+    var code: String                    = ""
+    var name: String                    = ""
+    var isStyle: Bool                   = true      // `true` for a style, `false` for an emphasis
+    var isUndeletable: Bool             = false
+    var isDefault: Bool                 = false
+    var fontCode: Int                   = 0
+    var underlined: Bool                = false
+    var bold: Bool                      = false
+    var italic: Bool                    = false
+    var superScript: Bool               = false     // Emphasis only
+    var subScript: Bool                 = false     // Emphasis only
+    var fontSize: Int                   = 10        // Multiple of 0.05
+    var inheritUnderline: Bool          = false
+    var inheritBold: Bool               = false
+    var inheritItalic: Bool             = false
+    var inheritSuperScript: Bool        = false
+    var inheritSubScript: Bool          = false
+    var leftIndent: Int                 = 0         // This and all remaining members
+    var rightIndent: Int                = 0         // are Style only
+    var firstIdent: Int                 = 0
+    var alignment: PsionWordAlignment   = .left
+    var lineSpacing: Int                = 0
+    var spaceAbovePara: Int             = 0
+    var spaceBelowPara: Int             = 0
+    var spacing: PsionWordSpacing       = .keepTogether
+    var outlineLevel: Int               = 0
+    var tabPositions: [Int]             = []
+    var tabTypes: [PsionWordTabType]    = []
 }
 
 
@@ -83,10 +83,21 @@ struct PsionWordStyle {
     Text section formattting information.
 */
 struct PsionWordFormatBlock {
-    var startIndex: Int = 0
-    var endIndex: Int = 0
-    var styleCode: String = "BT"
-    var emphasisCode: String = "NN"
+    var startIndex: Int         = 0
+    var endIndex: Int           = 0
+    var styleCode: String       = "BT"
+    var emphasisCode: String    = "NN"
+}
+
+
+/*
+    Configuration data for Word file processing operations.
+*/
+struct ProcessSettings {
+
+    var doShowInfo: Bool        = false
+    var doIncludeHeader: Bool   = false
+    var doReturnMarkdown: Bool  = false
 }
 
 
@@ -95,11 +106,11 @@ struct PsionWordFormatBlock {
     NOTE We require raw values for these
 */
 enum PsionWordAlignment: Int {
-    case left = 0
-    case right = 1
-    case centered = 2
-    case justified = 3
-    case unknown = 99
+    case left           = 0
+    case right          = 1
+    case centered       = 2
+    case justified      = 3
+    case unknown        = 99
 }
 
 
@@ -132,9 +143,9 @@ extension PsionWordSpacing {
     Tabulation options
 */
 enum PsionWordTabType: Int {
-    case left = 0
-    case right = 1
-    case centered = 2
+    case left       = 0
+    case right      = 1
+    case centered   = 2
 }
 
 
@@ -143,16 +154,16 @@ enum PsionWordTabType: Int {
     NOTE We require raw values for these, for output as stderr codes.
 */
 enum ProcessError: Int {
-    case noError = 0
-    case badFile = 1
-    case badPsionFileType = 2
-    case badFileEncrypted = 3
-    case badRecordLengthFileInfo = 4
-    case badRecordLengthPrinterConfig = 5
-    case badRecordLengthStyleDefinition = 6
-    case badRecordLengthEmphahsisDefinition = 7
-    case badRecordType = 8
-    case badFileMissingRecords = 9
+    case noError                                = 0
+    case badFile                                = 1
+    case badPsionFileType                       = 2
+    case badFileEncrypted                       = 3
+    case badRecordLengthFileInfo                = 4
+    case badRecordLengthPrinterConfig           = 5
+    case badRecordLengthStyleDefinition         = 6
+    case badRecordLengthEmphahsisDefinition     = 7
+    case badRecordType                          = 8
+    case badFileMissingRecords                  = 9
 }
 
 
@@ -161,14 +172,14 @@ enum ProcessError: Int {
     NOTE We require raw values for these, to match to record type bytes.
 */
 enum PsionWordRecordType: Int {
-    case fileInfo = 1
-    case printerConfig = 2
-    case printerDriver = 3
-    case headerText = 4
-    case footerText = 5
-    case styleDefinition = 6
-    case emphasisDefinition = 7
-    case bodyText = 8
-    case blockInfo = 9
-    case unknown = 99
+    case fileInfo               = 1
+    case printerConfig          = 2
+    case printerDriver          = 3
+    case headerText             = 4
+    case footerText             = 5
+    case styleDefinition        = 6
+    case emphasisDefinition     = 7
+    case bodyText               = 8
+    case blockInfo              = 9
+    case unknown                = 99
 }
