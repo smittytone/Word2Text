@@ -145,7 +145,7 @@ for filepath in finalFiles {
             } else {
                 Stdio.reportWarning("File \(filepath) could not be processed: \(error.localizedDescription)")
             }
-        case .success(let text):
+        case .success(let processedText):
             // Report the processed text
             if !outputToFiles {
                 // Output processed text to STDOUT so it's available for piping or redirection
@@ -153,7 +153,7 @@ for filepath in finalFiles {
                     Stdio.report("File \(filepath) processed")
                 }
 
-                Stdio.output(text)
+                Stdio.output(processedText)
             } else {
                 // Output to a file: generate the name and extension...
                 var outFilepath: String = (filepath as NSString).deletingPathExtension
@@ -161,13 +161,13 @@ for filepath in finalFiles {
 
                 // ...and attempt to write it out
                 do {
-                    try text.write(toFile: outFilepath, atomically: true, encoding: .utf8)
+                    try processedText.write(toFile: outFilepath, atomically: true, encoding: .utf8)
                     if settings.doShowInfo {
                         Stdio.report("File \(filepath) processed to \(outFilepath)")
                     }
                 } catch {
                     Stdio.reportWarning("File \(outFilepath) could not be processed: writing to stdout instead")
-                    Stdio.output(text)
+                    Stdio.output(processedText)
                 }
             }
     }
