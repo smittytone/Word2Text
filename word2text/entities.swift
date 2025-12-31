@@ -28,17 +28,40 @@ import Foundation
 
 
 /*
-    Structure to hold the outcome of a single file processing operation.
- 
-    The `text` property will either be the file's textual content or an error message.
-    
-    The `errorCode` value will be zero on a successful process, or an error code if processing
-    failed. This can be used as an exit code and to determine what kind of content `text`
-    contains.
+    Structure to hold the outcome of a failed file processing operation.
+
+    The `text` property will be an error message.
+
+    The `code` value will be an error code. Its raw value can be used as an exit code.
 */
-struct ProcessResult {
-    var text: String
-    var errorCode: ProcessError
+struct ProcessError: Error, LocalizedError {
+    var code: ProcessErrorKind
+    var text: String? = nil
+
+    public var errorDescription: String? {
+        switch self.code {
+            case .noError:
+                return nil
+            case .badFile:
+                return "file not found"
+            case .badPsionFileType:
+                return "not a Psion Series 3 Word file"
+            case .badFileEncrypted:
+                return "Word file is encrypted"
+            case .badRecordLengthFileInfo,
+                 .badRecordLengthPrinterConfig,
+                 .badRecordLengthStyleDefinition,
+                 .badRecordLengthEmphahsisDefinition,
+                 .badRecordType:
+                if let text = self.text {
+                    return text
+                } else {
+                    return "Error message not provided"
+                }
+            case .badFileMissingRecords:
+                return "file did not include required records"
+            }
+        }
 }
 
 
@@ -102,6 +125,24 @@ struct PsionWordFormatBlock {
 
 
 /*
+    Word file processing error codes.
+    NOTE We require raw values for these, for output as stderr codes.
+*/
+enum ProcessErrorKind: Int, Error {
+    case noError                                = 0
+    case badFile                                = 1
+    case badPsionFileType                       = 2
+    case badFileEncrypted                       = 3
+    case badRecordLengthFileInfo                = 4
+    case badRecordLengthPrinterConfig           = 5
+    case badRecordLengthStyleDefinition         = 6
+    case badRecordLengthEmphahsisDefinition     = 7
+    case badRecordType                          = 8
+    case badFileMissingRecords                  = 9
+}
+
+
+/*
     Text alignment options.
     NOTE We require raw values for these
 */
@@ -146,24 +187,6 @@ enum PsionWordTabType: Int {
     case left       = 0
     case right      = 1
     case centered   = 2
-}
-
-
-/*
-    Word file processing error codes.
-    NOTE We require raw values for these, for output as stderr codes.
-*/
-enum ProcessError: Int {
-    case noError                                = 0
-    case badFile                                = 1
-    case badPsionFileType                       = 2
-    case badFileEncrypted                       = 3
-    case badRecordLengthFileInfo                = 4
-    case badRecordLengthPrinterConfig           = 5
-    case badRecordLengthStyleDefinition         = 6
-    case badRecordLengthEmphahsisDefinition     = 7
-    case badRecordType                          = 8
-    case badFileMissingRecords                  = 9
 }
 
 

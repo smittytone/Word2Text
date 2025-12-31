@@ -19,27 +19,39 @@ struct word2textTests {
     @Test func testProcessTextBadPreamble() async throws {
         
         let bytes: [UInt8] = [UInt8](repeating: 0, count: 100)
-        let result: ProcessResult = PsionWord.processFile(bytes[...], "/sample/filepath")
-        #expect(result.errorCode == .badPsionFileType)
+        switch PsionWord.processFile(bytes[...], "/sample/filepath", ProcessSettings()) {
+            case .failure(let error):
+                #expect(error.code == .badPsionFileType)
+            case .success(_):
+                #expect(Bool(false))
+        }
     }
     
-    
+
     @Test func testProcessTextBadDataSizeUnder16Bytes() async throws {
         
         let bytes: [UInt8] = [UInt8](repeating: 0, count: 10)
-        let result: ProcessResult = PsionWord.processFile(bytes[...], "/sample/filepath")
-        #expect(result.errorCode == .badPsionFileType)
+        switch PsionWord.processFile(bytes[...], "/sample/filepath", ProcessSettings()) {
+            case .failure(let error):
+                #expect(error.code == .badPsionFileType)
+            case .success(_):
+                #expect(Bool(false))
+        }
     }
     
-    
+
     @Test func testProcessTextBadDataSizeUnder40Bytes() async throws {
         
         let preamble = "PSIONWPDATAFILE"
         var bytes: [UInt8] = Array(preamble.utf8)
         bytes.append(contentsOf: [0, 0, 1])
         bytes.append(contentsOf: [UInt8](repeating: 0, count: 10))
-        let result: ProcessResult = PsionWord.processFile(bytes[...], "/sample/filepath")
-        #expect(result.errorCode == .badPsionFileType)
+        switch PsionWord.processFile(bytes[...], "/sample/filepath", ProcessSettings()) {
+            case .failure(let error):
+                #expect(error.code == .badPsionFileType)
+            case .success(_):
+                #expect(Bool(false))
+        }
     }
     
     
@@ -49,23 +61,29 @@ struct word2textTests {
         var bytes: [UInt8] = Array(preamble.utf8)
         bytes.append(contentsOf: [0, 0, 1])
         bytes.append(contentsOf: [UInt8](repeating: 0, count: 100))
-        let result: ProcessResult = PsionWord.processFile(bytes[...], "/sample/filepath")
-
-        // This will exit with an 'encrypted' error
-        #expect(result.errorCode == .badFileEncrypted)
+        switch PsionWord.processFile(bytes[...], "/sample/filepath", ProcessSettings()) {
+            case .failure(let error):
+                // This will exit with an 'encrypted' error
+                #expect(error.code == .badFileEncrypted)
+            case .success(_):
+                #expect(Bool(false))
+        }
     }
     
-    
+
     @Test func testProcessTextGoodPreambleBadSize() async throws {
         
         let preamble = "PSIONWPDATAFILE"
         var bytes: [UInt8] = Array(preamble.utf8)
         bytes.append(contentsOf: [0, 0, 0])
         bytes.append(contentsOf: [UInt8](repeating: 0, count: 24))
-        let result: ProcessResult = PsionWord.processFile(bytes[...], "/sample/filepath")
-
-        // This will exit with an 'encrypted' error
-        #expect(result.errorCode == .badFileMissingRecords)
+        switch PsionWord.processFile(bytes[...], "/sample/filepath", ProcessSettings()) {
+            case .failure(let error):
+                // This will exit with an 'missing records' error
+                #expect(error.code == .badFileMissingRecords)
+            case .success(_):
+                #expect(Bool(false))
+        }
     }
     
     
@@ -73,8 +91,12 @@ struct word2textTests {
         
         var bytes = buildHeader()
         bytes.append(contentsOf: [0, 99, 0, 0, 0, 0, 0, 0, 0])
-        let result: ProcessResult = PsionWord.processFile(bytes[...], "/sample/filepath")
-        #expect(result.errorCode == .badRecordType)
+        switch PsionWord.processFile(bytes[...], "/sample/filepath", ProcessSettings()) {
+            case .failure(let error):
+                #expect(error.code == .badRecordType)
+            case .success(_):
+                #expect(Bool(false))
+        }
     }
     
     
@@ -82,8 +104,12 @@ struct word2textTests {
         
         var bytes = buildHeader()
         bytes.append(contentsOf: [0, 1, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-        let result: ProcessResult = PsionWord.processFile(bytes[...], "/sample/filepath")
-        #expect(result.errorCode == .badRecordLengthFileInfo)
+        switch PsionWord.processFile(bytes[...], "/sample/filepath", ProcessSettings()) {
+            case .failure(let error):
+                #expect(error.code == .badRecordLengthFileInfo)
+            case .success(_):
+                #expect(Bool(false))
+        }
     }
     
     
@@ -92,8 +118,12 @@ struct word2textTests {
         // Build record
         var bytes = buildHeader()
         bytes.append(contentsOf: [0, 2, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-        let result: ProcessResult = PsionWord.processFile(bytes[...], "/sample/filepath")
-        #expect(result.errorCode == .badRecordLengthPrinterConfig)
+        switch PsionWord.processFile(bytes[...], "/sample/filepath", ProcessSettings()) {
+            case .failure(let error):
+                #expect(error.code == .badRecordLengthPrinterConfig)
+            case .success(_):
+                #expect(Bool(false))
+        }
     }
     
     
@@ -102,8 +132,12 @@ struct word2textTests {
         // Build record
         var bytes = buildHeader()
         bytes.append(contentsOf: [0, 6, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-        let result: ProcessResult = PsionWord.processFile(bytes[...], "/sample/filepath")
-        #expect(result.errorCode == .badRecordLengthStyleDefinition)
+        switch PsionWord.processFile(bytes[...], "/sample/filepath", ProcessSettings()) {
+            case .failure(let error):
+                #expect(error.code == .badRecordLengthStyleDefinition)
+            case .success(_):
+                #expect(Bool(false))
+        }
     }
     
     
@@ -112,11 +146,15 @@ struct word2textTests {
         // Build record
         var bytes = buildHeader()
         bytes.append(contentsOf: [0, 7, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-        let result: ProcessResult = PsionWord.processFile(bytes[...], "/sample/filepath")
-        #expect(result.errorCode == .badRecordLengthStyleDefinition)
+        switch PsionWord.processFile(bytes[...], "/sample/filepath", ProcessSettings()) {
+            case .failure(let error):
+                #expect(error.code == .badRecordLengthStyleDefinition)
+            case .success(_):
+                #expect(Bool(false))
+        }
     }
     
-    
+
     // MARK: - GetWordValue()
     
     @Test func testGetWordValueGoodArrayLarge() async throws {
@@ -148,12 +186,12 @@ struct word2textTests {
     
     
     // MARK: - GetOuterText()
-    
+
     @Test func testGetOuterTextGoodHeaderString() async throws {
         
         let header = "Fintlewoodlewix\0"
         let bytes: [UInt8] = Array(header.utf8)
-        let s = PsionWord.getOuterText(bytes[...], true)
+        let s = PsionWord.getOuterText(bytes[...], true, ProcessSettings())
         #expect(s == "Fintlewoodlewix")
     }
 
@@ -162,7 +200,7 @@ struct word2textTests {
 
         let header = "     Fintlewoodlewix\n  \0"
         let bytes: [UInt8] = Array(header.utf8)
-        let s = PsionWord.getOuterText(bytes[...], true)
+        let s = PsionWord.getOuterText(bytes[...], true, ProcessSettings())
         #expect(s == "Fintlewoodlewix")
     }
 
@@ -171,7 +209,7 @@ struct word2textTests {
         
         let header = ""
         let bytes: [UInt8] = Array(header.utf8)
-        #expect(PsionWord.getOuterText(bytes[...], true) == "No header")
+        #expect(PsionWord.getOuterText(bytes[...], true, ProcessSettings()) == "No header")
     }
     
     
@@ -179,7 +217,7 @@ struct word2textTests {
         
         let footer = "Fintlewoodlewix\0"
         let bytes: [UInt8] = Array(footer.utf8)
-        let s = PsionWord.getOuterText(bytes[...], false)
+        let s = PsionWord.getOuterText(bytes[...], false, ProcessSettings())
         #expect(s == "Fintlewoodlewix")
     }
 
@@ -188,7 +226,7 @@ struct word2textTests {
 
         let footer = "               Fintlewoodlewix\n\n\r\0"
         let bytes: [UInt8] = Array(footer.utf8)
-        let s = PsionWord.getOuterText(bytes[...], false)
+        let s = PsionWord.getOuterText(bytes[...], false, ProcessSettings())
         #expect(s == "Fintlewoodlewix")
     }
 
@@ -197,7 +235,7 @@ struct word2textTests {
         
         let header = ""
         let bytes: [UInt8] = Array(header.utf8)
-        #expect(PsionWord.getOuterText(bytes[...], false) == "No footer")
+        #expect(PsionWord.getOuterText(bytes[...], false, ProcessSettings()) == "No footer")
     }
     
     
@@ -210,7 +248,7 @@ struct word2textTests {
         var bytes: [UInt8] = Array(body.utf8)
         bytes.append(0x07)
         bytes.append(contentsOf: Array(end.utf8))
-        let backBytes = PsionWord.getBodyText(bytes[...])
+        let backBytes = PsionWord.getBodyText(bytes[...], ProcessSettings())
         #expect(backBytes[15] == 0x0A && backBytes[18] == 0x2D)
     }
     
@@ -305,7 +343,7 @@ struct word2textTests {
         
         var bytes: [UInt8] = []
         bytes.append(contentsOf: [100, 0, 65, 66, 67, 68])
-        let blocks = PsionWord.getStyleBlocks(bytes[...], 100)
+        let blocks = PsionWord.getStyleBlocks(bytes[...], 100, ProcessSettings())
         #expect(blocks.count == 1)
         
         let block = blocks[0]
@@ -319,7 +357,7 @@ struct word2textTests {
         var bytes: [UInt8] = []
         bytes.append(contentsOf: [50, 00, 77, 77, 72, 72])
         bytes.append(contentsOf: [50, 00, 69, 69, 66, 66])
-        let blocks = PsionWord.getStyleBlocks(bytes[...], 100)
+        let blocks = PsionWord.getStyleBlocks(bytes[...], 100, ProcessSettings())
         #expect(blocks.count == 2)
         
         var block = blocks[0]
@@ -339,7 +377,7 @@ struct word2textTests {
         var bytes: [UInt8] = []
         bytes.append(contentsOf: [100, 0, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 0, 75, 76, 77])
         bytes.append(contentsOf: Array(repeating: 255, count: 64))
-        let style = PsionWord.getStyle(bytes[...], false)
+        let style = PsionWord.getStyle(bytes[...], false, ProcessSettings())
         #expect(style.name == "ABCDEFGHIJ")
     }
 
@@ -349,7 +387,7 @@ struct word2textTests {
         var bytes: [UInt8] = []
         bytes.append(contentsOf: [100, 0, 65, 65, 65, 65, 65, 0, 71, 72, 73, 74, 0, 75, 76, 77])
         bytes.append(contentsOf: Array(repeating: 255, count: 64))
-        let style = PsionWord.getStyle(bytes[...], true)
+        let style = PsionWord.getStyle(bytes[...], true, ProcessSettings())
         #expect(style.name == "AAAAA")
     }
 

@@ -25,7 +25,6 @@
 */
 
 import Foundation
-//import Clicore
 
 
 struct PsionWordConstants {
@@ -50,9 +49,9 @@ struct PsionWord {
         - filepath: Absolute path of the target Word file.
         - settings: File conversion parameters.
 
-     - Returns: A ProcessResult containing the text or an error code.
+     - Returns: A Result containing the text (success) or a ProcessError embedding the error code (failure).
      */
-    static func processFile(_ data: ArraySlice<UInt8>, _ filepath: String, _ settings: ProcessSettings) -> ProcessResult {
+    static func processFile(_ data: ArraySlice<UInt8>, _ filepath: String, _ settings: ProcessSettings) -> Result<String, ProcessError> {
 
         var textBytes: [UInt8] = []
         var bodyText: String = ""
@@ -64,14 +63,14 @@ struct PsionWord {
 
         // Check minimum file size: enough bytes to at least check the preamble
         if data.count < 16 {
-            return ProcessResult(text: "Not a Psion Series 3 Word file", errorCode: .badPsionFileType)
+            return .failure(ProcessError(code: .badPsionFileType))
         }
 
         // Check the data preamble (C String of up to 15 chars plus `NUL`)
         let preamble = String(decoding: data[0..<15], as: UTF8.self)
         if preamble != "PSIONWPDATAFILE" || data.count < 40 {
             // TODO Report actual file type
-            return ProcessResult(text: "Not a Psion Series 3 Word file", errorCode: .badPsionFileType)
+            return .failure(ProcessError(code: .badPsionFileType))
         }
 
         if settings.doShowInfo {
@@ -81,7 +80,7 @@ struct PsionWord {
         // Check for encrypted files: look at file bytes 16 and 17
         // NOTE We can't handle these yet as the decode algorithm remains unknown
         if getWordValue(data[16..<18]) == 256 {
-            return ProcessResult(text: "Word file is encrypted", errorCode: .badFileEncrypted)
+            return .failure(ProcessError(code: .badFileEncrypted))
         }
 
         // Iterate over the file's bytes to extract the records
@@ -103,12 +102,16 @@ struct PsionWord {
                 case .fileInfo:
                     // We don't care about this beyond its size
                     if recordDataLength != 10 {
-                        return ProcessResult(text: "Bad file info record size (\(recordDataLength) not 10 bytes", errorCode: .badRecordLengthFileInfo)
+                        var error = ProcessError(code: .badRecordLengthFileInfo)
+                        error.text = "Bad file info record size (\(recordDataLength) not 10 bytes)"
+                        return .failure(error)
                     }
                 case .printerConfig:
                     // We don't care about this beyond its size
                     if recordDataLength != 58 {
-                        return ProcessResult(text: "Bad printer config record size (\(recordDataLength) not 58 bytes", errorCode: .badRecordLengthPrinterConfig)
+                        var error = ProcessError(code: .badRecordLengthPrinterConfig)
+                        error.text = "Bad printer config record size (\(recordDataLength) not 58 bytes)"
+                        return .failure(error)
                     }
                 case .printerDriver:
                     // We don't care about this
@@ -122,7 +125,9 @@ struct PsionWord {
                 case .styleDefinition:
                     // Check the fixed size
                     if recordDataLength != 80 {
-                        return ProcessResult(text: "Bad style definition record size (\(recordDataLength) not 80 bytes", errorCode: .badRecordLengthStyleDefinition)
+                        var error = ProcessError(code: .badRecordLengthStyleDefinition)
+                        error.text = "Bad style definition record size (\(recordDataLength) not 80 bytes)"
+                        return .failure(error)
                     }
 
                     let style = getStyle(data[byteIndex..<byteIndex + 80], true, settings)
@@ -130,7 +135,9 @@ struct PsionWord {
                 case .emphasisDefinition:
                     // Check the fixed size
                     if recordDataLength != 28 {
-                        return ProcessResult(text: "Bad emphasis definition record size (\(recordDataLength) not 80 bytes", errorCode: .badRecordLengthStyleDefinition)
+                        var error = ProcessError(code: .badRecordLengthStyleDefinition)
+                        error.text = "Bad emphasis definition record size (\(recordDataLength) not 80 bytes"
+                        return .failure(error)
                     }
 
                     let emphasis = getStyle(data[byteIndex..<byteIndex + 28], false, settings)
@@ -140,7 +147,9 @@ struct PsionWord {
                 case .blockInfo:
                     blocks = getStyleBlocks(data[byteIndex..<data.endIndex], textBytes.count, settings)
                 case .unknown:
-                    return ProcessResult(text: "Bad Word file record type (\(recordType.rawValue) at \(String(format: "0x%04x", arguments: [byteIndex]))", errorCode: .badRecordType)
+                    var error = ProcessError(code: .badRecordType)
+                    error.text = "Bad Word file record type (\(recordType.rawValue) at \(String(format: "0x%04x", arguments: [byteIndex]))"
+                    return .failure(error)
             }
 
             recordCounter |= (1 << recordType.rawValue)
@@ -150,7 +159,7 @@ struct PsionWord {
         // Check we have at least one of every record
         if recordCounter != 1022 {
             // Processing ended, but without a complete set of records
-            return ProcessResult(text: "File did not include required records", errorCode: .badFileMissingRecords)
+            return .failure(ProcessError(code: .badFileMissingRecords))
         }
 
         // Process to Markdown if that's required
@@ -177,7 +186,7 @@ struct PsionWord {
             }
         }
 
-        return ProcessResult(text: bodyText, errorCode: .noError)
+        return .success(bodyText)
     }
 
 

@@ -33,13 +33,13 @@ extension PsionWord {
 
     static internal func log(_ message: String) {
 
-
+        // RECONNECT friendly logging here
     }
 
 
     static internal func warning(_ message: String) {
 
-
+        // RECONNECT friendly logging here
     }
 }
 #else
@@ -60,4 +60,3 @@ extension PsionWord {
     }
 }
 #endif
-

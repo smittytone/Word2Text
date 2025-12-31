@@ -134,43 +134,42 @@ for filepath in files {
 let outputToFiles: Bool = outputAsFile || finalFiles.count > 1
 for filepath in finalFiles {
     let data = Path.getFileContents(filepath)
-    let result: ProcessResult = !data.isEmpty
+    let result: Result = !data.isEmpty
     ? PsionWord.processFile(data, filepath, settings)
-    : ProcessResult(text: "file not found", errorCode: .badFile)
+    : .failure(ProcessError(code: .badFile))
 
-    // Handle the outcome of processing
-    if result.errorCode != .noError {
-        // Report the error and, if required, bail
-        if haltOnFirstError {
-            Stdio.reportErrorAndExit("File \(filepath) could not be processed: \(result.text)", Int32(result.errorCode.rawValue))
-        } else {
-            Stdio.reportWarning("File \(filepath) could not be processed: \(result.text)")
-        }
-    } else {
-        // Report the processed text
-        if !outputToFiles {
-            // Output processed text to STDOUT so it's available for piping or redirection
-            if settings.doShowInfo {
-                Stdio.report("File \(filepath) processed")
+    switch result {
+        case .failure(let error):
+            if haltOnFirstError {
+                Stdio.reportErrorAndExit("File \(filepath) could not be processed: \(error.localizedDescription)", Int32(error.code.rawValue))
+            } else {
+                Stdio.reportWarning("File \(filepath) could not be processed: \(error.localizedDescription)")
             }
-
-            Stdio.output(result.text)
-        } else {
-            // Output to a file: generate the name and extension...
-            var outFilepath: String = (filepath as NSString).deletingPathExtension
-            outFilepath += (settings.doReturnMarkdown ? ".md" : ".txt")
-
-            // ...and attempt to write it out
-            do {
-                try result.text.write(toFile: outFilepath, atomically: true, encoding: .utf8)
+        case .success(let text):
+            // Report the processed text
+            if !outputToFiles {
+                // Output processed text to STDOUT so it's available for piping or redirection
                 if settings.doShowInfo {
-                    Stdio.report("File \(filepath) processed to \(outFilepath)")
+                    Stdio.report("File \(filepath) processed")
                 }
-            } catch {
-                Stdio.reportWarning("File \(outFilepath) could not be processed: writing to stdout instead")
-                Stdio.output(result.text)
+
+                Stdio.output(text)
+            } else {
+                // Output to a file: generate the name and extension...
+                var outFilepath: String = (filepath as NSString).deletingPathExtension
+                outFilepath += (settings.doReturnMarkdown ? ".md" : ".txt")
+
+                // ...and attempt to write it out
+                do {
+                    try text.write(toFile: outFilepath, atomically: true, encoding: .utf8)
+                    if settings.doShowInfo {
+                        Stdio.report("File \(filepath) processed to \(outFilepath)")
+                    }
+                } catch {
+                    Stdio.reportWarning("File \(outFilepath) could not be processed: writing to stdout instead")
+                    Stdio.output(text)
+                }
             }
-        }
     }
 }
 
