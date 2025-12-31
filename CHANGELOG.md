@@ -1,6 +1,6 @@
 ## Release Notes ##
 
-- 0.1.5 *Unreleased*
+- 0.1.5 *31 December 2025*
     - Correct code formatting.
     - Sync macOS and Linux version numbering.
     - Update tests following migration to `Clicore`.
