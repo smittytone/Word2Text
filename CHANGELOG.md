@@ -1,5 +1,10 @@
 ## Release Notes ##
 
+- 0.2.0 *Unreleased*
+    - Refactor conversion code to make it more friendly to third-party apps by greater isolation from the cli host code.
+    - Refactor logging code to make it more friendly to third-party apps.
+    - Switch to Swift `Result` type for conversion outcomes.
+    - Fix error message typos.
 - 0.1.5 *31 December 2025*
     - Correct code formatting.
     - Sync macOS and Linux version numbering.

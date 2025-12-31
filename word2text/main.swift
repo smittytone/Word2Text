@@ -134,7 +134,7 @@ for filepath in files {
 let outputToFiles: Bool = outputAsFile || finalFiles.count > 1
 for filepath in finalFiles {
     let data = Path.getFileContents(filepath)
-    let result: Result = !data.isEmpty
+    let result: Result<String, ProcessError> = !data.isEmpty
     ? PsionWord.processFile(data, filepath, settings)
     : .failure(ProcessError(code: .badFile))
 
