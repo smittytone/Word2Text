@@ -26,7 +26,7 @@
 
 
 import Foundation
-#if LIBRARY
+#if BUILD_AS_LIBRARY
 
 
 extension PsionWord {
