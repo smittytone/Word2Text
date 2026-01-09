@@ -112,4 +112,4 @@ Building *word2text* from source requires my [Clicore Swift Package](https://git
 
 Binary located in `.build/aarch64-unknown-linux-gnu/debug/`. Copy it to a location in your `$PATH`.
 
-Copyright © 2025 Tony Smith (@smittytone)
+Copyright © 2026 Tony Smith (@smittytone)
