@@ -32,8 +32,15 @@ struct PsionWordConstants {
     static let BlockUnitLength: Int       = 6
     static let RecordHeaderLength: Int    = 4
     static let RecordTypes: [String]       = [
-        "FILE INFO", "PRINTER CONFIG", "PRINTER DRIVER INFO", "HEADER TEXT", "FOOTER TEXT",
-        "STYLE DEFINITION", "EMPHASIS DEFINITION", "BODY TEXT", "STYLE APPLICATION"
+        "FILE INFO",
+        "PRINTER CONFIG",
+        "PRINTER DRIVER INFO",
+        "HEADER TEXT",
+        "FOOTER TEXT",
+        "STYLE DEFINITION", 
+        "EMPHASIS DEFINITION",
+        "BODY TEXT",
+        "STYLE APPLICATION"
     ]
 }
 
@@ -658,7 +665,7 @@ struct PsionWord {
 
 
     /**
-     Determine the longest length of two strings
+     Determine the longest length of two substrings
      */
     private static func greater(_ a: Substring, _ b: Substring) -> String {
 
