@@ -665,7 +665,7 @@ struct PsionWord {
 
 
     /**
-     Determine the longest length of two substrings
+     Determine the longest length of two strings
      */
     private static func greater(_ a: Substring, _ b: Substring) -> String {
 
