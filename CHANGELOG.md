@@ -1,6 +1,6 @@
 ## Release Notes ##
 
-- 0.2.0 *Unreleased*
+- 0.2.0 *3 February 2026*
     - Refactor conversion code to make it more friendly to third-party apps by greater isolation from the cli host code.
     - Refactor logging code to make it more friendly to third-party apps.
     - Switch to Swift `Result` type for conversion outcomes.

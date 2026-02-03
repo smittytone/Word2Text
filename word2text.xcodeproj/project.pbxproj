@@ -87,7 +87,6 @@
 				3B54EF792E57295000292910 /* CHANGELOG.md */,
 				3B198CE92D03B61700FE1EC9 /* LICENSE.md */,
 				3BF1247B2D22A62300E45F2E /* Package.swift */,
-				3B9894232F028D6A00E3EDE3 /* Frameworks */,
 				3B48737B2D03743C00294F25 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -99,13 +98,6 @@
 				3BE01B712D0F3CB900E1D2F4 /* word2textTests.xctest */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		3B9894232F028D6A00E3EDE3 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		3BE01B792D0F3CCB00E1D2F4 /* word2textTests */ = {
@@ -379,7 +371,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 34;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
@@ -403,7 +395,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 34;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
