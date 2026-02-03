@@ -212,11 +212,8 @@ struct PsionWord {
         var style: PsionWordStyle = PsionWordStyle()
 
         // Code and name
-        // NOTE `String(cstring:...)` is deprecated so we'll eventually need to scan the bytes
-        //      for the NUL terminator and turn the rest into a Swift string
         let index = data.startIndex
         style.code = String(bytes: data[index..<index + 2], encoding: .windowsCP1252) ?? ""
-
         style.name = String(decoding: data[index + 2..<index + 18], as: UTF8.self)
         let range: Range<String.Index> = style.name.range(of: "\0")!    // Find the first nul
         style.name = String(style.name[..<range.lowerBound])
@@ -527,7 +524,7 @@ struct PsionWord {
      - Parameters
         - data:  Two-byte slice of the word file bytes.
 
-     - Returns The value as an (unsinged) integer, or -1 on error.
+     - Returns The value as an (unsigned) integer, or -1 on error.
      */
     internal static func getWordValue(_ data: ArraySlice<UInt8>) -> Int {
 

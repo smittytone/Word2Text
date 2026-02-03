@@ -52,7 +52,7 @@ struct ProcessError: Error, LocalizedError {
             case .badRecordLengthFileInfo,
                  .badRecordLengthPrinterConfig,
                  .badRecordLengthStyleDefinition,
-                 .badRecordLengthEmphahsisDefinition,
+                 .badRecordLengthEmphasisDefinition,
                  .badRecordType:
                 if let text = self.text {
                     return text
@@ -115,7 +115,7 @@ struct PsionWordStyle {
 
 
 /*
-    Text section formattting information.
+    Text section formatting information.
 */
 struct PsionWordFormatBlock {
     var startIndex: Int                         = 0
@@ -137,7 +137,7 @@ enum ProcessErrorKind: Int, Error {
     case badRecordLengthFileInfo                = 4
     case badRecordLengthPrinterConfig           = 5
     case badRecordLengthStyleDefinition         = 6
-    case badRecordLengthEmphahsisDefinition     = 7
+    case badRecordLengthEmphasisDefinition     = 7
     case badRecordType                          = 8
     case badFileMissingRecords                  = 9
 }

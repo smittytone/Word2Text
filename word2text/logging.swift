@@ -1,6 +1,6 @@
 /*
     word2text
-    word_loggging.swift
+    logging.swift
 
     Copyright © 2026 Tony Smith. All rights reserved.
 
