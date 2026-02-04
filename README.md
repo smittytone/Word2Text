@@ -132,12 +132,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
 
         do {
-            let filepath "/path/to/Psion/Word/file"
+            let filepath = "/path/to/Psion/Word/file"
             let data = try Data(contentsOf: URL(filePath: filepath))
             var settings: ProcessSettings = ProcessSettings()
             settings.doReturnMarkdown = true
             let result = PsionWord.processFile(data.byteSlice, filepath, settings)
-            
+
             switch result {
                 case .failure(let error):
                     textViewInWindow.string = error.localizedDescription
@@ -150,7 +150,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
-        
+
         return true
     }
 }
