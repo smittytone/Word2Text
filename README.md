@@ -171,4 +171,38 @@ public extension Data {
 }
 ```
 
+Logging can be enabled by (following the example above) adding the line:
+
+```swift
+settings.doShowInfo = true
+```
+
+In library mode, log messages and warnings are posted via the default notification centre. The names used are `ProcessNotification.log` and `ProcessNotification.warning`.
+
+For example, add these lines to the start of the `applicationDidFinishLaunching()` function shown above:
+
+```swift
+let nc: NotificationCenter = NotificationCenter.default
+nc.addObserver(self,
+               selector: #selector(self.printLog(_:)),
+               name: ProcessNotification.log,
+               object: nil)
+
+nc.addObserver(self,
+               selector: #selector(self.printLog(_:)),
+               name: ProcessNotification.warning,
+               object: nil)
+```
+
+And add this method to the `AppDelegate` class:
+
+```swift
+@objc
+func printLog(_ note: Notification) {
+
+    let message = note.object as! String
+    print(message)
+}
+```
+
 Copyright © 2026 Tony Smith (@smittytone)
