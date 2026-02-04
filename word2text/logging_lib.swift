@@ -34,14 +34,12 @@ extension PsionWord {
      */
     public static func log(_ message: String) {
 
-        NotificationCenter.default.post(name: NSNotification.Name(rawValue: ProcessNotification.log),
-                                        object: message)
+        NotificationCenter.default.post(name: NSNotification.Name(rawValue: ProcessNotification.log), object: message)
     }
 
 
     public static func warning(_ message: String) {
 
-        NotificationCenter.default.post(name: NSNotification.Name(rawValue: ProcessNotification.warning),
-                                        object: message)
+        NotificationCenter.default.post(name: NSNotification.Name(rawValue: ProcessNotification.warning), object: message)
     }
 }

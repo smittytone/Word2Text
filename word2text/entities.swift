@@ -82,6 +82,8 @@ public struct ProcessSettings {
 
 /*
     Notification for libraries.
+ 
+    FROM 0.2.1
 */
 public struct ProcessNotification {
 
