@@ -86,9 +86,9 @@ public struct ProcessSettings {
     FROM 0.2.1
 */
 public struct ProcessNotification {
-
-    public static let log = "com.bps.word2text.note.log.message"
-    public static let warning = "com.bps.word2text.note.log.warning"
+    
+    public static let log       = Notification.Name(rawValue: "com.bps.word2text.note.log.message")
+    public static let warning   = Notification.Name(rawValue: "com.bps.word2text.note.log.warning")
 }
 
 /*
