@@ -36,10 +36,10 @@ import Foundation
     The `text` property will be an error message. It is required only by certain errors,
     specifically those which interpolate information into the error message.
 */
-struct ProcessError: Error, LocalizedError {
-    var code: ProcessErrorKind                  = .noError
-    var text: String?                           = nil
-    var errorDescription: String? {
+public struct ProcessError: Error, LocalizedError {
+    public var code: ProcessErrorKind                  = .noError
+    public var text: String?                           = nil
+    public var errorDescription: String? {
         switch self.code {
             case .noError:
                 return nil
@@ -69,11 +69,14 @@ struct ProcessError: Error, LocalizedError {
 /*
     Configuration data for Word file processing operations.
 */
-struct ProcessSettings {
+public struct ProcessSettings {
 
-    var doShowInfo: Bool                        = false
-    var doIncludeHeader: Bool                   = false
-    var doReturnMarkdown: Bool                  = false
+    public var doShowInfo: Bool                        = false
+    public var doIncludeHeader: Bool                   = false
+    public var doReturnMarkdown: Bool                  = false
+
+    public init() {
+    }
 }
 
 
@@ -82,46 +85,46 @@ struct ProcessSettings {
  
     Not all of the fields are used by each type
 */
-struct PsionWordStyle {
-    var code: String                            = ""
-    var name: String                            = ""
-    var isStyle: Bool                           = true      // `true` for a style, `false` for an emphasis
-    var isUndeletable: Bool                     = false
-    var isDefault: Bool                         = false
-    var fontCode: Int                           = 0
-    var underlined: Bool                        = false
-    var bold: Bool                              = false
-    var italic: Bool                            = false
-    var superScript: Bool                       = false     // Emphasis only
-    var subScript: Bool                         = false     // Emphasis only
-    var fontSize: Int                           = 10        // Multiple of 0.05
-    var inheritUnderline: Bool                  = false
-    var inheritBold: Bool                       = false
-    var inheritItalic: Bool                     = false
-    var inheritSuperScript: Bool                = false
-    var inheritSubScript: Bool                  = false
-    var leftIndent: Int                         = 0         // This and all remaining members
-    var rightIndent: Int                        = 0         // are Style only
-    var firstIdent: Int                         = 0
-    var alignment: PsionWordAlignment           = .left
-    var lineSpacing: Int                        = 0
-    var spaceAbovePara: Int                     = 0
-    var spaceBelowPara: Int                     = 0
-    var spacing: PsionWordSpacing               = .keepTogether
-    var outlineLevel: Int                       = 0
-    var tabPositions: [Int]                     = []
-    var tabTypes: [PsionWordTabType]            = []
+public struct PsionWordStyle {
+    public var code: String                            = ""
+    public var name: String                            = ""
+    public var isStyle: Bool                           = true      // `true` for a style, `false` for an emphasis
+    public var isUndeletable: Bool                     = false
+    public var isDefault: Bool                         = false
+    public var fontCode: Int                           = 0
+    public var underlined: Bool                        = false
+    public var bold: Bool                              = false
+    public var italic: Bool                            = false
+    public var superScript: Bool                       = false     // Emphasis only
+    public var subScript: Bool                         = false     // Emphasis only
+    public var fontSize: Int                           = 10        // Multiple of 0.05
+    public var inheritUnderline: Bool                  = false
+    public var inheritBold: Bool                       = false
+    public var inheritItalic: Bool                     = false
+    public var inheritSuperScript: Bool                = false
+    public var inheritSubScript: Bool                  = false
+    public var leftIndent: Int                         = 0         // This and all remaining members
+    public var rightIndent: Int                        = 0         // are Style only
+    public var firstIdent: Int                         = 0
+    public var alignment: PsionWordAlignment           = .left
+    public var lineSpacing: Int                        = 0
+    public var spaceAbovePara: Int                     = 0
+    public var spaceBelowPara: Int                     = 0
+    public var spacing: PsionWordSpacing               = .keepTogether
+    public var outlineLevel: Int                       = 0
+    public var tabPositions: [Int]                     = []
+    public var tabTypes: [PsionWordTabType]            = []
 }
 
 
 /*
     Text section formatting information.
 */
-struct PsionWordFormatBlock {
-    var startIndex: Int                         = 0
-    var endIndex: Int                           = 0
-    var styleCode: String                       = "BT"
-    var emphasisCode: String                    = "NN"
+public struct PsionWordFormatBlock {
+    public var startIndex: Int                         = 0
+    public var endIndex: Int                           = 0
+    public var styleCode: String                       = "BT"
+    public var emphasisCode: String                    = "NN"
 }
 
 
@@ -129,7 +132,7 @@ struct PsionWordFormatBlock {
     Word file processing error codes.
     NOTE We require raw values for these, for output as stderr codes.
 */
-enum ProcessErrorKind: Int, Error {
+public enum ProcessErrorKind: Int, Error {
     case noError                                = 0
     case badFile                                = 1
     case badPsionFileType                       = 2
@@ -147,7 +150,7 @@ enum ProcessErrorKind: Int, Error {
     Text alignment options.
     NOTE We require raw values for these
 */
-enum PsionWordAlignment: Int {
+public enum PsionWordAlignment: Int {
     case left                                   = 0
     case right                                  = 1
     case centered                               = 2
@@ -159,7 +162,7 @@ enum PsionWordAlignment: Int {
 /*
     Paragraph spacing options
 */
-enum PsionWordSpacing {
+public enum PsionWordSpacing {
     case keepWithNext
     case keepTogether
     case newPage
@@ -184,7 +187,7 @@ extension PsionWordSpacing {
 /*
     Tabulation options
 */
-enum PsionWordTabType: Int {
+public enum PsionWordTabType: Int {
     case left                                   = 0
     case right                                  = 1
     case centered                               = 2
@@ -195,7 +198,7 @@ enum PsionWordTabType: Int {
     Word file record types.
     NOTE We require raw values for these, to match to record type bytes.
 */
-enum PsionWordRecordType: Int {
+public enum PsionWordRecordType: Int {
     case fileInfo                               = 1
     case printerConfig                          = 2
     case printerDriver                          = 3

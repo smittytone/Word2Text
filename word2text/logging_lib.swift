@@ -1,6 +1,6 @@
 /*
     word2text
-    linux_version.swift
+    logging_lib.swift
 
     Copyright © 2026 Tony Smith. All rights reserved.
 
@@ -24,8 +24,19 @@
     SOFTWARE.
 */
 
-#if os(Linux)
-    // TODO Update from macOS Info.plist
-    let LINUX_VERSION: String = "0.2.1"
-    let LINUX_BUILD: Int = 35               // Should be odd (macOS even)
-#endif
+
+import Foundation
+
+extension PsionWord {
+
+    public static func log(_ message: String) {
+
+        // RECONNECT friendly logging here
+    }
+
+
+    public static func warning(_ message: String) {
+
+        // RECONNECT friendly logging here
+    }
+}

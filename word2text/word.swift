@@ -27,11 +27,11 @@
 import Foundation
 
 
-struct PsionWordConstants {
+public struct PsionWordConstants {
 
-    static let BlockUnitLength: Int       = 6
-    static let RecordHeaderLength: Int    = 4
-    static let RecordTypes: [String]       = [
+    static let BlockUnitLength: Int     = 6
+    static let RecordHeaderLength: Int  = 4
+    static let RecordTypes: [String]    = [
         "FILE INFO",
         "PRINTER CONFIG",
         "PRINTER DRIVER INFO",
@@ -45,7 +45,7 @@ struct PsionWordConstants {
 }
 
 
-struct PsionWord {
+public struct PsionWord {
 
     /**
      Convert an individual Word file to plain text.
@@ -58,7 +58,7 @@ struct PsionWord {
 
      - Returns: A Result containing the text (success) or a ProcessError embedding the error code (failure).
      */
-    static func processFile(_ data: ArraySlice<UInt8>, _ filepath: String, _ settings: ProcessSettings) -> Result<String, ProcessError> {
+    static public func processFile(_ data: ArraySlice<UInt8>, _ filepath: String, _ settings: ProcessSettings) -> Result<String, ProcessError> {
 
         var textBytes: [UInt8] = []
         var bodyText: String = ""

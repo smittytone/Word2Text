@@ -1,5 +1,7 @@
 ## Release Notes ##
 
+- 0.2.1 *Unreleased*
+    - Update Swift package manifest to support use of code portions as a library in third-party macOS apps.
 - 0.2.0 *3 February 2026*
     - Refactor conversion code to make it more friendly to third-party apps by greater isolation from the cli host code.
     - Refactor logging code to make it more friendly to third-party apps.

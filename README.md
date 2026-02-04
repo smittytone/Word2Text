@@ -1,4 +1,4 @@
-# Word2Text 0.2.0
+# Word2Text 0.2.1
 
 Convert Psion Series 3, 3a and 3c unencrypted *Word* Documents to Plain Text.
 
@@ -90,7 +90,7 @@ For custom styles, *word2text* will apply bold and/or italic emphasis where it c
 
 In due course, I hope to support table formatting from Word tables and ultimately to more intelligently parse custom Word styles.
 
-## Compiling
+## Compiling the CLI App
 
 Building *word2text* from source requires my [Clicore Swift Package](https://github.com/smittytone/clicore).
 
@@ -111,5 +111,64 @@ Building *word2text* from source requires my [Clicore Swift Package](https://git
 * `swift build`
 
 Binary located in `.build/aarch64-unknown-linux-gnu/debug/`. Copy it to a location in your `$PATH`.
+
+## Library Usage
+
+From 0.2.1, you can import this repo as a library to make use of the conversion code in your own macOS app (not Linux).
+
+Add the package via Xcode in the usual way and `import Word2text`. For example:
+
+```swift
+import Cocoa
+import Word2text
+
+
+@main
+class AppDelegate: NSObject, NSApplicationDelegate {
+
+    @IBOutlet var window: NSWindow!
+    @IBOutlet var textViewInWindow: NSTextView!
+
+    func applicationDidFinishLaunching(_ aNotification: Notification) {
+
+        do {
+            let filepath "/path/to/Psion/Word/file"
+            let data = try Data(contentsOf: URL(filePath: filepath))
+            var settings: ProcessSettings = ProcessSettings()
+            settings.doReturnMarkdown = true
+            let result = PsionWord.processFile(data.byteSlice, filepath, settings)
+            
+            switch result {
+                case .failure(let error):
+                    textViewInWindow.string = error.localizedDescription
+                case .success(let processedText):
+                    textViewInWindow.string = processedText
+            }
+        } catch {
+            textViewInWindow.string = "File load error"
+        }
+    }
+
+    func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
+        
+        return true
+    }
+}
+
+
+public extension Data {
+
+    // Return data as an array of bytes
+    var bytes: [UInt8] {
+        return [UInt8](self)
+    }
+
+
+    // Return data as a slice of array of bytes
+    var byteSlice: ArraySlice<UInt8> {
+        return self.bytes[...]
+    }
+}
+```
 
 Copyright © 2026 Tony Smith (@smittytone)

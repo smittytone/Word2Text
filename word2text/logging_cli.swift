@@ -1,6 +1,6 @@
 /*
     word2text
-    logging.swift
+    logging_cli.swift
 
     Copyright © 2026 Tony Smith. All rights reserved.
 
@@ -26,23 +26,6 @@
 
 
 import Foundation
-#if BUILD_AS_LIBRARY
-
-
-extension PsionWord {
-
-    static internal func log(_ message: String) {
-
-        // RECONNECT friendly logging here
-    }
-
-
-    static internal func warning(_ message: String) {
-
-        // RECONNECT friendly logging here
-    }
-}
-#else
 import Clicore
 
 
@@ -59,4 +42,3 @@ extension PsionWord {
         Stdio.reportWarning(message)
     }
 }
-#endif
