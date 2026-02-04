@@ -29,14 +29,19 @@ import Foundation
 
 extension PsionWord {
 
+    /*
+     These files trigger
+     */
     public static func log(_ message: String) {
 
-        // RECONNECT friendly logging here
+        NotificationCenter.default.post(name: NSNotification.Name(rawValue: ProcessNotification.log),
+                                        object: message)
     }
 
 
     public static func warning(_ message: String) {
 
-        // RECONNECT friendly logging here
+        NotificationCenter.default.post(name: NSNotification.Name(rawValue: ProcessNotification.warning),
+                                        object: message)
     }
 }

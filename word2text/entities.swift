@@ -81,6 +81,15 @@ public struct ProcessSettings {
 
 
 /*
+    Notification for libraries.
+*/
+public struct ProcessNotification {
+
+    public static let log = "com.bps.word2text.note.log.message"
+    public static let warning = "com.bps.word2text.note.log.warning"
+}
+
+/*
     Structure to hold a Style or Emphasis record.
  
     Not all of the fields are used by each type
