@@ -53,7 +53,7 @@ public struct PsionWord {
      - Parameters
         - data:     Data object containing the file bytes.
                     May be better to just pass a byte array.
-        - filepath: Absolute path of the target Word file.
+        - filepath: Absolute path of the target Word file. Used for logging. Optional
         - settings: File conversion parameters.
 
      - Returns: A Result containing the text (success) or a ProcessError embedding the error code (failure).
@@ -194,6 +194,16 @@ public struct PsionWord {
         }
 
         return .success(bodyText)
+    }
+
+
+    /**
+     Variation of the above to support passing in a Data object.
+     */
+    static public func processFile(_ data: Data, _ filepath: String = "", _ settings: ProcessSettings = ProcessSettings()) -> Result<String, ProcessError> {
+
+        let bytes = [UInt8](data)
+        return processFile(bytes[...], filepath, settings)
     }
 
 
