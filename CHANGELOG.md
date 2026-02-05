@@ -1,9 +1,11 @@
 ## Release Notes ##
 
-- 0.2.1 *Unreleased*
+- 0.3.0 *Unreleased*
     - Update Swift package manifest to support use of code portions as a library in third-party macOS apps.
+    - Add function `PsionWord.processFile(_ data: Data, _ settings: ProcessSettings = [], _ filepath: String = "") -> Result<String, ProcessError>`, including default values, for easier access. 
+    - **Breaking Change** Migrate `ProcessSettings` from `Struct` to `OptionSet`.
 - 0.2.0 *3 February 2026*
-    - Refactor conversion code to make it more friendly to third-party apps by greater isolation from the cli host code.
+    - Refactor conversion code to make it more friendly to third-party apps by greater isolation from the CLI host code.
     - Refactor logging code to make it more friendly to third-party apps.
     - Switch to Swift `Result` type for conversion outcomes.
     - Update to `Clicore 0.4.0`.
