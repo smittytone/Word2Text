@@ -1,4 +1,4 @@
-# Word2Text 0.2.1
+# Word2Text 0.3.0
 
 Convert Psion Series 3, 3a and 3c unencrypted *Word* Documents to Plain Text.
 
@@ -132,11 +132,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
 
         do {
-            let filepath = "/path/to/Psion/Word/file"
-            let data = try Data(contentsOf: URL(filePath: filepath))
-            var settings: ProcessSettings = ProcessSettings()
-            settings.doReturnMarkdown = true
-            let result = PsionWord.processFile(data.byteSlice, filepath, settings)
+            let wordFilePath = "/path/to/Psion/Word/file"
+            let data = try Data(contentsOf: URL(filePath: wordFilePath))
+            let settings: ProcessSettings = [.doReturnMarkdown]
+            let result = PsionWord.processFile(data, settings, wordFilePath)
 
             switch result {
                 case .failure(let error):
@@ -152,21 +151,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
 
         return true
-    }
-}
-
-
-public extension Data {
-
-    // Return data as an array of bytes
-    var bytes: [UInt8] {
-        return [UInt8](self)
-    }
-
-
-    // Return data as a slice of array of bytes
-    var byteSlice: ArraySlice<UInt8> {
-        return self.bytes[...]
     }
 }
 ```
@@ -203,6 +187,18 @@ func printLog(_ note: Notification) {
     let message = note.object as! String
     print(message)
 }
+```
+
+You can adjust the handling of the Word file by adding parameters to the `ProcessSettings` instance. By default, no options are selected. The options are:
+
+* `doShowinfo` — Issue logging messages during processing.
+* `doIncludeHeaders` — Include Word document headers and footers in the processed output.
+* `doReturnMarkdown` — Return the processed text in Markdown format rather than plain text (the default).
+
+As the example above shows, options are added by inserting them into an empty `ProcessSettings` array:
+
+```swift
+var settings: ProcessSettings = [.doShowInfo, .doReturnMarkdown]
 ```
 
 Copyright © 2026 Tony Smith (@smittytone)
