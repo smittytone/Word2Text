@@ -200,7 +200,7 @@ public struct PsionWord {
     /**
      Variation of the main `processFile()` to support passing in a Data object.
      */
-    static public func processFile(_ data: Data, _ filepath: String = "", _ settings: ProcessSettings = []) -> Result<String, ProcessError> {
+    static public func processFile(_ data: Data, _ settings: ProcessSettings = [], _ filepath: String = "") -> Result<String, ProcessError> {
 
         let bytes = [UInt8](data)
         return processFile(bytes[...], filepath, settings)
