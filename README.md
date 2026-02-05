@@ -155,10 +155,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 }
 ```
 
-Logging can be enabled by (following the example above) adding the line:
+You can adjust the handling of the Word file by adding parameters to the `ProcessSettings` instance. By default, no options are selected. The options are:
+
+* `doShowinfo` — Issue logging messages during processing.
+* `doIncludeHeaders` — Include Word document headers and footers in the processed output.
+* `doReturnMarkdown` — Return the processed text in Markdown format rather than plain text (the default).
+
+As the example above shows, options are added by inserting them into an empty `ProcessSettings` array:
 
 ```swift
-settings.doShowInfo = true
+var settings: ProcessSettings = [.doShowInfo, .doReturnMarkdown]
 ```
 
 In library mode, log messages and warnings are posted via the default notification centre. The names used are `ProcessNotification.log` and `ProcessNotification.warning`.
@@ -187,18 +193,6 @@ func printLog(_ note: Notification) {
     let message = note.object as! String
     print(message)
 }
-```
-
-You can adjust the handling of the Word file by adding parameters to the `ProcessSettings` instance. By default, no options are selected. The options are:
-
-* `doShowinfo` — Issue logging messages during processing.
-* `doIncludeHeaders` — Include Word document headers and footers in the processed output.
-* `doReturnMarkdown` — Return the processed text in Markdown format rather than plain text (the default).
-
-As the example above shows, options are added by inserting them into an empty `ProcessSettings` array:
-
-```swift
-var settings: ProcessSettings = [.doShowInfo, .doReturnMarkdown]
 ```
 
 Copyright © 2026 Tony Smith (@smittytone)
