@@ -74,9 +74,9 @@ public struct ProcessSettings: OptionSet {
 
     public let rawValue: UInt8
 
-    static let doShowInfo       = ProcessSettings(rawValue: 1 << 0)
-    static let doIncludeHeader  = ProcessSettings(rawValue: 1 << 1)
-    static let doReturnMarkdown = ProcessSettings(rawValue: 1 << 2)
+    public static let doShowInfo       = ProcessSettings(rawValue: 1 << 0)
+    public static let doIncludeHeader  = ProcessSettings(rawValue: 1 << 1)
+    public static let doReturnMarkdown = ProcessSettings(rawValue: 1 << 2)
 
     public init(rawValue: UInt8) {
 
