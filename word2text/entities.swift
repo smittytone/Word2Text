@@ -88,7 +88,7 @@ public struct ProcessSettings: OptionSet {
 /*
     Notification for libraries.
  
-    FROM 0.2.1
+    FROM 0.3.0
 */
 public struct ProcessNotification {
     

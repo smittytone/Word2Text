@@ -114,14 +114,13 @@ Binary located in `.build/aarch64-unknown-linux-gnu/debug/`. Copy it to a locati
 
 ## Library Usage
 
-From 0.2.1, you can import this repo as a library to make use of the conversion code in your own macOS app (not Linux).
+From 0.3.0, you can import this repo as a library to make use of the conversion code in your own macOS app (not Linux).
 
 Add the package via Xcode in the usual way and `import Word2text`. For example:
 
 ```swift
 import Cocoa
 import Word2text
-
 
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
