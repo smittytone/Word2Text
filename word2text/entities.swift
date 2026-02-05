@@ -37,6 +37,7 @@ import Foundation
     specifically those which interpolate information into the error message.
 */
 public struct ProcessError: Error, LocalizedError {
+
     public var code: ProcessErrorKind                  = .noError
     public var text: String?                           = nil
     public var errorDescription: String? {
@@ -69,13 +70,17 @@ public struct ProcessError: Error, LocalizedError {
 /*
     Configuration data for Word file processing operations.
 */
-public struct ProcessSettings {
+public struct ProcessSettings: OptionSet {
 
-    public var doShowInfo: Bool                        = false
-    public var doIncludeHeader: Bool                   = false
-    public var doReturnMarkdown: Bool                  = false
+    public let rawValue: UInt8
 
-    public init() {
+    static let doShowInfo       = ProcessSettings(rawValue: 1 << 0)
+    static let doIncludeHeader  = ProcessSettings(rawValue: 1 << 1)
+    static let doReturnMarkdown = ProcessSettings(rawValue: 1 << 2)
+
+    public init(rawValue: UInt8) {
+
+        self.rawValue = rawValue
     }
 }
 
@@ -97,6 +102,7 @@ public struct ProcessNotification {
     Not all of the fields are used by each type
 */
 public struct PsionWordStyle {
+    
     public var code: String                            = ""
     public var name: String                            = ""
     public var isStyle: Bool                           = true      // `true` for a style, `false` for an emphasis
@@ -132,6 +138,7 @@ public struct PsionWordStyle {
     Text section formatting information.
 */
 public struct PsionWordFormatBlock {
+
     public var startIndex: Int                         = 0
     public var endIndex: Int                           = 0
     public var styleCode: String                       = "BT"
@@ -144,6 +151,7 @@ public struct PsionWordFormatBlock {
     NOTE We require raw values for these, for output as stderr codes.
 */
 public enum ProcessErrorKind: Int, Error {
+
     case noError                                = 0
     case badFile                                = 1
     case badPsionFileType                       = 2
@@ -162,6 +170,7 @@ public enum ProcessErrorKind: Int, Error {
     NOTE We require raw values for these
 */
 public enum PsionWordAlignment: Int {
+
     case left                                   = 0
     case right                                  = 1
     case centered                               = 2
@@ -174,6 +183,7 @@ public enum PsionWordAlignment: Int {
     Paragraph spacing options
 */
 public enum PsionWordSpacing {
+
     case keepWithNext
     case keepTogether
     case newPage
@@ -181,6 +191,7 @@ public enum PsionWordSpacing {
 }
 
 extension PsionWordSpacing {
+
     mutating func set(_ value: UInt8) {
         if value & 0x01 > 0 {
             self = .keepWithNext
@@ -199,6 +210,7 @@ extension PsionWordSpacing {
     Tabulation options
 */
 public enum PsionWordTabType: Int {
+
     case left                                   = 0
     case right                                  = 1
     case centered                               = 2
@@ -210,6 +222,7 @@ public enum PsionWordTabType: Int {
     NOTE We require raw values for these, to match to record type bytes.
 */
 public enum PsionWordRecordType: Int {
+
     case fileInfo                               = 1
     case printerConfig                          = 2
     case printerDriver                          = 3

@@ -53,7 +53,7 @@ public struct PsionWord {
      - Parameters
         - data:     Data object containing the file bytes.
                     May be better to just pass a byte array.
-        - filepath: Absolute path of the target Word file. Used for logging. Optional
+        - filepath: Absolute path of the target Word file. Used for logging.
         - settings: File conversion parameters.
 
      - Returns: A Result containing the text (success) or a ProcessError embedding the error code (failure).
@@ -80,7 +80,7 @@ public struct PsionWord {
             return .failure(ProcessError(code: .badPsionFileType))
         }
 
-        if settings.doShowInfo {
+        if settings.contains(.doShowInfo) {
             log("File \(filepath) is a Psion Series 3 Word document")
         }
 
@@ -100,7 +100,7 @@ public struct PsionWord {
             // Move index to start of record
             byteIndex += PsionWordConstants.RecordHeaderLength
 
-            if settings.doShowInfo {
+            if settings.contains(.doShowInfo) {
                 log("Record of type \(PsionWordConstants.RecordTypes[recordType.rawValue - 1]) found at offset \(String(format: "0x%04x", arguments: [byteIndex])). Size: \(recordDataLength) bytes")
             }
 
@@ -170,7 +170,7 @@ public struct PsionWord {
         }
 
         // Process to Markdown if that's required
-        if settings.doReturnMarkdown {
+        if settings.contains(.doReturnMarkdown) {
             bodyText = convertToMarkdown(textBytes, blocks, styles, emphases, settings)
         } else {
             // Psion Series 3a character set is IBM CP 850. The closest Swift supports is Windows 1252,
@@ -180,10 +180,10 @@ public struct PsionWord {
         }
 
         // Add the header and foot if requested
-        if settings.doIncludeHeader {
+        if settings.contains(.doIncludeHeader) {
             // FROM 0.1.3
             // Do different delimiters for markdown output
-            if settings.doReturnMarkdown {
+            if settings.contains(.doReturnMarkdown) {
                 var longest = greater(outerText[0][...], outerText[1][...])
                 longest = greater(longest[...], "****")
                 let stars = String(repeating: "*", count: longest.count)
@@ -198,9 +198,9 @@ public struct PsionWord {
 
 
     /**
-     Variation of the above to support passing in a Data object.
+     Variation of the main `processFile()` to support passing in a Data object.
      */
-    static public func processFile(_ data: Data, _ filepath: String = "", _ settings: ProcessSettings = ProcessSettings()) -> Result<String, ProcessError> {
+    static public func processFile(_ data: Data, _ filepath: String = "", _ settings: ProcessSettings = []) -> Result<String, ProcessError> {
 
         let bytes = [UInt8](data)
         return processFile(bytes[...], filepath, settings)
@@ -260,7 +260,7 @@ public struct PsionWord {
 
         // The following properties apply to Styles only so exit if it's an Emphasis
         if !style.isStyle {
-            if settings.doShowInfo {
+            if settings.contains(.doShowInfo) {
                 log("  Emphasis code: \(style.code) (\(style.name))")
             }
 
@@ -297,7 +297,7 @@ public struct PsionWord {
             }
         }
 
-        if settings.doShowInfo {
+        if settings.contains(.doShowInfo) {
             log("  Style code: \(style.code) (\(style.name))")
         }
 
@@ -328,7 +328,7 @@ public struct PsionWord {
         // String is empty (NUL only)?
         outerText = outerText.count > 0 ? outerText : (isHeader ? "No header" : "No footer")
 
-        if settings.doShowInfo {
+        if settings.contains(.doShowInfo) {
             log("  \(isHeader ? "Header" : "Footer") text length \(rawLength - 1) byte\(rawLength == 1 ? "" : "s")")
         }
 
@@ -372,7 +372,7 @@ public struct PsionWord {
             }
 
             // If the user has selected verbose mode, output the list of 'bad' characters
-            if settings.doShowInfo {
+            if settings.contains(.doShowInfo) {
                 var msg = ""
                 for (idx, badChar) in badChars {
                     msg += String(format: "%d @ %d ", badChar, idx)
@@ -438,7 +438,7 @@ public struct PsionWord {
             }
         }
 
-        if settings.doShowInfo {
+        if settings.contains(.doShowInfo) {
             log("  Processed text length \(textBytes.count) characters\(textBytes.count == 1 ? "" : "s")")
         }
 
@@ -512,7 +512,7 @@ public struct PsionWord {
 
             blocks.append(block)
 
-            if settings.doShowInfo {
+            if settings.contains(.doShowInfo) {
                 log("  Text bytes range \(block.startIndex)-\(block.endIndex) has style code \(styleCode) and emphasis code \(emphasisCode)")
             }
 

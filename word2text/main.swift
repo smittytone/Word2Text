@@ -31,16 +31,16 @@ import Clicore
 // MARK: - Global Variables
 
 // CLI argument management
-var argIsAValue: Bool       = false
-var argType: Int            = -1
-var argCount: Int           = 0
-var prevArg: String         = ""
+var argIsAValue: Bool           = false
+var argType: Int                = -1
+var argCount: Int               = 0
+var prevArg: String             = ""
 // CLI operational settings
-var haltOnFirstError: Bool  = false
-var outputAsFile: Bool      = false
-var files: [String]         = []
+var haltOnFirstError: Bool      = false
+var outputAsFile: Bool          = false
+var files: [String]             = []
 // File conversion settings
-var settings: ProcessSettings = ProcessSettings()
+var settings: ProcessSettings   = []
 
 
 // MARK: - Runtime Start
@@ -76,11 +76,11 @@ for argument in args {
     } else {
         switch argument {
         case "-v", "--verbose":
-            settings.doShowInfo = true
+            settings.insert(.doShowInfo)
         case "-o", "--outer":
-            settings.doIncludeHeader = true
+            settings.insert(.doIncludeHeader)
         case "-m","--markdown":
-            settings.doReturnMarkdown = true
+            settings.insert(.doReturnMarkdown)
         case "-f", "--file":
             outputAsFile = true
         case "-s", "--stop":
@@ -149,7 +149,7 @@ for filepath in finalFiles {
             // Report the processed text
             if !outputToFiles {
                 // Output processed text to STDOUT so it's available for piping or redirection
-                if settings.doShowInfo {
+                if settings.contains(.doShowInfo) {
                     Stdio.report("File \(filepath) processed")
                 }
 
@@ -157,12 +157,12 @@ for filepath in finalFiles {
             } else {
                 // Output to a file: generate the name and extension...
                 var outFilepath: String = (filepath as NSString).deletingPathExtension
-                outFilepath += (settings.doReturnMarkdown ? ".md" : ".txt")
+                outFilepath += (settings.contains(.doReturnMarkdown) ? ".md" : ".txt")
 
                 // ...and attempt to write it out
                 do {
                     try processedText.write(toFile: outFilepath, atomically: true, encoding: .utf8)
-                    if settings.doShowInfo {
+                    if settings.contains(.doShowInfo) {
                         Stdio.report("File \(filepath) processed to \(outFilepath)")
                     }
                 } catch {
