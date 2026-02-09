@@ -1,0 +1,58 @@
+{
+  "fill" : {
+    "solid" : "display-p3:0.65479,0.13330,0.09802,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "image-name" : "01 2.png",
+          "name" : "01 2",
+          "opacity-specializations" : [
+            {
+              "appearance" : "tinted",
+              "value" : 0.8
+            }
+          ],
+          "position" : {
+            "scale" : 0.36,
+            "translation-in-points" : [
+              0,
+              -110.1484375
+            ]
+          }
+        },
+        {
+          "image-name" : "02 2.png",
+          "name" : "02 2",
+          "opacity-specializations" : [
+            {
+              "appearance" : "tinted",
+              "value" : 0.8
+            }
+          ],
+          "position" : {
+            "scale" : 0.36,
+            "translation-in-points" : [
+              0,
+              68.46875
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : [
+      "macOS"
+    ]
+  }
+}
