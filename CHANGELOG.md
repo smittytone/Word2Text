@@ -1,5 +1,7 @@
 ## Release Notes ##
 
+- 0.3.1 *Unreleased*
+    - Fix out-of-boards byte array acces on conversion to Markdown.
 - 0.3.0 *5 February 2026*
     - Update Swift package manifest to support use of code portions as a library in third-party macOS apps.
     - Add function `PsionWord.processFile(_ data: Data, _ settings: ProcessSettings = [], _ filepath: String = "") -> Result<String, ProcessError>`, including default values, for easier access. 

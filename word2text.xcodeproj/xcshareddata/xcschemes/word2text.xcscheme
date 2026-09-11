@@ -55,7 +55,7 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "$HOME/Psion/NOTES.WRD"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$HOME/Psion/WORD03.WRD"
@@ -83,6 +83,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-f"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "$HOME/GitHub/plptools/plpftp/timeline.wrd"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

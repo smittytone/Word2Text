@@ -60,12 +60,6 @@ var args: [String] = Cli.unify(args: CommandLine.arguments)
 
 // Process the (separated) arguments
 for argument in args {
-    // Ignore the first command line argument
-    if argCount == 0 {
-        argCount += 1
-        continue
-    }
-
     if argIsAValue {
         // Make sure we're not reading in an option rather than a value
         if argument.prefix(1) == "-" {
