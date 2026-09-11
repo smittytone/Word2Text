@@ -638,9 +638,17 @@ public struct PsionWord {
                 }
             }
 
+            // FROM 0.3.1
+            // This feels hacky -- need to track down the issue that's causing
+            // me to need to add thus
+            var endIndex = block.endIndex
+            if block.endIndex >= rawText.count {
+                endIndex -= 1
+            }
+
             // Add the tagged text to the string store. We only duplicate the tag at the end
             // of the block if it is a character-level tag, ie. an Emphasis
-            var addition = convertText([UInt8](rawText[block.startIndex...block.endIndex]), settings)
+            var addition = convertText([UInt8](rawText[block.startIndex...endIndex]), settings)
 
             // Check if we've come to the end of a paragraph - but not empty ones
             if addition.hasSuffix("\n") && addition.count > 1 {
