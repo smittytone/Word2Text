@@ -638,9 +638,9 @@ public struct PsionWord {
                 }
             }
 
-            // FROM 0.3.1
+            // FROM 0.4.0
             // This feels hacky -- need to track down the issue that's causing
-            // me to need to add thus
+            // me to need to add this...
             var endIndex = block.endIndex
             if block.endIndex >= rawText.count {
                 endIndex -= 1

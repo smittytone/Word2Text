@@ -4,7 +4,7 @@
     - **Breeaking** The minimum supprted version of macOS is now 12.4.
     - Revise code to match structure of my other CLI tools.
     - Expand Swift compiler support for macOS CLI app and macOS library usage.
-    - Fix out-of-boards byte array access on conversion to Markdown.
+    - Fix out-of-bounds byte array access on conversion to Markdown.
 - 0.3.0 *5 February 2026*
     - Update Swift package manifest to support use of code portions as a library in third-party macOS apps.
     - Add function `PsionWord.processFile(_ data: Data, _ settings: ProcessSettings = [], _ filepath: String = "") -> Result<String, ProcessError>`, including default values, for easier access. 
