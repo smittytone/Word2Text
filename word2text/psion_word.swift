@@ -1,6 +1,6 @@
 /*
     word2text
-    word.swift
+    psion_word.swift
 
     Copyright © 2026 Tony Smith. All rights reserved.
 
@@ -25,6 +25,7 @@
 */
 
 import Foundation
+import Clicore
 
 
 public struct PsionWordConstants {
@@ -47,6 +48,52 @@ public struct PsionWordConstants {
 
 public struct PsionWord {
 
+    static func processFiles(_ settings: ProcessSettings) {
+
+        let outputToFiles = settings.outputAsFile || settings.files.count > 1
+        for filepath in settings.files {
+            let data = Path.getFileContents(filepath)
+            let result: Result<String, ProcessError> = !data.isEmpty
+            ? PsionWord.processFile(data, filepath, settings)
+            : .failure(ProcessError(code: .badFile))
+
+            switch result {
+                case .failure(let error):
+                    if settings.haltOnFirstError {
+                        Stdio.reportErrorAndExit("File \(filepath) could not be processed: \(error.localizedDescription)", Int32(error.code.rawValue))
+                    } else {
+                        Stdio.reportWarning("File \(filepath) could not be processed: \(error.localizedDescription)")
+                    }
+                case .success(let processedText):
+                    // Report the processed text
+                    if !outputToFiles {
+                        // Output processed text to STDOUT so it's available for piping or redirection
+                        if settings.showInfo {
+                            Stdio.report("File \(filepath) processed")
+                        }
+
+                        Stdio.output(processedText)
+                    } else {
+                        // Output to a file: generate the name and extension...
+                        var outFilepath = (filepath as NSString).deletingPathExtension
+                        outFilepath += settings.returnMarkdown ? ".md" : ".txt"
+
+                        // ...and attempt to write it out
+                        do {
+                            try processedText.write(toFile: outFilepath, atomically: true, encoding: .utf8)
+                            if settings.showInfo {
+                                Stdio.report("File \(filepath) processed to \(outFilepath)")
+                            }
+                        } catch {
+                            Stdio.reportWarning("File \(outFilepath) could not be processed: writing to stdout instead")
+                            Stdio.output(processedText)
+                        }
+                    }
+            }
+        }
+    }
+
+
     /**
      Convert an individual Word file to plain text.
 
@@ -60,13 +107,13 @@ public struct PsionWord {
      */
     static public func processFile(_ data: ArraySlice<UInt8>, _ filepath: String, _ settings: ProcessSettings) -> Result<String, ProcessError> {
 
+        var bodyText = ""
+        var byteIndex = 40
         var textBytes: [UInt8] = []
-        var bodyText: String = ""
         var outerText: [String] = ["", ""]
         var styles: [String:PsionWordStyle] = [:]
         var emphases: [String:PsionWordStyle] = [:]
         var blocks: [PsionWordFormatBlock] = []
-        var byteIndex: Int = 40
 
         // Check minimum file size: enough bytes to at least check the preamble
         if data.count < 16 {
@@ -80,7 +127,7 @@ public struct PsionWord {
             return .failure(ProcessError(code: .badPsionFileType))
         }
 
-        if settings.contains(.doShowInfo) {
+        if settings.showInfo {
             log("File \(filepath) is a Psion Series 3 Word document")
         }
 
@@ -100,7 +147,7 @@ public struct PsionWord {
             // Move index to start of record
             byteIndex += PsionWordConstants.RecordHeaderLength
 
-            if settings.contains(.doShowInfo) {
+            if settings.showInfo {
                 log("Record of type \(PsionWordConstants.RecordTypes[recordType.rawValue - 1]) found at offset \(String(format: "0x%04x", arguments: [byteIndex])). Size: \(recordDataLength) bytes")
             }
 
@@ -170,7 +217,7 @@ public struct PsionWord {
         }
 
         // Process to Markdown if that's required
-        if settings.contains(.doReturnMarkdown) {
+        if settings.returnMarkdown {
             bodyText = convertToMarkdown(textBytes, blocks, styles, emphases, settings)
         } else {
             // Psion Series 3a character set is IBM CP 850. The closest Swift supports is Windows 1252,
@@ -180,10 +227,10 @@ public struct PsionWord {
         }
 
         // Add the header and foot if requested
-        if settings.contains(.doIncludeHeader) {
+        if settings.includeHeader {
             // FROM 0.1.3
             // Do different delimiters for markdown output
-            if settings.contains(.doReturnMarkdown) {
+            if settings.returnMarkdown {
                 var longest = greater(outerText[0][...], outerText[1][...])
                 longest = greater(longest[...], "****")
                 let stars = String(repeating: "*", count: longest.count)
@@ -200,10 +247,10 @@ public struct PsionWord {
     /**
      Variation of the main `processFile()` to support passing in a Data object.
      */
-    static public func processFile(_ data: Data, _ settings: ProcessSettings = [], _ filepath: String = "") -> Result<String, ProcessError> {
+    static public func processFile(_ data: Data, _ settings: ProcessSettings? = nil, _ filepath: String = "") -> Result<String, ProcessError> {
 
         let bytes = [UInt8](data)
-        return processFile(bytes[...], filepath, settings)
+        return processFile(bytes[...], filepath, settings == nil ? ProcessSettings() : settings!)
     }
 
 
@@ -260,7 +307,7 @@ public struct PsionWord {
 
         // The following properties apply to Styles only so exit if it's an Emphasis
         if !style.isStyle {
-            if settings.contains(.doShowInfo) {
+            if settings.showInfo {
                 log("  Emphasis code: \(style.code) (\(style.name))")
             }
 
@@ -297,7 +344,7 @@ public struct PsionWord {
             }
         }
 
-        if settings.contains(.doShowInfo) {
+        if settings.showInfo {
             log("  Style code: \(style.code) (\(style.name))")
         }
 
@@ -328,7 +375,7 @@ public struct PsionWord {
         // String is empty (NUL only)?
         outerText = outerText.count > 0 ? outerText : (isHeader ? "No header" : "No footer")
 
-        if settings.contains(.doShowInfo) {
+        if settings.showInfo {
             log("  \(isHeader ? "Header" : "Footer") text length \(rawLength - 1) byte\(rawLength == 1 ? "" : "s")")
         }
 
@@ -372,7 +419,7 @@ public struct PsionWord {
             }
 
             // If the user has selected verbose mode, output the list of 'bad' characters
-            if settings.contains(.doShowInfo) {
+            if settings.showInfo {
                 var msg = ""
                 for (idx, badChar) in badChars {
                     msg += String(format: "%d @ %d ", badChar, idx)
@@ -438,7 +485,7 @@ public struct PsionWord {
             }
         }
 
-        if settings.contains(.doShowInfo) {
+        if settings.showInfo {
             log("  Processed text length \(textBytes.count) characters\(textBytes.count == 1 ? "" : "s")")
         }
 
@@ -512,7 +559,7 @@ public struct PsionWord {
 
             blocks.append(block)
 
-            if settings.contains(.doShowInfo) {
+            if settings.showInfo {
                 log("  Text bytes range \(block.startIndex)-\(block.endIndex) has style code \(styleCode) and emphasis code \(emphasisCode)")
             }
 

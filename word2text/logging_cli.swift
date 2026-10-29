@@ -24,11 +24,13 @@
     SOFTWARE.
 */
 
-
 import Foundation
 import Clicore
 
 
+/*
+ * Logging functions for the CLI version of this utility.
+ */
 extension PsionWord {
 
     static internal func log(_ message: String) {

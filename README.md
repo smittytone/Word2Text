@@ -1,6 +1,6 @@
-# Word2Text 0.3.1
+# Word2Text 0.4.0
 
-Convert Psion Series 3, 3a and 3c unencrypted *Word* Documents to Plain Text.
+Convert Psion Series 3, 3a and 3c unencrypted *Word* Documents to Plain Text or Markdown.
 
 > This utility owes a massive debt to the work of [Clive Feather](https://www.davros.org), whose [Psionics Files](https://www.davros.org/psion/psionics/) contains (among many other useful things) the results of his work reverse engineering the Series 3 applications’ document formats.
 
@@ -110,11 +110,11 @@ Building *word2text* from source requires my [Clicore Swift Package](https://git
 * `cd /path/to/repo`
 * `swift build`
 
-Binary located in `.build/aarch64-unknown-linux-gnu/debug/`. Copy it to a location in your `$PATH`.
+Binary located in `.build/debug/`. Copy it to a location in your `$PATH`.
 
 ## Library Usage
 
-From 0.3.0, you can import this repo as a library to make use of the conversion code in your own macOS app (not Linux).
+You can import this repo as a library to make use of the conversion code in your own macOS app (not Linux).
 
 Add the package via Xcode in the usual way and `import Word2text`. For example:
 
@@ -171,7 +171,7 @@ In library mode, log messages and warnings are posted via the default notificati
 For example, add these lines to the start of the `applicationDidFinishLaunching()` function shown above:
 
 ```swift
-let nc: NotificationCenter = NotificationCenter.default
+let nc = NotificationCenter.default
 nc.addObserver(self,
                selector: #selector(self.printLog(_:)),
                name: ProcessNotification.log,
@@ -194,4 +194,19 @@ func printLog(_ note: Notification) {
 }
 ```
 
-Copyright © 2026 Tony Smith (@smittytone)
+## Version Management
+
+The source of truth for version information is the *Xcode* project. If you compile `word2text` for macOS using the Swift compiler, the file `swift.plist` will be compiled into the binary to provide version information and to permit subsequent notarisation (after code signing).
+
+The `sync-version.sh` script is my tool to update the subsidiary files after I have updated the app using *Xcode*. The current version of the app, in the `main` branch of the repo, will always contain up-to-date `word2text` version information with the subsidiary version information files, so you should not need to alter these files yourself. The script is currently macOS only.
+
+## Release Notes ##
+
+See [Changelog](./CHANGELOG.md)
+
+## Licence ##
+
+*word2text* is copyright © 2026, Tony Smith. Its source code is released under the MIT Licence.
+
+_AI was not used in the development of this software. This is a statement of plain fact, not of policy. AI tools may be used in future._
+

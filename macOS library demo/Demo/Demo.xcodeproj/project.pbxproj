@@ -352,7 +352,7 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/smittytone/Word2Text";
 			requirement = {
-				branch = main;
+				branch = develop;
 				kind = branch;
 			};
 		};

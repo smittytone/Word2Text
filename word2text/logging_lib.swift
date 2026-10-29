@@ -30,7 +30,7 @@ import Foundation
 extension PsionWord {
 
     /*
-     These files trigger
+     * Logging functions for the library version of this utility.
      */
     public static func log(_ message: String) {
 

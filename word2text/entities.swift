@@ -69,19 +69,17 @@ public struct ProcessError: Error, LocalizedError {
 
 /*
     Configuration data for Word file processing operations.
+
+    REVISED 0.4.0
 */
-public struct ProcessSettings: OptionSet {
-
-    public let rawValue: UInt8
-
-    public static let doShowInfo       = ProcessSettings(rawValue: 1 << 0)
-    public static let doIncludeHeader  = ProcessSettings(rawValue: 1 << 1)
-    public static let doReturnMarkdown = ProcessSettings(rawValue: 1 << 2)
-
-    public init(rawValue: UInt8) {
-
-        self.rawValue = rawValue
-    }
+public struct ProcessSettings {
+    
+    public var showInfo: Bool               = false
+    public var includeHeader: Bool          = false
+    public var haltOnFirstError: Bool       = false
+    public var outputAsFile: Bool           = false
+    public var returnMarkdown: Bool         = false
+    public var files: [String]              = []
 }
 
 
