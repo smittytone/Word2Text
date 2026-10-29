@@ -74,9 +74,11 @@ public struct ProcessSettings: OptionSet {
 
     public let rawValue: UInt8
 
-    public static let doShowInfo       = ProcessSettings(rawValue: 1 << 0)
-    public static let doIncludeHeader  = ProcessSettings(rawValue: 1 << 1)
-    public static let doReturnMarkdown = ProcessSettings(rawValue: 1 << 2)
+    public static let showInfo       = ProcessSettings(rawValue: 1 << 0)
+    public static let includeHeader  = ProcessSettings(rawValue: 1 << 1)
+    public static let returnMarkdown = ProcessSettings(rawValue: 1 << 2)
+    // FROM 0.4.0
+    public static let reverseConvert = ProcessSettings(rawValue: 1 << 3)
 
     public init(rawValue: UInt8) {
 
@@ -159,7 +161,7 @@ public enum ProcessErrorKind: Int, Error {
     case badRecordLengthFileInfo                = 4
     case badRecordLengthPrinterConfig           = 5
     case badRecordLengthStyleDefinition         = 6
-    case badRecordLengthEmphasisDefinition     = 7
+    case badRecordLengthEmphasisDefinition      = 7
     case badRecordType                          = 8
     case badFileMissingRecords                  = 9
 }

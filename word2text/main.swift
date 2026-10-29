@@ -70,15 +70,18 @@ for argument in args {
     } else {
         switch argument {
         case "-v", "--verbose":
-            settings.insert(.doShowInfo)
+            settings.insert(.showInfo)
         case "-o", "--outer":
-            settings.insert(.doIncludeHeader)
+            settings.insert(.includeHeader)
         case "-m","--markdown":
-            settings.insert(.doReturnMarkdown)
+            settings.insert(.returnMarkdown)
         case "-f", "--file":
             outputAsFile = true
         case "-s", "--stop":
             haltOnFirstError = true
+        case "-r", "--reverse":
+            settings.insert(.reverseConvert)
+            outputAsFile = true
         case "-h", "-help":
             showHelp()
             Stdio.disableCtrlHandler()
@@ -106,6 +109,9 @@ for argument in args {
     }
 }
 
+// TODO
+// Markdown output and reverse are incompatible
+
 // Pre-process the file list looking for directories.
 // We also take the time to rationalise the paths of passed files
 var finalFiles: [String] = []
@@ -115,8 +121,14 @@ for filepath in files {
         // References a directory so get the file list
         let directoryContentsEnumerator = FileManager.default.enumerator(atPath: absolutePath)
         while let file = directoryContentsEnumerator?.nextObject() as? String {
-            if file.hasSuffix(".WRD") {
-                finalFiles.append(absolutePath + "/" + file)
+            if settings.contains(.reverseConvert) {
+                if file.uppercased().hasSuffix(".MD") {
+                    finalFiles.append(absolutePath + "/" + file)
+                }
+            } else {
+                if file.hasSuffix(".WRD") {
+                    finalFiles.append(absolutePath + "/" + file)
+                }
             }
         }
     } else {
@@ -128,42 +140,71 @@ for filepath in files {
 let outputToFiles: Bool = outputAsFile || finalFiles.count > 1
 for filepath in finalFiles {
     let data = Path.getFileContents(filepath)
-    let result: Result<String, ProcessError> = !data.isEmpty
-    ? PsionWord.processFile(data, filepath, settings)
-    : .failure(ProcessError(code: .badFile))
+    if settings.contains(.reverseConvert) {
+        let result: Result<Data, ProcessError> = !data.isEmpty
+        ? PsionWord.convertBack(data, filepath, settings)
+        : .failure(ProcessError(code: .badFile))
 
-    switch result {
-        case .failure(let error):
-            if haltOnFirstError {
-                Stdio.reportErrorAndExit("File \(filepath) could not be processed: \(error.localizedDescription)", Int32(error.code.rawValue))
-            } else {
-                Stdio.reportWarning("File \(filepath) could not be processed: \(error.localizedDescription)")
-            }
-        case .success(let processedText):
-            // Report the processed text
-            if !outputToFiles {
-                // Output processed text to STDOUT so it's available for piping or redirection
-                if settings.contains(.doShowInfo) {
-                    Stdio.report("File \(filepath) processed")
+        switch result {
+            case .failure(let error):
+                if haltOnFirstError {
+                    Stdio.reportErrorAndExit("File \(filepath) could not be processed: \(error.localizedDescription)", Int32(error.code.rawValue))
+                } else {
+                    Stdio.reportWarning("File \(filepath) could not be processed: \(error.localizedDescription)")
                 }
-
-                Stdio.output(processedText)
-            } else {
+            case .success(let processedData):
                 // Output to a file: generate the name and extension...
-                var outFilepath: String = (filepath as NSString).deletingPathExtension
-                outFilepath += (settings.contains(.doReturnMarkdown) ? ".md" : ".txt")
+                var outFilepath = (filepath as NSString).deletingPathExtension
+                outFilepath += ".wrd"
 
                 // ...and attempt to write it out
                 do {
-                    try processedText.write(toFile: outFilepath, atomically: true, encoding: .utf8)
-                    if settings.contains(.doShowInfo) {
+                    try processedData.write(to: URL(fileURLWithPath: outFilepath))
+                    if settings.contains(.showInfo) {
                         Stdio.report("File \(filepath) processed to \(outFilepath)")
                     }
                 } catch {
-                    Stdio.reportWarning("File \(outFilepath) could not be processed: writing to stdout instead")
-                    Stdio.output(processedText)
+                    Stdio.reportWarning("File \(outFilepath) could not be processed")
                 }
-            }
+        }
+    } else {
+        let result: Result<String, ProcessError> = !data.isEmpty
+        ? PsionWord.processFile(data, filepath, settings)
+        : .failure(ProcessError(code: .badFile))
+
+        switch result {
+            case .failure(let error):
+                if haltOnFirstError {
+                    Stdio.reportErrorAndExit("File \(filepath) could not be processed: \(error.localizedDescription)", Int32(error.code.rawValue))
+                } else {
+                    Stdio.reportWarning("File \(filepath) could not be processed: \(error.localizedDescription)")
+                }
+            case .success(let processedText):
+                // Report the processed text
+                if !outputToFiles {
+                    // Output processed text to STDOUT so it's available for piping or redirection
+                    if settings.contains(.showInfo) {
+                        Stdio.report("File \(filepath) processed")
+                    }
+
+                    Stdio.output(processedText)
+                } else {
+                    // Output to a file: generate the name and extension...
+                    var outFilepath = (filepath as NSString).deletingPathExtension
+                    outFilepath += settings.contains(.returnMarkdown) ? ".md" : ".txt"
+
+                    // ...and attempt to write it out
+                    do {
+                        try processedText.write(toFile: outFilepath, atomically: true, encoding: .utf8)
+                        if settings.contains(.showInfo) {
+                            Stdio.report("File \(filepath) processed to \(outFilepath)")
+                        }
+                    } catch {
+                        Stdio.reportWarning("File \(outFilepath) could not be processed: writing to stdout instead")
+                        Stdio.output(processedText)
+                    }
+                }
+        }
     }
 }
 

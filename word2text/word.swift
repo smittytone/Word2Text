@@ -80,7 +80,7 @@ public struct PsionWord {
             return .failure(ProcessError(code: .badPsionFileType))
         }
 
-        if settings.contains(.doShowInfo) {
+        if settings.contains(.showInfo) {
             log("File \(filepath) is a Psion Series 3 Word document")
         }
 
@@ -100,7 +100,7 @@ public struct PsionWord {
             // Move index to start of record
             byteIndex += PsionWordConstants.RecordHeaderLength
 
-            if settings.contains(.doShowInfo) {
+            if settings.contains(.showInfo) {
                 log("Record of type \(PsionWordConstants.RecordTypes[recordType.rawValue - 1]) found at offset \(String(format: "0x%04x", arguments: [byteIndex])). Size: \(recordDataLength) bytes")
             }
 
@@ -155,7 +155,7 @@ public struct PsionWord {
                     blocks = getStyleBlocks(data[byteIndex..<data.endIndex], textBytes.count, settings)
                 case .unknown:
                     var error = ProcessError(code: .badRecordType)
-                    error.text = "Bad Word file record type (\(recordType.rawValue) at \(String(format: "0x%04x", arguments: [byteIndex]))"
+                    error.text = "Bad Word file record type (\(recordType.rawValue) at \(String(format: "0x%04x", arguments: [byteIndex])))"
                     return .failure(error)
             }
 
@@ -170,7 +170,7 @@ public struct PsionWord {
         }
 
         // Process to Markdown if that's required
-        if settings.contains(.doReturnMarkdown) {
+        if settings.contains(.returnMarkdown) {
             bodyText = convertToMarkdown(textBytes, blocks, styles, emphases, settings)
         } else {
             // Psion Series 3a character set is IBM CP 850. The closest Swift supports is Windows 1252,
@@ -180,10 +180,10 @@ public struct PsionWord {
         }
 
         // Add the header and foot if requested
-        if settings.contains(.doIncludeHeader) {
+        if settings.contains(.includeHeader) {
             // FROM 0.1.3
             // Do different delimiters for markdown output
-            if settings.contains(.doReturnMarkdown) {
+            if settings.contains(.returnMarkdown) {
                 var longest = greater(outerText[0][...], outerText[1][...])
                 longest = greater(longest[...], "****")
                 let stars = String(repeating: "*", count: longest.count)
@@ -260,7 +260,7 @@ public struct PsionWord {
 
         // The following properties apply to Styles only so exit if it's an Emphasis
         if !style.isStyle {
-            if settings.contains(.doShowInfo) {
+            if settings.contains(.showInfo) {
                 log("  Emphasis code: \(style.code) (\(style.name))")
             }
 
@@ -297,7 +297,7 @@ public struct PsionWord {
             }
         }
 
-        if settings.contains(.doShowInfo) {
+        if settings.contains(.showInfo) {
             log("  Style code: \(style.code) (\(style.name))")
         }
 
@@ -328,7 +328,7 @@ public struct PsionWord {
         // String is empty (NUL only)?
         outerText = outerText.count > 0 ? outerText : (isHeader ? "No header" : "No footer")
 
-        if settings.contains(.doShowInfo) {
+        if settings.contains(.showInfo) {
             log("  \(isHeader ? "Header" : "Footer") text length \(rawLength - 1) byte\(rawLength == 1 ? "" : "s")")
         }
 
@@ -372,7 +372,7 @@ public struct PsionWord {
             }
 
             // If the user has selected verbose mode, output the list of 'bad' characters
-            if settings.contains(.doShowInfo) {
+            if settings.contains(.showInfo) {
                 var msg = ""
                 for (idx, badChar) in badChars {
                     msg += String(format: "%d @ %d ", badChar, idx)
@@ -438,7 +438,7 @@ public struct PsionWord {
             }
         }
 
-        if settings.contains(.doShowInfo) {
+        if settings.contains(.showInfo) {
             log("  Processed text length \(textBytes.count) characters\(textBytes.count == 1 ? "" : "s")")
         }
 
@@ -512,7 +512,7 @@ public struct PsionWord {
 
             blocks.append(block)
 
-            if settings.contains(.doShowInfo) {
+            if settings.contains(.showInfo) {
                 log("  Text bytes range \(block.startIndex)-\(block.endIndex) has style code \(styleCode) and emphasis code \(emphasisCode)")
             }
 
@@ -705,5 +705,164 @@ public struct PsionWord {
         }
 
         print(s)
+    }
+
+
+    static func convertBack(_ data: ArraySlice<UInt8>, _ filepath: String, _ settings: ProcessSettings) -> Result<Data, ProcessError> {
+
+        var textBytes: [UInt8] = []
+
+        // Add preamble (C String of up to 15 chars plus `NUL`)
+        let preamble = "PSIONWPDATAFILE\u{0}" // String(decoding: data[0..<15], as: UTF8.self)
+        for character in preamble {
+            textBytes.append(character.asciiValue ?? 0)
+        }
+
+        // Add encryption version word (1 = NONE)
+        setWordValue(1, &textBytes)
+
+        // Add encryption state word (0 = NONE)
+        setWordValue(0, &textBytes)
+
+        // Add empty encryption keys
+        for _ in 0..<20 {
+            textBytes.append(0xEA)
+        }
+
+        guard let markdown = String(bytes: data, encoding: .utf8) else {
+            let error = ProcessError(code: .badRecordLengthPrinterConfig)
+            return .failure(error)
+        }
+
+        if let attStr = try? AttributedString(markdown: markdown) {
+            buildBlock01(&textBytes)
+            buildBlock02(&textBytes)
+            buildBlock03(3, &textBytes)
+            buildBlock03(4, &textBytes)    // Proxy for 4
+            buildBlock03(5, &textBytes)    // Proxy for 5
+            buildBlock08(attStr, &textBytes)
+            buildBlock09(attStr, &textBytes)
+        }
+
+        print(textBytes.count)
+        let returnData = Data(textBytes)
+        return .success(returnData)
+    }
+
+    private static func buildBlock01(_ target: inout [UInt8]) {
+
+        setWordValue(1, &target)
+        setWordValue(10, &target)
+        for i in 0..<10 {
+            print(i)
+            target.append(0x00)
+        }
+    }
+
+    private static func buildBlock02(_ target: inout [UInt8]) {
+
+        setWordValue(2, &target)
+        setWordValue(58, &target)
+        for _ in 0..<58 {
+            target.append(0)
+        }
+    }
+
+    private static func buildBlock03(_ blockType: Int, _ target: inout [UInt8]) {
+
+        let length = blockType == 3 ? 2 : 1
+        setWordValue(blockType, &target)
+        setWordValue(length, &target)
+
+        if blockType == 3 { target.append(0) }
+        target.append(0)
+    }
+
+    private static func buildBlock06(_ target: inout [UInt8]) {
+
+        setWordValue(2, &target)
+        setWordValue(58, &target)
+        for _ in 0..<57 {
+            target.append(0)
+        }
+    }
+
+    private static func buildBlock08(_ source: AttributedString, _ target: inout [UInt8]) {
+
+        var text = String(source.characters)
+        text = text.replacingOccurrences(of: "\n", with: "\u{0}")
+        text = text.replacingOccurrences(of: "-", with: "\u{7}")
+
+        setWordValue(8, &target)
+        setWordValue(text.count, &target)
+
+        for character in text {
+            target.append(UInt8(String(character)) ?? 0)
+        }
+    }
+
+
+    private static func buildBlock09(_ source: AttributedString, _ target: inout [UInt8]) {
+
+        struct PsionStyle {
+            var code: String = "BB"
+            var range: Range<AttributedString.Index>? = nil
+            var isEmphasis: Bool = false
+        }
+
+        var styles: [PsionStyle] = []
+        var emphases: [PsionStyle] = []
+        var styleCount = 0
+        var emphasisCount = 0
+
+        for (index, run) in source.runs.enumerated() {
+            // Locate styles
+            if let intents = run.foundation.presentationIntent?.components {
+                for intent in intents {
+                    var style = PsionStyle()
+                    style.range = run.range
+                    switch intent.kind {
+                        case .header(level: 1), .header(level: 2), .header(level: 3), .header(level: 4):
+                            style.code = "HA"
+                        default:
+                            style.code = "BB"
+
+                    }
+
+                    styles.append(style)
+                }
+            }
+
+            // Locate emphases
+            if let intent = run.foundation.inlinePresentationIntent {
+                var emphasis = PsionStyle()
+                emphasis.isEmphasis = true
+                switch intent {
+                    case .emphasized:
+                        emphasis.code = "ITALIC"
+                    case .code:
+                        emphasis.code = "MONO"
+                    default:
+                        emphasis.code = "BOLD"
+                }
+
+                emphases.append(emphasis)
+            }
+
+            styleCount = styles.count - styleCount
+            emphasisCount = emphases.count - emphasisCount
+            let charCount = source[run.range].characters.count
+
+            print("RUN \(index) has \(charCount) characters in \(styleCount) styles with \(emphasisCount) emphases")
+        }
+    }
+
+
+    internal static func setWordValue(_ word: Int, _ target: inout [UInt8]) {
+
+        let lsb = UInt8(word & 0xFF)
+        let msb = UInt8((word & 0xFF00) >> 8)
+        target.append(lsb)
+        target.append(msb)
     }
 }

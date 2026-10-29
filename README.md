@@ -133,7 +133,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         do {
             let wordFilePath = "/path/to/Psion/Word/file"
             let data = try Data(contentsOf: URL(filePath: wordFilePath))
-            let settings: ProcessSettings = [.doReturnMarkdown]
+            let settings: ProcessSettings = [.returnMarkdown]
             let result = PsionWord.processFile(data, settings, wordFilePath)
 
             switch result {
@@ -157,13 +157,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 You can adjust the handling of the Word file by adding parameters to the `ProcessSettings` instance. By default, no options are selected. The options are:
 
 * `doShowinfo` — Issue logging messages during processing.
-* `doIncludeHeaders` — Include Word document headers and footers in the processed output.
-* `doReturnMarkdown` — Return the processed text in Markdown format rather than plain text (the default).
+* `includeHeaders` — Include Word document headers and footers in the processed output.
+* `returnMarkdown` — Return the processed text in Markdown format rather than plain text (the default).
 
 As the example above shows, options are added by inserting them into an empty `ProcessSettings` array:
 
 ```swift
-var settings: ProcessSettings = [.doShowInfo, .doReturnMarkdown]
+var settings: ProcessSettings = [.showInfo, .returnMarkdown]
 ```
 
 In library mode, log messages and warnings are posted via the default notification centre. The names used are `ProcessNotification.log` and `ProcessNotification.warning`.
