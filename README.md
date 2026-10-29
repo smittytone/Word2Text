@@ -8,9 +8,9 @@ Convert Psion Series 3, 3a and 3c unencrypted *Word* Documents to Plain Text or 
 
 ## Background
 
-Psion *Word* allows you to enter styled text. Back in the Series 3’s heyday — the mid to late 1990s — Psion provided Windows software that converted these files to Microsoft Word. A separate DOS utility, *wrd2txt* could convert transferred files to plain text. This latter was the inspiration for *word2text*, which I wrote to perform exactly the same task, but on a modern macOS machine.
+Psion *Word* allows you to enter styled text. Back in the Series 3’s heyday—the mid to late 1990s—Psion provided Windows software that converted these files to Microsoft Word. A separate DOS utility, *wrd2txt* could convert transferred files to plain text. This latter was the inspiration for `word2text`, which I wrote to perform exactly the same task, but on a modern macOS machine.
 
-I write either plain text or, when I require formatting, in Markdown format. Psion *Word*, created long before Markdown’s conception, doesn’t support it, but both types of text file can be created in *Word* and transferred to a Mac. *Word* embeds the plain text in a document that also includes a host of file, formatting and printing related data. *word2text* strips all that away.
+I write either plain text or, when I require formatting, in Markdown format. Psion *Word*, created long before Markdown’s conception, doesn’t support it, but both types of text file can be created in *Word* and transferred to a Mac. *Word* embeds the plain text in a document that also includes a host of file, formatting and printing related data. `word2text` strips all that away.
 
 ## Character Set
 
@@ -84,33 +84,39 @@ Page %P
 
 ### Markdown
 
-*word2text* can use Word files’ styling information to mark up the processed text with Markdown formatting tags. This is necessarily limited: Word has only two standard headline sizes, and the only emphasis options relevant to Markdown are bold and/or italic text. Where these apply, *word2text* will mark up the text accordingly. Text styled as a Word Bulleted List entry will be tagged as a Markdown unordered list.
+`word2text` can use Word files’ styling information to mark up the processed text with Markdown formatting tags. This is necessarily limited: Word has only two standard headline sizes, and the only emphasis options relevant to Markdown are bold and/or italic text. Where these apply, `word2text` will mark up the text accordingly. Text styled as a Word Bulleted List entry will be tagged as a Markdown unordered list.
 
-For custom styles, *word2text* will apply bold and/or italic emphasis where it can. For custom headlines, *word2text* will apply a Markdown headline size based on the style’s font size.
+For custom styles, *word2text* will apply bold and/or italic emphasis where it can. For custom headlines, `word2text` will apply a Markdown headline size based on the style’s font size.
 
 In due course, I hope to support table formatting from Word tables and ultimately to more intelligently parse custom Word styles.
 
 ## Compiling the CLI App
 
-Building *word2text* from source requires my [Clicore Swift Package](https://github.com/smittytone/clicore).
+Building `word2text` from source requires my [Clicore Swift Package](https://github.com/smittytone/clicore).
 
-### macOS
+### macOS using Xcode
 
-* Clone this repo.
-* Open the `.xcodeproj` file.
-* Set your team under **Signing & Capabilities** for the *word2text* target.
-* Select **Archive** from the **Product** menu.
-* Export the resulting archive using **Distribute Content** > **Custom** > **Build Products** and save to desktop.
-* `sudo cp path/to/exported/binary /usr/local/bin/word2text`.
+1. Clone this repo.
+1. Open the `.xcodeproj` file.
+1. Set your team under **Signing & Capabilities** for the *word2text* target.
+1. Select **Archive** from the **Product** menu.
+1. Export the resulting archive using **Distribute Content** > **Custom** > **Build Products** and save to desktop.
+1. `sudo cp path/to/exported/binary /usr/local/bin`.
 
-### Linux
+### macOS using the Swift compiler
 
-* [Install Swift](https://www.swift.org/install/linux/)
-* Clone this repo.
-* `cd /path/to/repo`
-* `swift build`
+1. Clone this repo.
+1. `cd /path/to/repo`
+1. `swift build --target Word2text -c release`
+1. `sudo cp .build/release/word2text /usr/local/bin`
 
-Binary located in `.build/debug/`. Copy it to a location in your `$PATH`.
+### Linux using the Swift compiler
+
+1. [Install Swift](https://www.swift.org/install/linux/)
+1. Clone this repo.
+1. `cd /path/to/repo`
+1. `swift build --target Word2text -c release`
+1. `sudo cp .build/release/word2text /usr/local/bin`
 
 ## Library Usage
 
@@ -133,7 +139,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         do {
             let wordFilePath = "/path/to/Psion/Word/file"
             let data = try Data(contentsOf: URL(filePath: wordFilePath))
-            let settings: ProcessSettings = [.doReturnMarkdown]
+            var settings = ProcessSettings()
+            settings.returnMarkdown = true
             let result = PsionWord.processFile(data, settings, wordFilePath)
 
             switch result {
@@ -156,14 +163,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 You can adjust the handling of the Word file by adding parameters to the `ProcessSettings` instance. By default, no options are selected. The options are:
 
-* `doShowinfo` — Issue logging messages during processing.
-* `doIncludeHeaders` — Include Word document headers and footers in the processed output.
-* `doReturnMarkdown` — Return the processed text in Markdown format rather than plain text (the default).
+* `showinfo` — Issue logging messages during processing.
+* `includeHeaders` — Include Word document headers and footers in the processed output.
+* `returnMarkdown` — Return the processed text in Markdown format rather than plain text (the default).
 
 As the example above shows, options are added by inserting them into an empty `ProcessSettings` array:
 
 ```swift
-var settings: ProcessSettings = [.doShowInfo, .doReturnMarkdown]
+var settings: ProcessSettings()
+settings.showInfo = true
+settings.returnMarkdown = true
 ```
 
 In library mode, log messages and warnings are posted via the default notification centre. The names used are `ProcessNotification.log` and `ProcessNotification.warning`.
@@ -189,7 +198,7 @@ And add this method to the `AppDelegate` class:
 @objc
 func printLog(_ note: Notification) {
 
-    let message = note.object as! String
+    let message = note.object as? String ?? "No message included"
     print(message)
 }
 ```
@@ -206,7 +215,7 @@ See [Changelog](./CHANGELOG.md)
 
 ## Licence ##
 
-*word2text* is copyright © 2026, Tony Smith. Its source code is released under the MIT Licence.
+`word2text` is copyright © 2026, Tony Smith. Its source code is released under the MIT Licence.
 
 _AI was not used in the development of this software. This is a statement of plain fact, not of policy. AI tools may be used in future._
 
