@@ -17,7 +17,7 @@ let package = Package(
         .macOS(.v12)
     ],
     products: [
-        .library(name: "Word2text", targets: ["word2text-lib"]),
+        .library(name: "Word2text", targets: ["Word2text"]),
         .executable(name: "word2text", targets: ["word2text"])
     ],
     dependencies: [
@@ -55,7 +55,7 @@ let package = Package(
             ]
         ),
         .target(
-            name: "word2text-lib",
+            name: "Word2text",
             path: "word2text/lib",
             sources: [
                 // Just include the files needed for macOS lib usage
