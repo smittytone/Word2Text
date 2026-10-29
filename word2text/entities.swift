@@ -80,6 +80,10 @@ public struct ProcessSettings {
     public var outputAsFile: Bool           = false
     public var returnMarkdown: Bool         = false
     public var files: [String]              = []
+
+    public init() {
+        
+    }
 }
 
 
