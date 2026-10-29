@@ -93,7 +93,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
        // Load and process the Word file
        do {
            let data = try Data(contentsOf: URL(filePath: wordFilePath))
-           let settings: ProcessSettings = [.doShowInfo, .doReturnMarkdown]
+           var settings = ProcessSettings()
+           settings.returnMarkdown = true
            let result = PsionWord.processFile(data, settings, wordFilePath)
 
            switch result {
