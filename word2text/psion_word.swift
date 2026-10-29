@@ -25,7 +25,6 @@
 */
 
 import Foundation
-import Clicore
 
 
 public struct PsionWordConstants {
@@ -47,52 +46,6 @@ public struct PsionWordConstants {
 
 
 public struct PsionWord {
-
-    static func processFiles(_ settings: ProcessSettings) {
-
-        let outputToFiles = settings.outputAsFile || settings.files.count > 1
-        for filepath in settings.files {
-            let data = Path.getFileContents(filepath)
-            let result: Result<String, ProcessError> = !data.isEmpty
-            ? PsionWord.processFile(data, filepath, settings)
-            : .failure(ProcessError(code: .badFile))
-
-            switch result {
-                case .failure(let error):
-                    if settings.haltOnFirstError {
-                        Stdio.reportErrorAndExit("File \(filepath) could not be processed: \(error.localizedDescription)", Int32(error.code.rawValue))
-                    } else {
-                        Stdio.reportWarning("File \(filepath) could not be processed: \(error.localizedDescription)")
-                    }
-                case .success(let processedText):
-                    // Report the processed text
-                    if !outputToFiles {
-                        // Output processed text to STDOUT so it's available for piping or redirection
-                        if settings.showInfo {
-                            Stdio.report("File \(filepath) processed")
-                        }
-
-                        Stdio.output(processedText)
-                    } else {
-                        // Output to a file: generate the name and extension...
-                        var outFilepath = (filepath as NSString).deletingPathExtension
-                        outFilepath += settings.returnMarkdown ? ".md" : ".txt"
-
-                        // ...and attempt to write it out
-                        do {
-                            try processedText.write(toFile: outFilepath, atomically: true, encoding: .utf8)
-                            if settings.showInfo {
-                                Stdio.report("File \(filepath) processed to \(outFilepath)")
-                            }
-                        } catch {
-                            Stdio.reportWarning("File \(outFilepath) could not be processed: writing to stdout instead")
-                            Stdio.output(processedText)
-                        }
-                    }
-            }
-        }
-    }
-
 
     /**
      Convert an individual Word file to plain text.
