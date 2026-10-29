@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 100;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -23,9 +23,8 @@
 /* Begin PBXCopyFilesBuildPhase section */
 		3B4873782D03743C00294F25 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
+			dstSubfolder = None;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 1;
@@ -52,19 +51,15 @@
 /* Begin PBXFrameworksBuildPhase section */
 		3B4873772D03743C00294F25 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				3B30A27D2E55A65800025C49 /* Clicore in Frameworks */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		3BE01B6E2D0F3CB900E1D2F4 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				3B9894252F028D6A00E3EDE3 /* Clicore in Frameworks */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -134,8 +129,6 @@
 			);
 			buildRules = (
 			);
-			dependencies = (
-			);
 			name = word2text;
 			packageProductDependencies = (
 				3B30A27C2E55A65800025C49 /* Clicore */,
@@ -154,8 +147,6 @@
 			);
 			buildRules = (
 			);
-			dependencies = (
-			);
 			name = word2textTests;
 			packageProductDependencies = (
 				3B9894242F028D6A00E3EDE3 /* Clicore */,
@@ -172,7 +163,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1620;
-				LastUpgradeCheck = 2620;
+				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					3B4873792D03743C00294F25 = {
 						CreatedOnToolsVersion = 16.1;
@@ -194,7 +185,7 @@
 			packageReferences = (
 				3B30A27A2E55A5CB00025C49 /* XCRemoteSwiftPackageReference "clicore" */,
 			);
-			preferredProjectObjectVersion = 77;
+			preferredProjectObjectVersion = 100;
 			productRefGroup = 3B48737B2D03743C00294F25 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -208,28 +199,23 @@
 /* Begin PBXResourcesBuildPhase section */
 		3BE01B6F2D0F3CB900E1D2F4 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		3B4873762D03743C00294F25 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				3BF564532D0A270F008E58B6 /* main.swift in Sources */,
 				3BF564542D0A270F008E58B6 /* entities.swift in Sources */,
 				3B8187EE2F03CCED00E98F50 /* logging_cli.swift in Sources */,
 				3BD947C42E50D99D00A3245D /* word.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		3BE01B6D2D0F3CB900E1D2F4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				3B8187ED2F03CCED00E98F50 /* logging_cli.swift in Sources */,
 				3BE01B7A2D0F3CCB00E1D2F4 /* word2textTests.swift in Sources */,
@@ -237,12 +223,11 @@
 				3BE01B7D2D0F3D6000E1D2F4 /* main.swift in Sources */,
 				3BD947C52E50D99D00A3245D /* word.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		3B48737F2D03743C00294F25 /* Debug */ = {
+		3B48737F2D03743C00294F25 /* Debug configuration for PBXProject "word2text" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -307,7 +292,7 @@
 			};
 			name = Debug;
 		};
-		3B4873802D03743C00294F25 /* Release */ = {
+		3B4873802D03743C00294F25 /* Release configuration for PBXProject "word2text" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -364,46 +349,61 @@
 			};
 			name = Release;
 		};
-		3B4873822D03743C00294F25 /* Debug */ = {
+		3B4873822D03743C00294F25 /* Debug configuration for PBXNativeTarget "word2text" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				AUTOMATION_APPLE_EVENTS = NO;
+				CODE_SIGN_ENTITLEMENTS = word2text/word2text.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 39;
+				CURRENT_PROJECT_VERSION = 100;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
 				DSTROOT = $SRCROOT/build/pkgroot;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				INFOPLIST_FILE = /Users/smitty/GitHub/word2text/word2text/Info.plist;
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
-				MARKETING_VERSION = 0.3.1;
+				MACOSX_DEPLOYMENT_TARGET = 12.4;
+				MARKETING_VERSION = 0.4.0;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bps.word2text;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
+				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
+				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
+				RUNTIME_EXCEPTION_DEBUGGING_TOOL = NO;
+				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
+				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
-		3B4873832D03743C00294F25 /* Release */ = {
+		3B4873832D03743C00294F25 /* Release configuration for PBXNativeTarget "word2text" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = word2text/word2text.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 39;
+				CURRENT_PROJECT_VERSION = 100;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
 				DSTROOT = $SRCROOT/build/pkgroot;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = /Users/smitty/GitHub/word2text/word2text/Info.plist;
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
-				MARKETING_VERSION = 0.3.1;
+				MACOSX_DEPLOYMENT_TARGET = 12.4;
+				MARKETING_VERSION = 0.4.0;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bps.word2text;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -412,7 +412,7 @@
 			};
 			name = Release;
 		};
-		3BE01B762D0F3CB900E1D2F4 /* Debug */ = {
+		3BE01B762D0F3CB900E1D2F4 /* Debug configuration for PBXNativeTarget "word2textTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -420,7 +420,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = Y5J3K52DNA;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.bps.word2textTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -429,7 +429,7 @@
 			};
 			name = Debug;
 		};
-		3BE01B772D0F3CB900E1D2F4 /* Release */ = {
+		3BE01B772D0F3CB900E1D2F4 /* Release configuration for PBXNativeTarget "word2textTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -437,7 +437,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = Y5J3K52DNA;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.bps.word2textTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -452,28 +452,25 @@
 		3B4873752D03743C00294F25 /* Build configuration list for PBXProject "word2text" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				3B48737F2D03743C00294F25 /* Debug */,
-				3B4873802D03743C00294F25 /* Release */,
+				3B48737F2D03743C00294F25 /* Debug configuration for PBXProject "word2text" */,
+				3B4873802D03743C00294F25 /* Release configuration for PBXProject "word2text" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		3B4873812D03743C00294F25 /* Build configuration list for PBXNativeTarget "word2text" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				3B4873822D03743C00294F25 /* Debug */,
-				3B4873832D03743C00294F25 /* Release */,
+				3B4873822D03743C00294F25 /* Debug configuration for PBXNativeTarget "word2text" */,
+				3B4873832D03743C00294F25 /* Release configuration for PBXNativeTarget "word2text" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		3BE01B752D0F3CB900E1D2F4 /* Build configuration list for PBXNativeTarget "word2textTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				3BE01B762D0F3CB900E1D2F4 /* Debug */,
-				3BE01B772D0F3CB900E1D2F4 /* Release */,
+				3BE01B762D0F3CB900E1D2F4 /* Debug configuration for PBXNativeTarget "word2textTests" */,
+				3BE01B772D0F3CB900E1D2F4 /* Release configuration for PBXNativeTarget "word2textTests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
@@ -483,7 +480,7 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/smittytone/clicore";
 			requirement = {
-				branch = main;
+				branch = develop;
 				kind = branch;
 			};
 		};
