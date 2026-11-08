@@ -27,30 +27,12 @@
 import Foundation
 
 
-public struct PsionWordConstants {
-
-    static let BlockUnitLength: Int     = 6
-    static let RecordHeaderLength: Int  = 4
-    static let RecordTypes: [String]    = [
-        "FILE INFO",
-        "PRINTER CONFIG",
-        "PRINTER DRIVER INFO",
-        "HEADER TEXT",
-        "FOOTER TEXT",
-        "STYLE DEFINITION", 
-        "EMPHASIS DEFINITION",
-        "BODY TEXT",
-        "STYLE APPLICATION"
-    ]
-}
-
-
 public struct PsionWord {
 
     /**
      Convert an individual Word file to plain text.
 
-     - Parameters
+     - Parameters:
         - data:     Data object containing the file bytes.
                     May be better to just pass a byte array.
         - filepath: Absolute path of the target Word file. Used for logging.
@@ -210,12 +192,12 @@ public struct PsionWord {
     /**
      Parse a Psion Word Style or Emphasis record.
 
-     - Parameters
+     - Parameters:
         - data:     A slice of the word file bytes.
         - isStyle: `true` if the record holds a Style; `false` if it is an Emphasis.
         - settings: File conversion parameters.
 
-     - Returns A PsionWordStyle containing the record's information.
+     - Returns: A PsionWordStyle containing the record's information.
      */
     internal static func getStyle(_ data: ArraySlice<UInt8>, _ isStyle: Bool, _ settings: ProcessSettings) -> PsionWordStyle {
 
@@ -308,12 +290,12 @@ public struct PsionWord {
     /**
      Read a C string of known length from the word file byte store
 
-     - Parameters
+     - Parameters:
         - data:     A slice of the word file bytes.
         - isHeader: `true` if the record contains header text, otherwise `false`.
         - settings: File conversion parameters.
 
-     - Returns The text as a string.
+     - Returns: The text as a string.
      */
     internal static func getOuterText(_ data: ArraySlice<UInt8>, _ isHeader: Bool, _ settings: ProcessSettings) -> String {
 
@@ -339,11 +321,11 @@ public struct PsionWord {
     /**
      Generate a String from the file's text bytes.
 
-     - Parameters
+     - Parameters:
         - textBytes: The bytes from the Psion file.
         - settings:  File conversion parameters.
 
-     - Returns The text as a String
+     - Returns: The text as a String
      */
     private static func convertText(_ textBytes: [UInt8], _ settings: ProcessSettings) -> String {
 
@@ -402,11 +384,11 @@ public struct PsionWord {
     /**
      Read body text known length from the word file byte store.
 
-     - Parameters
+     - Parameters:
         - data:     A slice of the word file bytes containing the body text.
         - settings: File conversion parameters.
 
-     - Returns The text as a byte array.
+     - Returns: The text as a byte array.
      */
     internal static func getBodyText(_ data: ArraySlice<UInt8>, _ settings: ProcessSettings) -> [UInt8] {
 
@@ -449,33 +431,50 @@ public struct PsionWord {
     /**
      Swap a CP 850 for a CP 1252.
 
-     - Parameters
-        - char: A CP 850 integer value.
+     Covers every CP 850 character that CP 1252 can represent: all of the
+     CP 850 accented letters and symbols, which sit at their Latin-1 code points
+     in CP 1252, plus ƒ. Box-drawing and other characters absent from CP 1252
+     (eg. `ı`, `‗`, `■`) still become `?`.
 
-     - Returns The equivalent 1252 code.
+     REVISED 0.4.0
+
+     - Parameters:
+        - char: A CP 850 integer value (0x80-0xFF).
+
+     - Returns: The equivalent 1252 code.
      */
     private static func charSwap(_ char: UInt8) -> UInt8 {
 
-        // £ (r) (c) 1/2 1/4 3/4 Y P S 0 1 2 3 +/- x - o a f |
-        let cp850: [UInt8]  = [0x9C, 0xA9, 0xB8, 0xAB, 0xAC, 0xF3, 0xBE, 0xF4, 0xF5, 0xF8, 0xFB, 0xFD, 0xFC, 0xF1, 0x9E, 0xF6, 0xA7, 0xA6, 0x9F, 0xDD]
-        let cp1252: [UInt8] = [0xA3, 0xAE, 0xA9, 0xBD, 0xBC, 0xBE, 0xA5, 0xB6, 0xA7, 0xB0, 0xB9, 0xB2, 0xB3, 0xB1, 0xD7, 0xF7, 0xBA, 0xAA, 0x83, 0xA6]
+        guard char >= 0x80 else { return char }
+        return cp850ToCp1252[Int(char) - 0x80]
+    }
 
-        if let index = cp850.firstIndex(of: char) {
-            return cp1252[index]
+    /*
+     CP 1252 equivalents of CP 850 bytes 0x80-0xFF, derived from `cp850UpperHalf`
+     */
+    private static let cp850ToCp1252: [UInt8] = cp850UpperHalf.map { scalar in
+        switch scalar.value {
+            case 0xA0...0xFF:
+                // Latin-1 Supplement characters have the same code in CP 1252
+                return UInt8(scalar.value)
+            case 0x0192:
+                // ƒ
+                return 0x83
+            default:
+                return 0x3F
         }
-
-        // Return a ? in all other cases
-        return 0x3F
     }
 
 
     /**
      Parse a Psion Word block styling record and extract the formatting blocks.
 
-     - Parameters
+     - Parameters:
         - data:       A slice of the Word file bytes containing the block formatting data.
         - textLength: The number of bytes in the corresponding body text.
         - settings:   File conversion parameters.
+
+     - Returns: An array of internal style records.
      */
     internal static func getStyleBlocks(_ data: ArraySlice<UInt8>, _ textLength: Int, _ settings: ProcessSettings) -> [PsionWordFormatBlock] {
 
@@ -531,10 +530,10 @@ public struct PsionWord {
     /**
      Read a 16-bit little endian value from the Word file byte store.
 
-     - Parameters
+     - Parameters:
         - data:  Two-byte slice of the word file bytes.
 
-     - Returns The value as an (unsigned) integer, or -1 on error.
+     - Returns: The value as an (unsigned) integer, or -1 on error.
      */
     internal static func getWordValue(_ data: ArraySlice<UInt8>) -> Int {
 
@@ -562,7 +561,7 @@ public struct PsionWord {
             `# **headline**, but this would not comprise separate blocks. So we need to set the `#`
             on the paragraph start and (separately) the `**` at the start and end of the actual text.
 
-     - Parameters
+     - Parameters:
          - rawText:  The basic Ascii text.
          - blocks:   The block formatting data extracted from the document.
          - styles:   The styles extracted from the document.
@@ -577,65 +576,72 @@ public struct PsionWord {
         var paraStyleSet: Bool = false
         var textEndTag: String = ""
 
+        // FROM 0.4.0
+        // Completed paragraphs and their style codes, joined with blank lines at the end
+        var paragraphs: [(text: String, styleCode: String)] = []
+        var paraStyleCode: String = "BT"
+
         // Blocks are in stored in sequence, so we just need to iterate over them
         for block in blocks {
-            var tag: String = ""
-            var isEmphasisTag: Bool = false
+            // REVISED 0.4.0 Paragraph (Style) and character (Emphasis) tags are now tracked separately,
+            //               so emphasis on a paragraph's first block is no longer lost
+            var styleTag: String = ""
 
             if !paraStyleSet {
                 // Starting a new para, so the Style should not change
                 paraStyleSet = true
+                paraStyleCode = block.styleCode
 
-                // Look for
                 switch block.styleCode {
-                    case "HA":
-                        tag = "# "
-                    case "HB":
-                        tag = "### "
+                    case "HA", "HB", "HC", "HD", "HE", "HF":
+                        // FROM 0.4.0 Headings A-F map to Markdown levels 1-6
+                        let level = Int(block.styleCode.unicodeScalars.last!.value) - Int(("A" as Unicode.Scalar).value) + 1
+                        styleTag = String(repeating: "#", count: level) + " "
                     case "BL":
                         // Bullet list
-                        tag = "* "
+                        styleTag = "* "
+                    case "BT", "NL":
+                        // Body text, or numbered list (number is already in the text)
+                        break
                     default:
-                        if block.styleCode != "BT" {
-                            // NOTE User-defined style may have any name
-                            if let style: PsionWordStyle = styles[block.styleCode] {
-                                // Use font size
-                                var size = (Int(0.05 * Double(style.fontSize)) >> 1)
-                                if size > 10 {
-                                    size = 10
-                                }
+                        // NOTE User-defined style may have any name
+                        if let style: PsionWordStyle = styles[block.styleCode] {
+                            // Use font size
+                            var size = (Int(0.05 * Double(style.fontSize)) >> 1)
+                            if size > 10 {
+                                size = 10
+                            }
 
-                                // Ignore sizes below 7 (13pt)
-                                if size > 6 {
-                                    size = 10 - size + 1
-                                    tag = String(repeating: "#", count: size)
-                                    tag += " "
-                                }
+                            // Ignore sizes below 7 (13pt)
+                            if size > 6 {
+                                size = 10 - size + 1
+                                styleTag = String(repeating: "#", count: size)
+                                styleTag += " "
+                            }
 
-                                if style.bold {
-                                    tag += "**"
-                                    textEndTag = "**"
-                                } else if style.italic {
-                                    textEndTag = "*"
-                                }
+                            if style.bold {
+                                styleTag += "**"
+                                textEndTag = "**"
+                            } else if style.italic {
+                                styleTag += "*"
+                                textEndTag = "*"
                             }
                         }
                 }
             }
 
             // Look for in-paragraph tags.
-            // NOTE BB (Bold) and II (Italic) are the only ones relevant to Markdown
-            if tag == "" {
-                switch block.emphasisCode {
-                    case "BB":
-                        tag = "**"
-                        isEmphasisTag = true
-                    case "II":
-                        tag = "*"
-                        isEmphasisTag = true
-                    default:
-                        tag = ""
-                }
+            // NOTE BB (Bold), II (Italic) and BI (Bold italic) are the only ones relevant to Markdown
+            var emphasisTag: String
+            switch block.emphasisCode {
+                case "BB":
+                    emphasisTag = "**"
+                case "II":
+                    emphasisTag = "*"
+                case "BI":
+                    emphasisTag = "***"
+                default:
+                    emphasisTag = ""
             }
 
             // FROM 0.4.0
@@ -646,41 +652,66 @@ public struct PsionWord {
                 endIndex -= 1
             }
 
-            // Add the tagged text to the string store. We only duplicate the tag at the end
-            // of the block if it is a character-level tag, ie. an Emphasis
+            // Add the tagged text to the string store
             var addition = convertText([UInt8](rawText[block.startIndex...endIndex]), settings)
 
             // Check if we've come to the end of a paragraph - but not empty ones
             if addition.hasSuffix("\n") && addition.count > 1 {
                 // Remove the NEWLINE
                 _ = addition.removeLast()
-                markdown += (tag + addition + (isEmphasisTag ? tag : ""))
+                markdown += (styleTag + emphasisTag + addition + emphasisTag)
 
                 if !textEndTag.isEmpty {
                     markdown += textEndTag
                     textEndTag = ""
                 }
 
-                // Add the NEWLINE back, after the tgitsyncags
-                markdown += "\n"
+                // Store the completed paragraph
+                paragraphs.append((markdown, paraStyleCode))
+                markdown = ""
 
                 // Reset the paragraph found flag
                 paraStyleSet = false
             } else if addition.hasSuffix("\n") && addition.count ==  1 {
+                // Close any style-level tag opened by an earlier block in this paragraph.
+                // Empty paragraphs (Psion spacing) are dropped: blank lines are added below
+                if !markdown.isEmpty {
+                    paragraphs.append((markdown + textEndTag, paraStyleCode))
+                    markdown = ""
+                }
+
+                textEndTag = ""
                 paraStyleSet = false
-                markdown += "\n"
             } else {
                 // Just add the tags
-                markdown += (tag + addition + (isEmphasisTag ? tag : ""))
+                markdown += (styleTag + emphasisTag + addition + emphasisTag)
             }
         }
 
-        return markdown
+        // Catch any final paragraph that lacks a separator
+        if !markdown.isEmpty {
+            paragraphs.append((markdown + textEndTag, paraStyleCode))
+        }
+
+        // Join the paragraphs with blank lines, except between consecutive items
+        // of the same list, which are kept together as a single Markdown list
+        var output: String = ""
+        for (index, paragraph) in paragraphs.enumerated() {
+            if index > 0 {
+                let previous = paragraphs[index - 1].styleCode
+                let isListItem = paragraph.styleCode == "BL" || paragraph.styleCode == "NL"
+                output += (isListItem && paragraph.styleCode == previous) ? "\n" : "\n\n"
+            }
+
+            output += paragraph.text
+        }
+
+        return output.isEmpty ? output : output + "\n"
     }
 
 
     /**
-     Determine the longest length of two strings
+     Determine the longest length of two substrings.
      */
     private static func greater(_ a: Substring, _ b: Substring) -> String {
 
@@ -706,4 +737,5 @@ public struct PsionWord {
 
         print(s)
     }
+
 }

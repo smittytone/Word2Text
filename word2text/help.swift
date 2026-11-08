@@ -36,19 +36,20 @@ extension Word2Text {
 
         let helpText = """
             Convert a Psion Series 3 Word document to plain text or Markdown.
-            
+
             \(String(.bold))USAGE\(String(.normal))
                 word2text [-s] [-o] [-v] [-h] file(s)
-            
+
             \(String(.bold))OPTIONS\(String(.normal))
-                -s | --stop          Stop on first file that can't be processed. Default: false")
-                -o | --outer         Include outer text (header and footer) in output.")
-                -m | --markdown      Include outer text (header and footer) in output.")
-                -f | --file          Output to file, not stdout. Default: false for one file,")
-                                     true for multiple files/directories")
-                -v | --verbose       Show progress information. Otherwise only errors are shown.")
-                -h | --help          This help screen.
-            
+                -f | --file         Output to file, not stdout. Default: false for one file,
+                                    true for multiple files/directories.
+                -m | --markdown     Convert to Markdown format.
+                -r | --reverse      Convert a text or Markdown file to a Psion Word file.
+                -o | --outer        Include outer text (header and footer) in output.
+                -s | --stop         Stop on first file that can't be processed. Default: false.
+                -v | --verbose      Show progress information. Otherwise only errors are shown.
+                -h | --help         This help screen.
+
             \(String(.italic))https://smittytone.net/word2text/index.html\(String(.normal))
             """
 
@@ -76,4 +77,3 @@ extension Word2Text {
     }
 
 }
-

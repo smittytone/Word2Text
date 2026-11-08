@@ -1,7 +1,8 @@
 ## Release Notes ##
 
 - 0.4.0 *Unreleased*
-    - **Breeaking** The minimum supprted version of macOS is now 12.4.
+    - **Breaking** The minimum supprted version of macOS is now 12.4.
+    - Add ability to convert Markdown/Text files to Psion Word files.
     - Revise code to match structure of my other CLI tools.
     - Expand Swift compiler support for macOS CLI app and macOS library usage.
     - Fix out-of-bounds byte array access on conversion to Markdown.

@@ -58,10 +58,17 @@ public struct ProcessError: Error, LocalizedError {
                 if let text = self.text {
                     return text
                 } else {
-                    return "Error message not provided"
+                    return "error message not provided"
                 }
             case .badFileMissingRecords:
                 return "file did not include required records"
+            case .badTextTooLong:
+                if let text = self.text {
+                    return text
+                } else {
+                    return "text too long for a Psion Word file (max. 64KB)"
+                }
+
             }
         }
 }
@@ -73,38 +80,62 @@ public struct ProcessError: Error, LocalizedError {
     REVISED 0.4.0
 */
 public struct ProcessSettings {
-    
+
     public var showInfo: Bool               = false
     public var includeHeader: Bool          = false
     public var haltOnFirstError: Bool       = false
     public var outputAsFile: Bool           = false
     public var returnMarkdown: Bool         = false
     public var files: [String]              = []
+    // FROM 0.4.0
+    public var reverseConversion: Bool      = false
 
     public init() {
-        
+
     }
 }
 
 
 /*
     Notification for libraries.
- 
+
     FROM 0.3.0
 */
 public struct ProcessNotification {
-    
+
     public static let log       = Notification.Name(rawValue: "com.bps.word2text.note.log.message")
     public static let warning   = Notification.Name(rawValue: "com.bps.word2text.note.log.warning")
 }
 
+
+/*
+    Constants used in the description of Psion Word files.
+*/
+public struct PsionWordConstants {
+
+    static let BlockUnitLength: Int     = 6
+    static let RecordHeaderLength: Int  = 4
+    static let RecordTypes: [String]    = [
+        "FILE INFO",
+        "PRINTER CONFIG",
+        "PRINTER DRIVER INFO",
+        "HEADER TEXT",
+        "FOOTER TEXT",
+        "STYLE DEFINITION",
+        "EMPHASIS DEFINITION",
+        "BODY TEXT",
+        "STYLE APPLICATION"
+    ]
+}
+
+
 /*
     Structure to hold a Style or Emphasis record.
- 
-    Not all of the fields are used by each type
+
+    Not all of the fields are used by each type.
 */
 public struct PsionWordStyle {
-    
+
     public var code: String                            = ""
     public var name: String                            = ""
     public var isStyle: Bool                           = true      // `true` for a style, `false` for an emphasis
@@ -126,10 +157,10 @@ public struct PsionWordStyle {
     public var rightIndent: Int                        = 0         // are Style only
     public var firstIdent: Int                         = 0
     public var alignment: PsionWordAlignment           = .left
-    public var lineSpacing: Int                        = 0
+    public var lineSpacing: Int                        = 240
     public var spaceAbovePara: Int                     = 0
     public var spaceBelowPara: Int                     = 0
-    public var spacing: PsionWordSpacing               = .keepTogether
+    public var spacing: PsionWordSpacing               = .noSpacing
     public var outlineLevel: Int                       = 0
     public var tabPositions: [Int]                     = []
     public var tabTypes: [PsionWordTabType]            = []
@@ -161,9 +192,10 @@ public enum ProcessErrorKind: Int, Error {
     case badRecordLengthFileInfo                = 4
     case badRecordLengthPrinterConfig           = 5
     case badRecordLengthStyleDefinition         = 6
-    case badRecordLengthEmphasisDefinition     = 7
+    case badRecordLengthEmphasisDefinition      = 7
     case badRecordType                          = 8
     case badFileMissingRecords                  = 9
+    case badTextTooLong                         = 10
 }
 
 
@@ -235,4 +267,19 @@ public enum PsionWordRecordType: Int {
     case bodyText                               = 8
     case blockInfo                              = 9
     case unknown                                = 99
+}
+
+
+/*
+    Markdown formatting record.
+ */
+struct MarkdownToken {
+
+    var text: String                            = ""
+    var delimiter: Character?                   = nil
+    var count: Int                              = 0
+    var canOpen: Bool                           = false
+    var canClose: Bool                          = false
+    var opens: [Int]                            = []
+    var closes: [Int]                           = []
 }

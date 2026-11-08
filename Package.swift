@@ -37,7 +37,8 @@ let package = Package(
                 "swift.plist",
                 "logging_lib.swift",
                 "lib/logging_lib.swift",
-                "lib/psion_word.swift",
+                "lib/convert_word.swift",
+                "lib/convert_markdown.swift",
                 "lib/entities.swift"
             ],
             linkerSettings: [
@@ -59,8 +60,9 @@ let package = Package(
             path: "word2text/lib",
             sources: [
                 // Just include the files needed for macOS lib usage
-                "psion_word.swift",
                 "entities.swift",
+                "convert_word.swift",
+                "convert_markdown.swift",
                 "logging_lib.swift"
             ]
         )

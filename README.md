@@ -42,11 +42,12 @@ For convenience, files are written using the UTF-8 encoding.
 
 *word2text* accepts the following modifiers:
 
-* `-m`/`--markdown` — Output the body text in Markdown formatting. Default: `false`.
-* `-o`/`--outer` — Include ‘outer’ text, ie. header and footer text, in addition to the body text. Default: `false`.
-* `-s`/`--stop` — Stop processing multiple files on the first error. Default: `false`.
-* `-f`/`--file` — Output a single input file to a new file. Default: `false`.
-* `-v`/`--verbose` — Show file and content discovery information during file processing.
+* `-m`/`--markdown`—Output the body text in Markdown formatting. Default: `false`.
+* `-f`/`--file`—Output a single input file to a new file. Default: `false`.
+* `-r`/`--reverse`—Convert a Markdown file to Psion Word format. Default: `false`.
+* `-o`/`--outer`—Include ‘outer’ text, ie. header and footer text, in addition to the body text. Default: `false`.
+* `-s`/`--stop`—Stop processing multiple files on the first error. Default: `false`.
+* `-v`/`--verbose`—Show file and content discovery information during file processing.
 
 For example:
 
@@ -89,6 +90,20 @@ Page %P
 For custom styles, *word2text* will apply bold and/or italic emphasis where it can. For custom headlines, `word2text` will apply a Markdown headline size based on the style’s font size.
 
 In due course, I hope to support table formatting from Word tables and ultimately to more intelligently parse custom Word styles.
+
+### Conversion to Psion Word
+
+`word2text` can convert a Markdown file to Psion Word format for transfer to a device and/or emulator. Currently, the level of Markdown parsing is intentionally limited to the following formatting markers:
+
+| Markdown | Role | Psion Word Style(s) |
+| :--- | :--- | :--- |
+| `#`—`######` | Headline levels 1 through 6 | `HA`—`HF` |
+| `===`, `---` | Headline levels 1 through 6 | `HA`—`HF` |
+| `-`, `*`, `+` | Bullet-list items | `BL` |
+| `1.`, `1)` | Numbered list items | `NL` (number kept in the text) |
+| `**bold**`, `*italic*`, `***both***` (and `_` variants) | Bold, Italic, Bold+Italic emphases | `BB`, `II`, `BI` |
+
+All other formatting is ignored and content is passed through as plain Body Text (Psion Word style `BT`). Fenced code blocks are passed through line by line with no inline processing; thematic breaks are dropped.
 
 ## Compiling the CLI App
 
@@ -217,5 +232,4 @@ See [Changelog](./CHANGELOG.md)
 
 `word2text` is copyright © 2026, Tony Smith. Its source code is released under the MIT Licence.
 
-_AI was not used in the development of this software. This is a statement of plain fact, not of policy. AI tools may be used in future._
-
+_This software was written by humans. AI was used to research algorithms, for testing and for review. All code portions produced by AI have been reviewed and modified by humans._
