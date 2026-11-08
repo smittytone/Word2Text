@@ -87,7 +87,7 @@ Page %P
 
 `word2text` can use Word files’ styling information to mark up the processed text with Markdown formatting tags. This is necessarily limited: Word has only two standard headline sizes, and the only emphasis options relevant to Markdown are bold and/or italic text. Where these apply, `word2text` will mark up the text accordingly. Text styled as a Word Bulleted List entry will be tagged as a Markdown unordered list.
 
-For custom styles, *word2text* will apply bold and/or italic emphasis where it can. For custom headlines, `word2text` will apply a Markdown headline size based on the style’s font size.
+For custom styles, `word2text` will apply bold and/or italic emphasis where it can. For custom headlines, `word2text` will apply a Markdown headline size based on the style’s font size.
 
 In due course, I hope to support table formatting from Word tables and ultimately to more intelligently parse custom Word styles.
 

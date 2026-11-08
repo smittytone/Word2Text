@@ -4,26 +4,26 @@
 word2text \- Convert Psion Word files to plain text or Markdown.
 
 .SH SYNOPSIS
-\fBword2text\fR [\fB\-m\fR] [\fB\-s\fR] [\fB\-o\fR] [\fB\-v\fR] [\fB\-h\fR] [\fB\-\-version\fR] {files}
+\fBword2text\fR [\fB\-m\fR] [\fB\-o\fR] [\fB\-r\fR] [\fB\-f\fR] [\fB\-s\fR] [\fB\-v\fR] [\fB\-h\fR] [\fB\-\-version\fR] {files}
 
 .SH DESCRIPTION
 .P
 \fBword2text\fR is a macOS utility. Use it to convert Psion Word documents transferred from a Psion Series 3 organiser to
-plain text.
+plain text or to Markdown.
 .P
-Optionally, the text may be formatted using Markdown.
+Markdown or plain text files can be converted back to Psion Word format for use on a device or in an emulator.
 
-Provide a file, a list of files, or a source directory after the options. If multiple files are provided, the output will be written to disk.
-If a single file is specified, it will be output to \fBstdout\fR.
+Provide a file, a list of files, or a source directory after the options.
 
 .SH OPTIONS
 .P
 \fB\-m\fR | \fB\-\-markdown\fR      Output in Markdown format. Default: false.
 .P
-\fB\-o\fR | \fB\-\-outer\fR         Include header and footer text in the output. Default: false.
+\fB\-o\fR | \fB\-\-outer\fR         Include Psion Word header and footer text in the output. Default: false.
 .P
-\fB\-f\fR | \fB\-\-file\fR          Output a single Word file to file, not stdout. Default: false.
-                     Multiple Word files are always written to file.
+\fB\-r\fR | \fB\-\-reverse\fR       Convert a Markdown or text file to Psion Word format. Default: false.
+.P
+\fB\-f\fR | \fB\-\-force\fR         Overwrite an existing file. Default: false.
 .P
 \fB\-v\fR | \fB\-\-verbose\fR       Display processing information.
 .P
@@ -32,6 +32,28 @@ If a single file is specified, it will be output to \fBstdout\fR.
 \fB\-h\fR | \fB\-\-help\fR          This help screen.
 .P
      \fB\-\-version\fR       Show \fBword2text\fR Version information.
+
+.SH CONVERSION TO MARKDOWN
+
+\fBword2text\fR can use Word files’ styling information to mark up the processed text with Markdown formatting tags. This is necessarily limited: Word has only two standard headline sizes, and the only emphasis options relevant to Markdown are bold and/or italic text. Where these apply, \fBword2text\fR will mark up the text accordingly. Text styled as a Word Bulleted List entry will be tagged as a Markdown unordered list.
+
+For custom styles, \fBword2text\fR will apply bold and/or italic emphasis where it can. For custom headlines, `word2text` will apply a Markdown headline size based on the style’s font size.
+
+Psion documents using the Style and Emphasis codes listed below will be converted to appropriate Markdown formatting.
+
+.SH CONVERSION TO PSION WORD
+
+\fBword2text\fR can convert a Markdown or plain text file to Psion Word format for transfer to a device and/or emulator. Currently, the level of Markdown parsing is intentionally limited to the following formatting markers:
+
+\[bu]  Headline levels 1 through 6 -- implemented as Psion Word styles \fBHA\fR through \fBHA\fR.
+
+\[bu]  Bullet-list items -- implemented as Psion Word styles \fBBL\fR.
+
+\[bu]  Numbered list items -- implemented as Psion Word styles \fBNL\fR.
+
+\[bu]  Bold, Italic, and Bold+Italic emphases -- implemented as Psion Word styles \fBBB\fR, \fBII\fR and \fBBI\fR, respectively.
+
+All other formatting is ignored and content is passed through as plain Body Text (Psion Word style \fBBT\fR). Fenced code blocks are passed through line by line with no inline processing; thematic breaks are dropped.
 
 .SH COPYRIGHT
 Code and design copyright © 2026, Tony Smith (\fB@smittytone\fR). Source code available under the MIT licence.
