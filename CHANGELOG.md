@@ -2,10 +2,17 @@
 
 - 0.4.0 *Unreleased*
     - **Breaking** The minimum supprted version of macOS is now 12.4.
-    - Add ability to convert Markdown/Text files to Psion Word files.
-    - Revise code to match structure of my other CLI tools.
-    - Expand Swift compiler support for macOS CLI app and macOS library usage.
+    - **Breaking** Remove the `--file` flag. Output to file is now the default.
+    - Add ability to convert Markdown/Text files to Psion Word files. Use the new `--reverse` flag.
+    - Extend Psion Word to Markdown conversion to support the Styles used in the above process.
+    - Prevent overwriting of existing files by default.
+    - Add `--force` flag to enable overwriting of existing files.
+    - Improve reporting on less-commonly encountered errors.
+    - Ensure files passed to the tool exist and are of the correct extension(s).
     - Fix out-of-bounds byte array access on conversion to Markdown.
+    - Revise code to match structure of my other CLI tools.
+    - Rename some files.
+    - Expand Swift compiler support for macOS CLI app and macOS library usage.
 - 0.3.0 *5 February 2026*
     - Update Swift package manifest to support use of code portions as a library in third-party macOS apps.
     - Add function `PsionWord.processFile(_ data: Data, _ settings: ProcessSettings = [], _ filepath: String = "") -> Result<String, ProcessError>`, including default values, for easier access. 
