@@ -74,8 +74,8 @@ struct Word2Text {
                         settings.showInfo = true
                     case "-o", "--outer":
                         settings.includeHeader = true
-                    case "-f", "--file":
-                        settings.outputAsFile = true
+                    case "-f", "--force":
+                        settings.forceWrite = true
                     case "-m", "--markdown":
                         settings.returnMarkdown = true
                     case "-s", "--stop":
@@ -113,10 +113,6 @@ struct Word2Text {
         if settings.files.count == 0 {
             let errorMessage = settings.reverseConversion ? "No Markdown files passed for conversion" : "No Psion Word files passed for conversion"
             Stdio.reportErrorAndExit(errorMessage)
-        }
-
-        if settings.files.count > 1 {
-            settings.outputAsFile = true
         }
 
         // FROM 0.4.0 -- check we have extant files
@@ -192,7 +188,7 @@ struct Word2Text {
             if fm.fileExists(atPath: file) {
                 validFiles.append(file)
             } else {
-                Stdio.reportError("file \(file) cannot be located -- it will be ignored")
+                Stdio.reportError("File \(file) cannot be located -- it will be ignored")
             }
         }
 
@@ -214,9 +210,13 @@ struct Word2Text {
             let data = Path.getFileContents(filepath)
             if settings.reverseConversion {
                 // Convert text or Markdown to WRD
-                let markdown = String(bytes: data, encoding: .utf8)
-                let result: Result<Data, ProcessError> = markdown != nil
-                ? PsionWord.generateFile(fromMarkdown: markdown!)
+                guard let markdown = String(bytes: data, encoding: .utf8) else {
+                    outputWord(.failure(ProcessError(code:.badFileNotUTF8)), settings, filepath)
+                    continue
+                }
+
+                let result: Result<Data, ProcessError> = !data.isEmpty
+                ? PsionWord.generateFile(fromMarkdown: markdown)
                 : .failure(ProcessError(code: .badFile))
                 outputWord(result, settings, filepath)
             } else {
@@ -253,6 +253,17 @@ struct Word2Text {
             case .success(let fileData):
                 // Output to a file: generate the name and extension
                 let outFilePath = (sourceFilePath as NSString).deletingPathExtension + ".wrd"
+                if FileManager.default.fileExists(atPath: outFilePath) && !settings.forceWrite {
+                    let errorMessage = "File \(outFilePath) already exists -- use `--force` to overwrite"
+                    let errCode: ProcessErrorKind = .fileAlreadyExists
+                    if settings.haltOnFirstError {
+                        Stdio.reportErrorAndExit(errorMessage, Int32(errCode.rawValue))
+                    } else {
+                        Stdio.reportWarning(errorMessage)
+                        return
+                    }
+                }
+                
                 let outFileURL = URL(fileURLWithPath: outFilePath)
                 do {
                     try fileData.write(to: outFileURL)
@@ -304,6 +315,11 @@ struct Word2Text {
                     // Output to a file: generate the name and extension...
                     var outFilePath = (sourceFilePath as NSString).deletingPathExtension
                     outFilePath += settings.returnMarkdown ? ".md" : ".txt"
+                    if FileManager.default.fileExists(atPath: outFilePath) && !settings.forceWrite {
+                        Stdio.reportWarning("File \(outFilePath) already exists -- use `--force` to overwrite")
+                        return
+                    }
+
                     do {
                         try processedText.write(toFile: outFilePath, atomically: true, encoding: .utf8)
                         if settings.showInfo {

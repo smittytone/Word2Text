@@ -421,7 +421,7 @@ public struct PsionWord {
         }
 
         if settings.showInfo {
-            log("  Processed text length \(textBytes.count) characters\(textBytes.count == 1 ? "" : "s")")
+            log("  Processed text length \(textBytes.count) character\(textBytes.count == 1 ? "" : "s")")
         }
 
         return textBytes

@@ -41,12 +41,11 @@ extension Word2Text {
                 word2text [-s] [-o] [-v] [-h] file(s)
 
             \(String(.bold))OPTIONS\(String(.normal))
-                -f | --file         Output to file, not stdout. Default: false for one file,
-                                    true for multiple files/directories.
-                -m | --markdown     Convert to Markdown format.
-                -r | --reverse      Convert a text or Markdown file to a Psion Word file.
-                -o | --outer        Include outer text (header and footer) in output.
-                -s | --stop         Stop on first file that can't be processed. Default: false.
+                -m | --markdown     Convert to Markdown format. Default: false (plain text output).
+                -r | --reverse      Convert a plain text or Markdown file to a Psion Word file.
+                -o | --outer        Include outer Psion Word text (header and footer) in output.
+                -s | --stop         Stop on first file that can't be converted. Default: false.
+                -f | --force        Overwrite an existing file. Default: false.
                 -v | --verbose      Show progress information. Otherwise only errors are shown.
                 -h | --help         This help screen.
 

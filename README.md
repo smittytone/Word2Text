@@ -43,9 +43,9 @@ For convenience, files are written using the UTF-8 encoding.
 *word2text* accepts the following modifiers:
 
 * `-m`/`--markdown`—Output the body text in Markdown formatting. Default: `false`.
-* `-f`/`--file`—Output a single input file to a new file. Default: `false`.
 * `-r`/`--reverse`—Convert a Markdown file to Psion Word format. Default: `false`.
 * `-o`/`--outer`—Include ‘outer’ text, ie. header and footer text, in addition to the body text. Default: `false`.
+* `-f`/`--force`—Overwrite an existing file. Default: `false`.
 * `-s`/`--stop`—Stop processing multiple files on the first error. Default: `false`.
 * `-v`/`--verbose`—Show file and content discovery information during file processing.
 
