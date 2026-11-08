@@ -45,9 +45,9 @@ public struct ProcessError: Error, LocalizedError {
             case .noError:
                 return nil
             case .badFile:
-                return "file not found"
+                return "File not found"
             case .badPsionFileType:
-                return "not a Psion Series 3 Word file"
+                return "Not a Psion Series 3 Word file"
             case .badFileEncrypted:
                 return "Word file is encrypted"
             case .badRecordLengthFileInfo,
@@ -58,19 +58,22 @@ public struct ProcessError: Error, LocalizedError {
                 if let text = self.text {
                     return text
                 } else {
-                    return "error message not provided"
+                    return "Error message not provided"
                 }
             case .badFileMissingRecords:
-                return "file did not include required records"
+                return "File did not include required records"
             case .badTextTooLong:
                 if let text = self.text {
                     return text
                 } else {
-                    return "text too long for a Psion Word file (max. 64KB)"
+                    return "Text too long for a Psion Word file (max. 64KB)"
                 }
-
-            }
+            case .badFileNotUTF8:
+                return "Source file is not UTF-8"
+            case .fileAlreadyExists:
+                return "Output file already exists -- use `--force to overwrite"
         }
+    }
 }
 
 
@@ -84,11 +87,12 @@ public struct ProcessSettings {
     public var showInfo: Bool               = false
     public var includeHeader: Bool          = false
     public var haltOnFirstError: Bool       = false
-    public var outputAsFile: Bool           = false
+    public var outputAsFile: Bool           = true
     public var returnMarkdown: Bool         = false
     public var files: [String]              = []
     // FROM 0.4.0
     public var reverseConversion: Bool      = false
+    public var forceWrite: Bool             = false
 
     public init() {
 
@@ -196,6 +200,8 @@ public enum ProcessErrorKind: Int, Error {
     case badRecordType                          = 8
     case badFileMissingRecords                  = 9
     case badTextTooLong                         = 10
+    case badFileNotUTF8                         = 11
+    case fileAlreadyExists                      = 12
 }
 
 
