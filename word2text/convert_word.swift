@@ -581,27 +581,91 @@ public struct PsionWord {
         var paragraphs: [(text: String, styleCode: String)] = []
         var paraStyleCode: String = "BT"
 
+        // FROM 0.4.1
+        // Widths of the Markdown list markers (eg. `* `, `12. `) of the open list levels, used to
+        // indent nested items so they sit under their parent's text
+        var listMarkerWidths: [Int] = []
+
+        // Is a CP 1252 byte a letter or digit, ie. can't be a bullet character?
+        func isAlphanumeric(_ byte: UInt8) -> Bool {
+            switch byte {
+                case 0x30...0x39, 0x41...0x5A, 0x61...0x7A:
+                    return true
+                case 0xC0...0xFF:
+                    return byte != 0xD7 && byte != 0xF7
+                default:
+                    return false
+            }
+        }
+
         // Blocks are in stored in sequence, so we just need to iterate over them
         for block in blocks {
             // REVISED 0.4.0 Paragraph (Style) and character (Emphasis) tags are now tracked separately,
             //               so emphasis on a paragraph's first block is no longer lost
             var styleTag: String = ""
 
+            // FROM 0.4.1 Where this block's text starts: list items skip their bullet or number
+            var textStartIndex = block.startIndex
+
             if !paraStyleSet {
                 // Starting a new para, so the Style should not change
                 paraStyleSet = true
                 paraStyleCode = block.styleCode
+
+                if PsionWordConstants.listInfo(block.styleCode) == nil {
+                    listMarkerWidths = []
+                }
 
                 switch block.styleCode {
                     case "HA", "HB", "HC", "HD", "HE", "HF":
                         // FROM 0.4.0 Headings A-F map to Markdown levels 1-6
                         let level = Int(block.styleCode.unicodeScalars.last!.value) - Int(("A" as Unicode.Scalar).value) + 1
                         styleTag = String(repeating: "#", count: level) + " "
-                    case "BL":
-                        // Bullet list
-                        styleTag = "* "
-                    case "BT", "NL":
-                        // Body text, or numbered list (number is already in the text)
+                    case let code where PsionWordConstants.listInfo(code) != nil:
+                        // FROM 0.4.1 Bulleted or numbered list item, at any level
+                        let list = PsionWordConstants.listInfo(code)!
+                        let start = block.startIndex
+                        var marker = "* "
+                        var prefixEnd = start
+                        if list.isBullet {
+                            // Skip a leading bullet character and tab, eg. `·<TAB>`
+                            if start + 1 < rawText.count && rawText[start + 1] == 0x09
+                                && rawText[start] != 0x20 && rawText[start] != 0x09 && !isAlphanumeric(rawText[start]) {
+                                prefixEnd = start + 2
+                            }
+                        } else {
+                            // Take the number from a leading `12.<TAB>` (or `12. `), and skip it
+                            var digitEnd = start
+                            while digitEnd < rawText.count && rawText[digitEnd] >= 0x30 && rawText[digitEnd] <= 0x39 {
+                                digitEnd += 1
+                            }
+
+                            if digitEnd > start && digitEnd + 1 < rawText.count
+                                && (rawText[digitEnd] == 0x2E || rawText[digitEnd] == 0x29)
+                                && (rawText[digitEnd + 1] == 0x09 || rawText[digitEnd + 1] == 0x20) {
+                                marker = String(decoding: rawText[start..<digitEnd], as: UTF8.self) + ". "
+                                prefixEnd = digitEnd + 2
+                            } else {
+                                // No number to use: output the text as it is
+                                marker = ""
+                            }
+                        }
+
+                        // The prefix should be in the first block, but don't run past it
+                        textStartIndex = min(prefixEnd, block.endIndex + 1)
+
+                        // Indent by the widths of the parent levels' markers
+                        let parentLevels = list.level - 1
+                        while listMarkerWidths.count < parentLevels {
+                            listMarkerWidths.append(2)
+                        }
+
+                        listMarkerWidths = Array(listMarkerWidths.prefix(parentLevels))
+                        let indent = listMarkerWidths.reduce(0, +)
+                        listMarkerWidths.append(marker.isEmpty ? 2 : marker.count)
+                        styleTag = String(repeating: " ", count: indent) + marker
+                    case "BT":
+                        // Body text
                         break
                     default:
                         // NOTE User-defined style may have any name
@@ -653,7 +717,8 @@ public struct PsionWord {
             }
 
             // Add the tagged text to the string store
-            var addition = convertText([UInt8](rawText[block.startIndex...endIndex]), settings)
+            var addition = textStartIndex <= endIndex ? convertText([UInt8](rawText[textStartIndex...endIndex]), settings) : ""
+
 
             // Check if we've come to the end of a paragraph - but not empty ones
             if addition.hasSuffix("\n") && addition.count > 1 {
@@ -698,9 +763,15 @@ public struct PsionWord {
         var output: String = ""
         for (index, paragraph) in paragraphs.enumerated() {
             if index > 0 {
-                let previous = paragraphs[index - 1].styleCode
-                let isListItem = paragraph.styleCode == "BL" || paragraph.styleCode == "NL"
-                output += (isListItem && paragraph.styleCode == previous) ? "\n" : "\n\n"
+                // REVISED 0.4.1 Items of the same list, including nested items, stay together.
+                //               Only adjacent top-level items of different list types are separated
+                var sameList = false
+                if let previousList = PsionWordConstants.listInfo(paragraphs[index - 1].styleCode),
+                   let currentList = PsionWordConstants.listInfo(paragraph.styleCode) {
+                    sameList = previousList.level > 1 || currentList.level > 1 || previousList.isBullet == currentList.isBullet
+                }
+
+                output += sameList ? "\n" : "\n\n"
             }
 
             output += paragraph.text

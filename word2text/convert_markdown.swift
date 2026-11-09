@@ -173,6 +173,37 @@ extension PsionWord {
         var current: (style: String, text: String)? = nil
         var fence: String? = nil
 
+        // FROM 0.4.1
+        // Indentation of the markers of the currently open list items, outermost first
+        var listIndents: [Int] = []
+
+        // Width of a line's leading whitespace (tabs to the next multiple of four columns)
+        func indentWidth(_ line: String) -> Int {
+            var width = 0
+            for character in line {
+                if character == " " {
+                    width += 1
+                } else if character == "\t" {
+                    width += 4 - (width % 4)
+                } else {
+                    break
+                }
+            }
+
+            return width
+        }
+
+        // Nesting level (1-based) of a list item whose marker is at `indent`. An item is nested
+        // inside the previous one if it is indented further than that item's marker
+        func listLevel(_ indent: Int) -> Int {
+            while let last = listIndents.last, indent <= last {
+                listIndents.removeLast()
+            }
+
+            listIndents.append(indent)
+            return min(listIndents.count, PsionWordConstants.ListLevelMax)
+        }
+
         func flush() {
             if let paragraph = current, !paragraph.text.isEmpty {
                 paragraphs.append((paragraph.style, paragraph.text, true))
@@ -201,6 +232,7 @@ extension PsionWord {
             // Start of a fenced code block
             if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") {
                 flush()
+                listIndents = []
                 fence = String(trimmed.prefix(3))
                 continue
             }
@@ -216,12 +248,14 @@ extension PsionWord {
                 if trimmed.allSatisfy({ $0 == "=" }) {
                     current = (psionHeadingCodes[0], paragraph.text)
                     flush()
+                    listIndents = []
                     continue
                 }
 
                 if trimmed.allSatisfy({ $0 == "-" }) {
                     current = (psionHeadingCodes[1], paragraph.text)
                     flush()
+                    listIndents = []
                     continue
                 }
             }
@@ -230,22 +264,27 @@ extension PsionWord {
             let compact = trimmed.filter { $0 != " " && $0 != "\t" }
             if compact.count >= 3, let first = compact.first, "-*_".contains(first), compact.allSatisfy({ $0 == first }) {
                 flush()
+                listIndents = []
                 continue
             }
 
             // ATX heading
             if let heading = parseAtxHeading(trimmed) {
                 flush()
+                listIndents = []
                 paragraphs.append((psionHeadingCodes[heading.level - 1], heading.text, true))
                 continue
             }
 
-            // Bulleted list item. NOTE Psion Word has no list nesting, so nested items are flattened
+            // Bulleted list item.
+            // REVISED 0.4.1 Nested items get a deeper list style, and the bullet is placed in the text
             if let first = trimmed.first, "-*+".contains(first) {
                 let rest = trimmed.dropFirst()
                 if rest.isEmpty || rest.first == " " || rest.first == "\t" {
                     flush()
-                    current = ("BL", rest.trimmingCharacters(in: .whitespaces))
+                    let level = listLevel(indentWidth(line))
+                    let bullet = PsionWordConstants.ListBullets[(level - 1) % PsionWordConstants.ListBullets.count]
+                    current = (PsionWordConstants.BulletListCodes[level - 1], bullet + "\t" + rest.trimmingCharacters(in: .whitespaces))
                     continue
                 }
             }
@@ -257,8 +296,10 @@ extension PsionWord {
                 if let delimiter = rest.first, delimiter == "." || delimiter == ")" {
                     let afterDelimiter = rest.dropFirst()
                     if afterDelimiter.isEmpty || afterDelimiter.first == " " || afterDelimiter.first == "\t" {
+                        // REVISED 0.4.1 Nested items get a deeper list style; the number is followed by a tab
                         flush()
-                        current = ("NL", "\(digits). " + afterDelimiter.trimmingCharacters(in: .whitespaces))
+                        let level = listLevel(indentWidth(line))
+                        current = (PsionWordConstants.NumberListCodes[level - 1], "\(digits).\t" + afterDelimiter.trimmingCharacters(in: .whitespaces))
                         continue
                     }
                 }
@@ -268,6 +309,11 @@ extension PsionWord {
             if let paragraph = current {
                 current = (paragraph.style, paragraph.text.isEmpty ? trimmed : paragraph.text + " " + trimmed)
             } else {
+                // An unindented paragraph ends any open list
+                if indentWidth(line) == 0 {
+                    listIndents = []
+                }
+
                 current = ("BT", trimmed)
             }
         }
@@ -575,63 +621,43 @@ extension PsionWord {
             outlineLevel: 6
         )
 
-        let bulletListStyle = PsionWordStyle(
-            code: "BL",
-            name: "Bulleted list",
-            isStyle: true,
-            fontCode: -1,
-            fontSize: 240,
-            leftIndent: 720,
-            firstIdent: 360,
-            alignment: .justified,
-            spaceBelowPara: 240,
-            outlineLevel: 9
-        )
-
-        let numberListStyle = PsionWordStyle(
-            code: "NL",
-            name: "Numbered list",
-            isStyle: true,
-            fontCode: -1,
-            fontSize: 240,
-            leftIndent: 720,
-            alignment: .justified,
-            spaceBelowPara: 240,
-            outlineLevel: 9
-        )
+        // FROM 0.4.1
+        // List styles, one per nesting level. Each has a hanging indent: the first line starts
+        // `ListHangingIndent` left of the rest, and a tab stop where the rest start, so `bullet<TAB>text`
+        // aligns wrapped lines with the text. Level 1 bullets (`BL`) match the Series 3a default.
+        var listStyles: [PsionWordStyle] = []
+        for isBullet in [true, false] {
+            for level in 1...PsionWordConstants.ListLevelMax {
+                let indent = PsionWordConstants.ListBaseIndent + (level - 1) * PsionWordConstants.ListIndentStep
+                let baseName = isBullet ? "Bulleted list" : "Numbered list"
+                listStyles.append(PsionWordStyle(
+                    code: (isBullet ? PsionWordConstants.BulletListCodes : PsionWordConstants.NumberListCodes)[level - 1],
+                    name: level == 1 ? baseName : "\(baseName) \(level)",
+                    isStyle: true,
+                    fontCode: -1,
+                    fontSize: 240,
+                    leftIndent: indent,
+                    firstIdent: indent - PsionWordConstants.ListHangingIndent,
+                    alignment: .justified,
+                    spaceBelowPara: 240,
+                    outlineLevel: 9,
+                    tabPositions: [indent],
+                    tabTypes: [.left]
+                ))
+            }
+        }
 
         return [
             // Body text: the default style
             makeStyleRecord(bodyStyle, 8),
-            //styleRecord(code: "BT", name: "Body text", flags: 0x06, fontCode: styleFontCode, style: 0x00, fontSize: 240,
-            //           alignment: .justified, spaceBelow: 240, outlineLevel: 9, tabCount: 8),
             // Headings
             makeStyleRecord(headStyleA),
-            //styleRecord(code: "HA", name: "Heading A", fontCode: styleFontCode, style: 0x02, fontSize: 480,
-            //          alignment: .centered, lineSpacing: 480, spaceBelow: 240, keepWithNext: true, outlineLevel: 1),
             makeStyleRecord(headStyleB),
-            //styleRecord(code: "HB", name: "Heading B", fontCode: styleFontCode, style: 0x02, fontSize: 360,
-            //            lineSpacing: 360, spaceBelow: 120, keepWithNext: true, outlineLevel: 2),
             makeStyleRecord(headStyleC),
-            //styleRecord(code: "HC", name: "Heading C", fontCode: styleFontCode, style: 0x02, fontSize: 280,
-            //            lineSpacing: 280, spaceBelow: 120, keepWithNext: true, outlineLevel: 3),
             makeStyleRecord(headStyleD),
-            //styleRecord(code: "HD", name: "Heading D", fontCode: styleFontCode, style: 0x02, fontSize: 240,
-            //            spaceBelow: 120, keepWithNext: true, outlineLevel: 4),
             makeStyleRecord(headStyleE),
-            //styleRecord(code: "HE", name: "Heading E", fontCode: styleFontCode, style: 0x06, fontSize: 240,
-            //            spaceBelow: 120, keepWithNext: true, outlineLevel: 5),
-            makeStyleRecord(headStyleF),
-            //styleRecord(code: "HF", name: "Heading F", fontCode: styleFontCode, style: 0x04, fontSize: 240,
-            ///            spaceBelow: 120, keepWithNext: true, outlineLevel: 6),
-            // Lists. BL is the Series 3a's standard bulleted list
-            makeStyleRecord(bulletListStyle, 1),
-            //styleRecord(code: "BL", name: "Bulleted list", fontCode: -1, style: 0x00, fontSize: 240,
-            //            leftIndent: 720, firstIndent: 360, alignment: .justified, spaceBelow: 240, outlineLevel: 9, tabCount: 1),
-            makeStyleRecord(numberListStyle, 1)
-            //styleRecord(code: "NL", name: "Numbered list", fontCode: -1, style: 0x00, fontSize: 240,
-            //            leftIndent: 720, alignment: .justified, spaceBelow: 240, outlineLevel: 9, tabCount: 1)
-        ]
+            makeStyleRecord(headStyleF)
+        ] + listStyles.map { makeStyleRecord($0) }
     }
 
 
@@ -728,19 +754,12 @@ extension PsionWord {
 
         return [
             makeEmphasisRecord(normalEmphasis),
-            //emphasisRecord(code: "NN", name: "Normal", flags: 0x07, style: 0x00, inherit: 0x07),
             makeEmphasisRecord(underlineEmphasis),
-            //emphasisRecord(code: "UU", name: "Underline", style: 0x01, inherit: 0x06),
             makeEmphasisRecord(boldEmphasis),
-            //emphasisRecord(code: "BB", name: "Bold", style: 0x02, inherit: 0x05),
             makeEmphasisRecord(italicEmphasis),
-            //emphasisRecord(code: "II", name: "Italic", style: 0x04, inherit: 0x03),
             makeEmphasisRecord(superscriptEmphasis),
-            //emphasisRecord(code: "EE", name: "Superscript", style: 0x08, inherit: 0x07),
             makeEmphasisRecord(subscriptEmphasis),
-            //emphasisRecord(code: "SS", name: "Subscript", style: 0x10, inherit: 0x07),
             makeEmphasisRecord(boldItalicEmphasis)
-            //emphasisRecord(code: "BI", name: "Bold italic", style: 0x06, inherit: 0x01)
         ]
     }
 
@@ -779,12 +798,20 @@ extension PsionWord {
         record.append(keepFlags)
         record.append(0)
         appendWord(&record, style.outlineLevel)
-        appendWord(&record, tabCount)
-        for tab in 1...8 {
-            // Position
-            appendWord(&record, tab * 720)
-            // Type
-            appendWord(&record, PsionWordTabType.left.rawValue)
+
+        // REVISED 0.4.1 Use the style's own tab stops if it has any. Unused slots get Word's
+        // default 0.5in stops, as Word itself writes them
+        let tabs = Array(style.tabPositions.prefix(8))
+        appendWord(&record, tabs.isEmpty ? tabCount : tabs.count)
+        for slot in 0..<8 {
+            if slot < tabs.count {
+                appendWord(&record, tabs[slot])
+                let tabType: PsionWordTabType = slot < style.tabTypes.count ? style.tabTypes[slot] : .left
+                appendWord(&record, tabType.rawValue)
+            } else {
+                appendWord(&record, (slot + 1) * 720)
+                appendWord(&record, PsionWordTabType.left.rawValue)
+            }
         }
 
         return record
@@ -855,69 +882,6 @@ extension PsionWord {
         record.append(0)
         return record
     }
-
-    /*
-    private static func styleRecord(code: String, name: String, flags: UInt8 = 0x00, fontCode: Int, style: UInt8,
-                                    fontSize: Int, leftIndent: Int = 0, firstIndent: Int = 0,
-                                    alignment: PsionWordAlignment = .left, lineSpacing: Int = 240, spaceBelow: Int = 0,
-                                    keepWithNext: Bool = false, outlineLevel: Int, tabCount: Int = 0) -> [UInt8] {
-
-        var record = styleHeader(code: code, name: name, flags: flags, fontCode: fontCode, style: style,
-                                 fontSize: fontSize, inherit: 0x00)
-        appendWord(&record, leftIndent)
-        // Right indent
-        appendWord(&record, 0)
-        appendWord(&record, firstIndent)
-        appendWord(&record, alignment.rawValue)
-        appendWord(&record, lineSpacing)
-        // Space above
-        appendWord(&record, 0)
-        appendWord(&record, spaceBelow)
-        record.append(keepWithNext ? 0x01 : 0x00)
-        record.append(0)
-        appendWord(&record, outlineLevel)
-        appendWord(&record, tabCount)
-        for tab in 1...8 {
-            // Position
-            appendWord(&record, tab * 720)
-            // Type
-            appendWord(&record, PsionWordTabType.left.rawValue)
-        }
-
-        return record
-    }
-
-
-    private static func emphasisRecord(code: String, name: String, flags: UInt8 = 0x01, style: UInt8, inherit: UInt8) -> [UInt8] {
-
-        return styleHeader(code: code, name: name, flags: flags, fontCode: -1, style: style, fontSize: 0, inherit: inherit)
-    }
-
-
-    private static func styleHeader(code: String, name: String, flags: UInt8, fontCode: Int, style: UInt8,
-                                    fontSize: Int, inherit: UInt8) -> [UInt8] {
-
-        // Short code (2 bytes)
-        var record: [UInt8] = Array(code.utf8.prefix(2))
-
-        // Full name: up to 15 chars, NUL, padded with spaces as Word does, and a final NUL
-        var nameBytes = Array(encodePsionText(name).prefix(15)) + [0]
-        nameBytes += [UInt8](repeating: 0x20, count: 16 - nameBytes.count)
-        nameBytes[15] = 0
-        record += nameBytes
-
-        record.append(flags)
-        record.append(0)
-        appendWord(&record, fontCode)
-        record.append(style)
-        // Unused (older files may have 0x80)
-        record.append(0)
-        appendWord(&record, fontSize)
-        record.append(inherit)
-        record.append(0)
-        return record
-    }
-     */
 
     /**
      Append a record (type, length, data) to the file bytes.
