@@ -82,6 +82,8 @@ struct Word2Text {
                         settings.haltOnFirstError = true
                     case "-r", "--reverse":
                         settings.reverseConversion = true
+                    case "--stdout":
+                        settings.outputAsFile = false
                     case "-h", "-help", "--help":
                         showHelp()
                         Stdio.exitApp()

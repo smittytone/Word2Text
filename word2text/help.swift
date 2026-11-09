@@ -42,12 +42,14 @@ extension Word2Text {
 
             \(String(.bold))OPTIONS\(String(.normal))
                 -m | --markdown     Convert to Markdown format. Default: false (plain text output).
+                -o | --outer        Include outer Psion Word content (header and footer) in output.
                 -r | --reverse      Convert a plain text or Markdown file to a Psion Word file.
-                -o | --outer        Include outer Psion Word text (header and footer) in output.
                 -s | --stop         Stop on first file that can't be converted. Default: false.
                 -f | --force        Overwrite an existing file. Default: false.
+                --stdout            Output generated plain text or Markdown (not .WRD) to stdout.
                 -v | --verbose      Show progress information. Otherwise only errors are shown.
                 -h | --help         This help screen.
+                --version           Show version information.
 
             \(String(.italic))https://smittytone.net/word2text/index.html\(String(.normal))
             """
