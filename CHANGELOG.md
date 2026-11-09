@@ -1,12 +1,13 @@
 ## Release Notes ##
 
-- 0.4.0 *Unreleased*
+- 0.4.0 *9 November 2026*
     - **Breaking** The minimum supprted version of macOS is now 12.4.
     - **Breaking** Remove the `--file` flag. Output to file is now the default.
     - Add ability to convert Markdown/Text files to Psion Word files. Use the new `--reverse` flag.
     - Extend Psion Word to Markdown conversion to support the Styles used in the above process.
     - Prevent overwriting of existing files by default.
     - Add `--force` flag to enable overwriting of existing files.
+    - Add `--stdout` flag to output generated Markdown/Text (not .wrd) to `stdout`. 
     - Improve reporting on less-commonly encountered errors.
     - Ensure files passed to the tool exist and are of the correct extension(s).
     - Fix out-of-bounds byte array access on conversion to Markdown.
