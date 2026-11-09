@@ -1,4 +1,4 @@
-# Word2Text 0.4.0
+# Word2Text 0.4.1
 
 Convert Psion Series 3, 3a and 3c unencrypted *Word* Documents to Plain Text or Markdown. And back again.
 
@@ -101,11 +101,19 @@ In due course, I hope to support table formatting from Word tables and ultimatel
 | :--- | :--- | :--- |
 | `#`—`######` | Headline levels 1 through 6 | `HA`—`HF` |
 | `===`, `---` | Headline levels 1 through 6 | `HA`—`HF` |
-| `-`, `*`, `+` | Bullet-list items | `BL` |
-| `1.`, `1)` | Numbered list items | `NL` (number kept in the text) |
+| `-`, `*`, `+` | Bullet-list items | `BL`—`B6` (bullet styled for Psion) |
+| `1.`, `1)` | Numbered list items | `NL`—`B6` (number kept in the text) |
 | `**bold**`, `*italic*`, `***both***` (and `_` variants) | Bold, Italic, Bold+Italic emphases | `BB`, `II`, `BI` |
 
 All other formatting is ignored and content is passed through as plain Body Text (Psion Word style `BT`). Fenced code blocks are passed through line by line with no inline processing; thematic breaks are dropped.
+
+Bullets are styled according to indentation level using the repeated sequence ·, ■ and ¤.
+
+#### Psion Styling
+
+Psion *Word* text styling is heavily based on the printer driver selected. This governs what fonts are available and more besides. Given that printing from the Psion is unlikely these days (for a start, many of the printers with bundled drivers are no longer available), I have elected to assume the Canon BubbleJet BJ-10e driver, as this makes available a broader array of fonts, and Proportional in particular.
+
+To change the printer driver on your Psion, open *Word*, press **Menu** and go to **Special > Print setup**. Scroll down to **Printer model...* and make sure `Canon BJ-10e` is selected (press **Tab** to change it if it is not).
 
 ## Compiling the CLI App
 
@@ -222,7 +230,7 @@ func printLog(_ note: Notification) {
 
 ## Known Issues
 
-* Nested lists do not survive conversion to *Word* and back to Markdown.
+* ~~~Nested lists do not survive conversion to *Word* and back to Markdown.~~~
 
 ## Version Management
 
