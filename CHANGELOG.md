@@ -1,5 +1,8 @@
 ## Release Notes ##
 
+- 0.4.1 *Unreleased*
+    - Fix sub-list indentation, and add bullets to Psion Word version on conversion.
+    - Clean out unused code.
 - 0.4.0 *9 November 2026*
     - **Breaking** The minimum supprted version of macOS is now 12.4.
     - **Breaking** Remove the `--file` flag. Output to file is now the default.
@@ -7,7 +10,7 @@
     - Extend Psion Word to Markdown conversion to support the Styles used in the above process.
     - Prevent overwriting of existing files by default.
     - Add `--force` flag to enable overwriting of existing files.
-    - Add `--stdout` flag to output generated Markdown/Text (not .wrd) to `stdout`. 
+    - Add `--stdout` flag to output generated Markdown/Text (not .wrd) to `stdout`.
     - Improve reporting on less-commonly encountered errors.
     - Ensure files passed to the tool exist and are of the correct extension(s).
     - Fix out-of-bounds byte array access on conversion to Markdown.
@@ -16,7 +19,7 @@
     - Expand Swift compiler support for macOS CLI app and macOS library usage.
 - 0.3.0 *5 February 2026*
     - Update Swift package manifest to support use of code portions as a library in third-party macOS apps.
-    - Add function `PsionWord.processFile(_ data: Data, _ settings: ProcessSettings = [], _ filepath: String = "") -> Result<String, ProcessError>`, including default values, for easier access. 
+    - Add function `PsionWord.processFile(_ data: Data, _ settings: ProcessSettings = [], _ filepath: String = "") -> Result<String, ProcessError>`, including default values, for easier access.
     - **Breaking Change** Migrate `ProcessSettings` from `Struct` to `OptionSet`.
 - 0.2.0 *3 February 2026*
     - Refactor conversion code to make it more friendly to third-party apps by greater isolation from the CLI host code.
