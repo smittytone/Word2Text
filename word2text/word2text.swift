@@ -209,24 +209,28 @@ struct Word2Text {
     private static func processFiles(_ settings: ProcessSettings) {
 
         for filepath in settings.files {
-            let data = Path.getFileContents(filepath)
-            if settings.reverseConversion {
-                // Convert text or Markdown to WRD
-                guard let markdown = String(bytes: data, encoding: .utf8) else {
-                    outputWord(.failure(ProcessError(code:.badFileNotUTF8)), settings, filepath)
-                    continue
-                }
+            switch Path.getFileContent(filepath) {
+                case .failure(let error):
+                    Stdio.reportError(error.localizedDescription)
+                case .success(let data):
+                    if settings.reverseConversion {
+                        // Convert text or Markdown to WRD
+                        guard let markdown = String(bytes: data, encoding: .utf8) else {
+                            outputWord(.failure(ProcessError(code:.badFileNotUTF8)), settings, filepath)
+                            continue
+                        }
 
-                let result: Result<Data, ProcessError> = !data.isEmpty
-                ? PsionWord.generateFile(fromMarkdown: markdown)
-                : .failure(ProcessError(code: .badFile))
-                outputWord(result, settings, filepath)
-            } else {
-                // Convert WRD to text or Markdown
-                let result: Result<String, ProcessError> = !data.isEmpty
-                ? PsionWord.processFile(data, filepath, settings)
-                : .failure(ProcessError(code: .badFile))
-                outputText(result, settings, filepath)
+                        let result: Result<Data, ProcessError> = !data.isEmpty
+                        ? PsionWord.generateFile(fromMarkdown: markdown)
+                        : .failure(ProcessError(code: .badFile))
+                        outputWord(result, settings, filepath)
+                    } else {
+                        // Convert WRD to text or Markdown
+                        let result: Result<String, ProcessError> = !data.isEmpty
+                        ? PsionWord.processFile(data, filepath, settings)
+                        : .failure(ProcessError(code: .badFile))
+                        outputText(result, settings, filepath)
+                    }
             }
         }
     }
