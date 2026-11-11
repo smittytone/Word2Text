@@ -2,8 +2,6 @@ Compiled from information produced by Frodo Looojaard (https://frodo.looijaard.n
 
 This documentation is in the public domain.
 
-
-
 Word File
 ---------
 
@@ -17,7 +15,7 @@ Offset    Size    Data            Description
 0010    «Section Table Offset Section»
 0014
 
-The «Section Table Section» may contain the following sections, usual in the given order.
+The «Section Table Section» may contain the following sections, usually in the given order.
 
 Identifier        Section                                    Always found
 CD 00 00 10       Offset of the «Password Section»           No
@@ -30,6 +28,15 @@ CD 00 00 10       Offset of the «Password Section»           No
 
 The «Password Section» is only found in encrypted documents. Only the «Text Section» is actually encrypted if it is found.
 If a «Text Layout Section» is not present, all text defaults to style Normal with no further layout.
+
+
+Section Table Offset Section
+----------------------------
+
+This is a very simple section, found directly after the «Header Section» in an «ID 10000037 File». It just contains the offset of the «Section Table Section».
+
+Offset		Size		Description
+0000		«Offset»	Offset of the «Section Table Section»
 
 
 Word Status Section
@@ -152,7 +159,7 @@ Below the structure of this section is shown.
     L        «Length»       Page width
     L        «Length»       Page height
 
-Most items are self-explanatory. Of course,the header and footer must fit within the top and bottom margins.
+Most items are self-explanatory. Of course, the header and footer must fit within the top and bottom margins.
 
 Page Header
 ===========
@@ -260,6 +267,7 @@ The sizes are the size the object will be displayed with. If the object is displ
 
 The sizes found here are the same as those in the «Object Display Section».
 
+
 Application ID Section
 ----------------------
 
@@ -284,6 +292,186 @@ Identifier         Name
 86 00 00 10        Data.app
 87 00 00 10        Comms.app
 88 00 00 10        Sheet.app
+
+
+
+TextEd Section
+--------------
+
+This section describes a text, with layout codes and other things. It is laid out as a jumptable to auxiliary sections followed by the text itself.
+
+	L	«ID»					Identifier 5C 00 00 10
+	«TextEd Jumptable»
+	L	«ID»					Identifier 64 00 00 10
+		«Text Section»		Text of the header/footer
+Note that there is a real «Text Section» at the end, not just an offset to it!
+
+TextEd Jumptable
+================
+
+This contains combinations of IDs and offsets of sections. All entries are optional.
+Identifier		Section
+63 00 00 10		«Text Replacement Section»
+65 00 00 10		Unknown; always found with offset 00 00 00 00?
+66 00 00 10		«Text Layout Section»
+
+If no «Text Layout Section» is needed, its «Offset» may equal 00 00 00 00, or it may simply be omitted. It is possible this is true for other sections as well.
+
+Text Replacement Section
+========================
+
+This section describes how dynamic elements like the current date and the page number should be substituted.These elements are written fully in the «Text Section», with their latest expansions. This section determines how they should be updated.
+This section is a «LListE» of the elements below. Note that the last element only consists of the first Long.
+
+	Size	Data		Description
+	L					Offset of replacement text, counted from the end of the last
+	L					Length of the text as appearing in the text section
+	L	«ID»			Identifier for kind of substitution
+	L	«Offset»		Offset of the «Text Substitution Pattern»
+
+	Identifier		Data			Notes
+	5F 00 00 10		Time or date	Uses true substitution patterns
+	60 00 00 10		Page nr.		Substitution pattern of length 0
+	61 00 00 10		Nr. of pages	Substitution pattern of length 0
+	62 00 00 10		Filename		No subsitution pattern; offset 0
+
+
+Text Substitution Pattern
+=========================
+
+The substitution patterns are BlistBs. Their encoding is unclear; %*J%:1%T%B is found for times, %D%M%J%/0%1%/1%2%/2%3%/3 for dates.
+
+
+
+Layout Codes
+------------
+
+There are two kinds of layout codes: those which always modify a whole pragraph, and those which modify one or more characters. They are always kept strictly separate. A layout code consists of a type byte, followed by one or more modifier bytes. All rcognized codes are listed below.
+
+Paragraph Layout List
+=====================
+
+A Paragraph Layout List is a «LListB» of «Paragraph Layout Codes». Paragraph Layout Codes are almost always found in this form.
+
+
+Paragraph Layout Codes
+======================
+
+As explained above, a Paragraph Layout Code consists of a type byte, telling what kind of layout code this is, followed by a type-dependent amount of data.
+
+Type	Size	Data		Description
+01		3B		«Color»	    Background color
+02		L	,	«Length»	Indent left
+03		L		«Length»	Indent right
+04		L		«Length»	(Un)indent first line (length relative to indent left setting)
+05		B					Hor. justify left (00), centre (01), right (02) or full (03)
+06		B					Vert. justify top (00) centre (01) or bottom (02)
+07		L		«Size»		Interline distance
+08		B					Interline distance is minimum (00) or exact (01)
+09		L		«Size»		Line distance before paragraph start
+0A		L		«Size»		Line distance after paragraph end
+0B		B					Line distance options: Keep on one page on (01) or off (00)
+0C		B					Line distance options: Keep together with on (01) or off (00)
+0D		B					Line distance options: On next page on (01) or off (00)
+0E		B					Protection vs. single lines on pages disable (01) or enable (00)
+0F		B					Wrap data to fill sheet cell limits on (01) or off (00)
+10		L		«Length»    Distance of borders from text
+11		9B		«Border»	Top border
+12		9B		«Border»	Bottom border
+13		9B		«Border»	Left border
+14		9B		«Border»	Right border
+15		*		«Bullet»	Bullets
+16		L		«Length»	Set standard (left) tabs interval
+17		5B		«Tab»		Set extra tab
+
+Some comments. The first line of a paragraph can have a different indentation than the other lines. This indentation length is always relative to the normal indentation, and can be positive (more to the right) or negative (more to the left). Combined with bulltes, things are slightly different (see there).
+Borders can be made to be drawn beyond the standard margins, by specifying the amount of space between them and the text. This is always a positive value.
+There always standard tab positions; they are placed at regular interfals as specified. These are always left tabs. Additional tabs can also be specified, but these are always in addition to the standard tab positions.
+
+Borders
+=======
+
+The four possible borders are specified separately, through initial type bytes 11 to 14. The border structure is shown below.
+
+	Offset	Data	    Description
+	0000	B			Type (see below)
+	0001	L			Thickness (always 01 for types 02 to 06)
+	0005	«Color»	    Color of border
+	0008	B			Unknown (always 00 or 01 ?)
+	0009
+
+The border type can have the following values:
+	Border Type		    Description
+		00				None
+		01				Solid single line
+		02				Solid double line
+		03				Dotted line
+		04				Dashed line
+		05				Dotsdashed line
+		06				Dotdotdashed line
+
+The thickness can only be defined for solid lines. It is expressed in units of 1/14 point (1/20 decimal), just like «Sizes» and «Lengths». The three Unknown bytes may be another color code, or something completely different. The function of the final byte is also unclear.
+
+Bullets
+=======
+
+A Bullet description is a «BListB». The complete structure is given below, including the initial length byte excluding the initial type byte 15.
+
+	Offset	Data		Description
+	0000	B			Size of the remainder of this section in bytes
+	0001	«Size»		Font size of bullet in points
+	0005	B			Character used for bullet in «ASCII»
+	0006	B			Indent after bullet on (01) or off (00)
+	0007	«Color»	Color of bullet
+	0008 	«Font»		Font from which the bullet is taken (always Swiss?)
+
+The combination of indents and bullets is somewhat involved. If Indent After Bullet is off, everything works as expected: the bullet is located at the first line indent, and the text starts right after it. If it is on, the bullet is located at the minmum of first line indent and left indent; the text (including the first line) is located at the maximum of first line indent and left indent.
+
+Tabs
+====
+
+In addition to the default left tabs, which are found at regular intervals, more tabs can be defined. Each additional tab is specified in its own structure. Below this structure is shown, excluding the initial type byte 17.
+
+	Offset	Data		Description
+	0000	«Length»	Location of the tab, relative to the left margin
+	0004	B			Tab type (see below)
+	0005
+
+There are three kinds of tabs. They specify the anchoring of the text just after the tab: either the first character, the centre character or the last character.
+
+	Tab type		Kind
+	1				Left
+	2				Centre
+	3				Right
+
+Character Layout List
+=====================
+
+A Character Layout List is a «LListB» of «Character Layout Codes». Character Layout Codes are almost always found in this form.
+
+Character Layout Codes
+======================
+
+As explained above, a Character Layout Code consists of a type byte, telling what kind of layout code this is, followed by a type-dependent amount of data.
+
+Type	Size	Data		Description
+18		B					Set ??? on (01) or off (00)
+19		3B		«Color»	    Set text color
+1A		3B		«Color»	    Set ??? color (background?)
+1B		B					Set ??? on (01) or off (00). Displayed with black background.
+1C		L		«Size»		Change character point size
+1D		B					Italic on (01) or off (00)
+1E		B					Bold on (01) or off (00
+1F		B					Superscript (01) or subscipt (02) or off (00)
+20		B					Underline on (01) or off (00)
+21		B					Strikethrough on (01) or off (00)
+22		*		«Font»		Change character font
+23		B					Unknown
+24		B					Unknown (5MX only): always 00 ?
+
+Some remarks: several of the above codes are sometimes found in Word documents (especially after a clipboard copy from another program), but seem te be ignored by Word. This is more or less true for codes 18, 1A, 1B, 23 and 24. None of them can be generated directly by a Word user.
+
+
 
 ASCII Codes
 -----------
@@ -322,3 +510,114 @@ There are Psion's which use different code pages, for cyrillic characters for ex
     D0-DF    ÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞß
     E0-EF    àáâãäåæçèéêëìíîï
     F0-FF    ðñòóôõö÷øùúûüýþÿ
+
+
+Basic Storage Elements
+----------------------
+
+Basic Elements
+==============
+
+All other elements can be descibed in terms of these three basic storage elements:
+
+Abbr.	Full	Desciption
+	B	Byte	1 byte long (8 bits)
+	W	Word	2 bytes long
+	L	Long	4 bytes long
+
+All numbers are written in hexcode. So 48 equals 72 decimal. A sequence of bytes is written like 4E 00 00 10. As the Psion uses little endian, this corresponds to the number 1000004E. Negative numbers are expressed using two's complement notation: F7 corresponds to -9.
+
+Sometimes, we need to talk about individual bits. A byte has 8 bits; bit 0 is the LSB (value: 1), bit 7 the MSB (value: 80).
+
+Lists
+=====
+
+Often lists are used. A list consists of an indication of its length, followed by length elements. A BListB uses a byte as length indicator and its length is counted in bytes. A LListB uses a long to encode the length, counted in bytes, etc. So the first letter tells how the length indicator is encoded: in a byte (B), word (W), long (L), special (S) or extra (X). The last letter tells what unit the length count is in: bytes (B), words (W), Longs (L) or elements as described (E).
+
+We can make the following matrix:
+
+			Element Size
+Indicator			B						W						L						E
+	B		BlistB [BListB]		BListW [BListW]		BListL [BListL]		BlistE [BListE]
+	W		WlistB [WListB]		WListW [WListW]		WListL [WListL]		WlistE [WListE]
+	L		LlistB [LListB]		LListW [LListW]		LListL [LListL]		LlistE [LListE]
+	S		SlistB [SListB]		SListW [SListW]		SListL [SListL]		SlistE [SListE]
+	X		XlistB [XListB]		XListW [XListW]		XListL [XListL]		XlistE [XListE]
+
+The special and extra encodings need some more explanation.They are both used in cases where it is unclear how big a number needs to be represented. Both use an expandable scheme to encode numbers.
+Special encoding:
+Length described		Length of indicator		Value of indicator		How to recognize
+00000000 - 0000003F		B							4 * length + 2		First byte & 03 == 02
+00000080 - 00001FFF		W							8 * length + 5		First byte & 07 == 05
+
+Extra encoding:
+Length described		Length of indicator		Value of indicator		How to recognize
+00000000 - 0000007F		B							2 * length			First byte & 01 == 00
+00000080 - 00003FFF		W							4 * length + 1		First byte & 03 == 01
+00004000 - 1FFFFFFF		L							8 * length + 3		First byte & 07 == 03
+
+Strings
+=======
+
+A string is encoded as a «SListB».. Strings use «ASCII Codes»..
+
+Offsets
+=======
+
+At many places, other locations in the file are referenced. These locations are given as Offsets: the
+number of bytes from the start of the file. Offsets are always encoded in Longs.
+
+Lengths
+=======
+
+Lengths are encoded within longs. The unit is a twip, or 1/5A0 inch (1/1440 decimal). This means 237 (567 decimal) units correspond to 1 cm.
+
+Sizes
+=====
+
+Font sizes are expressed within longs. The unit is a 1/14 point (1/20 decimal). As a point equals 1/48 twip (1/72 decimal), this is actually the same unit as used for «Lengths».
+
+Colors
+======
+
+Colors are encoded within three bytes. Each byte ranges from 00 (black) to FF (white). This is clearly intended to be a RGB encoding, but the Psion 5 only has a greytone display. All three bytes should be equal to express a greytone, and in practice, only values 00 00 00, 55 55 55, AA AA AA and FF FF FF are seen.
+
+Signed Integers
+===============
+
+Signed integers are encoded in longs. The most significant bit is used as sign (0 for positive, 1 for negative). So +1 is encoded as 01 00 00 00, and -1 as 01 00 00 80.
+
+Floating Point Numbers
+======================
+
+Floating point numbers are encoded in 8 bytes. The most significant bit is used as sign (0 for positive, 1 for negative). The next B (11 decimal) bits are used as a two-complement exponent, and the remaining 34 (52 decimal) bits are used as the mantissa.
+The complete number can be found through this C formula (>> means shift right, ** means to the power of, Float is the 8 byte unsigned integer representation):
+
+	(Float & 0x8000000000000000 ? -1 : 1) *
+	(1 + (Float & 0x000FFFFFFFFFFFFF) / 0x0010000000000000) *
+	(2 ** (((Float & 0x7FF0000000000000) >> 52) - 0x3FF)
+
+Some example representations:
+
+Number (decimal)	Sign bit	Exponent	Mantissa			Complete
+ 1.0					0			3FF			0000000000000		00 00 00 00 00 00 F0 3F
+ 2.0					0			400			0000000000000		00 00 00 00 00 00 00 40
+ 3.0					0			400			8000000000000		00 00 00 00 00 00 08 40
+ 3.5					0			400			C000000000000		00 00 00 00 00 00 0C 40
+-3.5					1			400			C000000000000		00 00 00 00 00 00 0C C0
+ 0.5					0			3FE			0000000000000		00 00 00 00 00 00 E0 3F
+ 0.0					0			000			0000000000000		00 00 00 00 00 00 00 00
+
+
+Fonts
+-----
+
+Fonts are encoded by their full name (using «ASCII Codes»), followed by a byte with the screen font number. Before the name, a byte encodes the length of the name plus one (a complete font is a «BListB»). So an theoretical font called New displayed with screen font code 80 would be encoded as 04 4E 65 57 80.
+
+Fonts are specific to your printer choice. But printer fonts can't be displayed directly on your screen. Instead, each printer font is mapped to a screen font. These are numbered as follows:.
+
+	Code	Usual name			Comments
+	00		Swiss			    Only found in bullet desciptions? May be the same as 02.
+	01		Arial			    Proportional sans serif font
+	02		Courier New		    Non-proportional font
+	03		Times New Roman	    Proportional serifed font
