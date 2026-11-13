@@ -34,7 +34,7 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      launchStyle = "0"
+      launchStyle = "1"
       useCustomWorkingDirectory = "NO"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
@@ -54,8 +54,8 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "$HOME/Psion/NOTES.WRD"
-            isEnabled = "NO">
+            argument = "samples/SAMPLE.WRD"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$HOME/Psion/WORD03.WRD"
@@ -79,15 +79,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-v"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-f"
             isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "$HOME/GitHub/plptools/plpftp/timeline.wrd"
-            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
       <MetalAPIValidationSettings

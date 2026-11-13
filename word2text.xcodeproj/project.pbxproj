@@ -17,6 +17,8 @@
 		3B8187ED2F03CCED00E98F50 /* logging_cli.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B8187EC2F03CCED00E98F50 /* logging_cli.swift */; };
 		3B8187EE2F03CCED00E98F50 /* logging_cli.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B8187EC2F03CCED00E98F50 /* logging_cli.swift */; };
 		3B9894252F028D6A00E3EDE3 /* Clicore in Frameworks */ = {isa = PBXBuildFile; productRef = 3B9894242F028D6A00E3EDE3 /* Clicore */; };
+		3BBE6EB130A626790066033A /* utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BBE6EB030A626700066033A /* utilities.swift */; };
+		3BBE6EB230A626790066033A /* utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BBE6EB030A626700066033A /* utilities.swift */; };
 		3BD947C42E50D99D00A3245D /* convert_word.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BD947C32E50D99D00A3245D /* convert_word.swift */; };
 		3BD947C52E50D99D00A3245D /* convert_word.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BD947C32E50D99D00A3245D /* convert_word.swift */; };
 		3BE01B7A2D0F3CCB00E1D2F4 /* word2textTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BE01B782D0F3CCB00E1D2F4 /* word2textTests.swift */; };
@@ -50,6 +52,7 @@
 		3B6C37C7309395F3006F185F /* help.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = help.swift; sourceTree = "<group>"; };
 		3B72CE27309F2C7300E61ADA /* convert_markdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = convert_markdown.swift; sourceTree = "<group>"; };
 		3B8187EC2F03CCED00E98F50 /* logging_cli.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = logging_cli.swift; sourceTree = "<group>"; };
+		3BBE6EB030A626700066033A /* utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = utilities.swift; sourceTree = "<group>"; };
 		3BD947C32E50D99D00A3245D /* convert_word.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = convert_word.swift; sourceTree = "<group>"; };
 		3BE01B712D0F3CB900E1D2F4 /* word2textTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = word2textTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3BE01B782D0F3CCB00E1D2F4 /* word2textTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = word2textTests.swift; sourceTree = "<group>"; };
@@ -128,6 +131,7 @@
 				3B72CE27309F2C7300E61ADA /* convert_markdown.swift */,
 				3B8187EC2F03CCED00E98F50 /* logging_cli.swift */,
 				3BF5644F2D0A270F008E58B6 /* entities.swift */,
+				3BBE6EB030A626700066033A /* utilities.swift */,
 				3B67C6B33093876D00FFB8CF /* swift_version.swift */,
 				3B67C6B23093876D00FFB8CF /* swift.plist */,
 				3BF5644C2D0A270F008E58B6 /* Info.plist */,
@@ -257,6 +261,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3BBE6EB130A626790066033A /* utilities.swift in Sources */,
 				3BF564532D0A270F008E58B6 /* word2text.swift in Sources */,
 				3BF564542D0A270F008E58B6 /* entities.swift in Sources */,
 				3B6C37C9309395F5006F185F /* help.swift in Sources */,
@@ -276,6 +281,7 @@
 				3B6C37C8309395F5006F185F /* help.swift in Sources */,
 				3B6C37CA30939F5E006F185F /* swift_version.swift in Sources */,
 				3B72CE29309F2C7600E61ADA /* convert_markdown.swift in Sources */,
+				3BBE6EB230A626790066033A /* utilities.swift in Sources */,
 				3BE01B7B2D0F3D5300E1D2F4 /* entities.swift in Sources */,
 				3BE01B7D2D0F3D6000E1D2F4 /* word2text.swift in Sources */,
 				3BD947C52E50D99D00A3245D /* convert_word.swift in Sources */,
@@ -414,7 +420,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 46;
+				CURRENT_PROJECT_VERSION = 48;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
@@ -423,7 +429,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = /Users/smitty/GitHub/word2text/word2text/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
-				MARKETING_VERSION = 0.4.1;
+				MARKETING_VERSION = 0.5.0;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bps.word2text;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -439,7 +445,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 46;
+				CURRENT_PROJECT_VERSION = 48;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
@@ -448,7 +454,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = /Users/smitty/GitHub/word2text/word2text/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
-				MARKETING_VERSION = 0.4.1;
+				MARKETING_VERSION = 0.5.0;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bps.word2text;
 				PRODUCT_NAME = "$(TARGET_NAME)";
