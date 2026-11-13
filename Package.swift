@@ -21,7 +21,7 @@ let package = Package(
         .executable(name: "word2text", targets: ["word2text"])
     ],
     dependencies: [
-        .package(url: "https://github.com/smittytone/clicore", from: "0.8.0"),
+        .package(url: "https://github.com/smittytone/clicore", from: "0.9.0"),
     ],
     targets: [
         .executableTarget(
@@ -68,58 +68,3 @@ let package = Package(
         )
     ]
 )
-/*
-#if os(Linux)
-let package = Package(
-    name: "word2text",
-    dependencies: [
-        .package(
-            url: "https://github.com/smittytone/clicore",
-            branch: "develop"
-        ),
-    ],
-    targets: [
-        .executableTarget(
-            name: "word2text",
-            dependencies: [
-                .product(
-                    name: "Clicore",
-                    package: "clicore"
-                ),
-            ],
-            path: "word2text",
-            exclude: [
-                // File not needed for Linux CLI builds
-                "Info.plist",
-                "logging_lib.swift",
-                "swift.plist"
-            ]
-        )
-    ]
-)
-#else
-let package = Package(
-    name: "word2text-lib",
-    products: [
-        .library(
-            name: "Word2text",
-            targets: [
-                "Word2text"
-            ]
-        )
-    ],
-    targets: [
-        .target(
-            name: "Word2text",
-            path: "word2text",
-            sources: [
-                // Just include the files needed for macOS lib usage
-                "word.swift",
-                "entities.swift",
-                "logging_lib.swift"
-            ]
-        )
-    ]
-)
-#endif
-*/
