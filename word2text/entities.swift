@@ -148,7 +148,17 @@ public struct PsionWordConstants {
     // Bullets cycle through these by level: middle dot, black square, currency sign
     static let ListBullets: [String]        = ["\u{00B7}", "\u{25A0}", "\u{00A4}"]
 
-    
+    static let PreambleLength               = 16
+    static let HeaderLength                 = 40
+    static let FileInfoRecordLength         = 10
+    static let PrinterConfigRecordLength    = 58
+    static let StyleRecordLength            = 80
+    static let EmphasisRecordLength         = 28
+
+    static let ParagraphMarker              = 0
+    static let EncryptionMarker             = 256
+    static let RecordTotal                  = 1022
+
     /**
      Get the list type and level of a style code.
 
@@ -215,10 +225,13 @@ public struct PsionWordStyle {
 */
 public struct PsionWordFormatBlock {
 
-    public var startIndex: Int                         = 0
-    public var endIndex: Int                           = 0
-    public var styleCode: String                       = "BT"
-    public var emphasisCode: String                    = "NN"
+    public var startIndex: Int                          = 0              // Index into the raw text from Section 8 (first character)
+    public var endIndex: Int                            = 0              // Index into the raw text from Section 8 (last character)
+    public var styleCode: String                        = "BT"           // Span's Word 3 style code
+    public var emphasisCode: String                     = "NN"           // Span's Word 3 emphasis code
+    // FROM
+    public var style: PsionWordStyle?                   = nil
+    public var emphasis: PsionWordStyle?                = nil
 }
 
 
@@ -327,4 +340,120 @@ struct MarkdownToken {
     var canClose: Bool                          = false
     var opens: [Int]                            = []
     var closes: [Int]                           = []
+}
+
+
+struct Paragraph {
+
+    var type: ParagraphType                     = .body
+    var spans: [Span]                           = []
+    var word3Style: PsionWordStyle?             = nil
+}
+
+
+/*
+    The paragraph-level style of a Paragraph.
+
+    Levels are 1-based and should be kept in the range 1-6 when Paragraphs are created.
+    Headers and footers are not types: their role comes from where they are stored in
+    a Document.
+*/
+public enum ParagraphType: Equatable {
+
+    case body
+    case heading(level: Int)                            // 1-6
+    case bulletItem(level: Int, bullet: Character?)     // 1-6; bullet taken from the source text, if any
+    case numberItem(level: Int, number: Int?)           // 1-6; number taken from the source text, if any
+
+    /*
+     For list items, whether the list is bulleted and the item's level; `nil` for other types
+     */
+    var listItem: (isBullet: Bool, level: Int)? {
+        switch self {
+            case .bulletItem(let level, _):
+                return (true, level)
+            case .numberItem(let level, _):
+                return (false, level)
+            case .body, .heading:
+                return nil
+        }
+    }
+}
+
+
+struct Span {
+
+    var type: SpanType                          = .normal
+    var text: String                            = ""
+
+    /*
+     The span's text with Markdown emphasis markers applied.
+
+     Leading and trailing whitespace is placed outside the markers, as Markdown
+     won't recognise, say, `** bold**` as emphasis. Whitespace-only text gets no markers.
+
+     NOTE Markdown has no underline, superscript or subscript, so these
+          emphases are not marked. Strikethrough uses the GFM `~~` extension.
+     */
+    var markdown: String {
+
+        var marker = ""
+        if self.type.contains(.bold) {
+            marker += "**"
+        }
+
+        if self.type.contains(.italic) {
+            marker += "*"
+        }
+
+        let strike = self.type.contains(.strikethrough) ? "~~" : ""
+
+        // Nothing to mark?
+        let core = self.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if (marker.isEmpty && strike.isEmpty) || core.isEmpty {
+            return self.text
+        }
+
+        // Separate the leading and trailing whitespace from the core text
+        let leading = self.text.prefix(while: { $0.isWhitespace })
+        let trailing = String(self.text.reversed().prefix(while: { $0.isWhitespace }).reversed())
+        return "\(leading)\(strike)\(marker)\(core)\(marker)\(strike)\(trailing)"
+    }
+}
+
+
+/*
+    The character-level emphases applied to a Span.
+
+    An OptionSet, so emphases can be combined, eg. `[.bold, .underline]`. An empty set is
+    normal text.
+    Word 3 supports underline, bold, italic, superscript and subscript;
+    Word 5 adds strikethrough.
+*/
+public struct SpanType: OptionSet, Hashable {
+
+    public let rawValue: Int
+
+    public init(rawValue: Int) {
+        self.rawValue = rawValue
+    }
+
+    public static let bold                      = SpanType(rawValue: 1 << 0)
+    public static let italic                    = SpanType(rawValue: 1 << 1)
+    public static let underline                 = SpanType(rawValue: 1 << 2)
+    public static let strikethrough             = SpanType(rawValue: 1 << 3)
+    public static let superScript               = SpanType(rawValue: 1 << 4)
+    public static let subScript                 = SpanType(rawValue: 1 << 5)
+
+    // Convenience combinations
+    public static let normal: SpanType          = []
+    public static let boldItalic: SpanType      = [.bold, .italic]
+}
+
+
+public struct Document {
+
+    var header: Paragraph?                      = nil
+    var footer: Paragraph?                      = nil
+    var paragraphs: [Paragraph]                 = []
 }

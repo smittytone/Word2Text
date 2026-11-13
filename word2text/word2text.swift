@@ -227,7 +227,7 @@ struct Word2Text {
                     } else {
                         // Convert WRD to text or Markdown
                         let result: Result<String, ProcessError> = !data.isEmpty
-                        ? PsionWord.processFile(data, filepath, settings)
+                        ? PsionWord.decodeWordFile(data, filepath, settings)
                         : .failure(ProcessError(code: .badFile))
                         outputText(result, settings, filepath)
                     }

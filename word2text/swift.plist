@@ -3,15 +3,15 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleGetInfoString</key>
-	<string>word2text 0.4.1 copyright © 2026, Tony Smith. All rights reserved</string>
+	<string>word2text 0.5.0 copyright © 2026, Tony Smith. All rights reserved</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.bps.word2text</string>
 	<key>CFBundleName</key>
 	<string>word2text</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.4.1</string>
+	<string>0.5.0</string>
 	<key>CFBundleVersion</key>
-	<string>46</string>
+	<string>48</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>12.4</string>
 	<key>NSHumanReadableCopyright</key>

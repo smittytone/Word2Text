@@ -32,6 +32,8 @@ public struct PsionWord {
     /**
      Convert an individual Word file to plain text.
 
+     DEPRECATED--Use `decodeWordFile()` instead.
+
      - Parameters:
         - data:     Data object containing the file bytes.
                     May be better to just pass a byte array.
@@ -42,6 +44,9 @@ public struct PsionWord {
      */
     static public func processFile(_ data: ArraySlice<UInt8>, _ filepath: String, _ settings: ProcessSettings) -> Result<String, ProcessError> {
 
+        return decodeWordFile(data, filepath, settings)
+
+        /*
         var bodyText = ""
         var byteIndex = 40
         var textBytes: [UInt8] = []
@@ -115,7 +120,7 @@ public struct PsionWord {
                     // Check the fixed size
                     if recordDataLength != 80 {
                         var error = ProcessError(code: .badRecordLengthStyleDefinition)
-                        error.text = "Bad style definition record size (\(recordDataLength) not 80 bytes)"
+                        error.text = "Bad style definition record size (\(recordDataLength)) not 80 bytes)"
                         return .failure(error)
                     }
 
@@ -125,7 +130,7 @@ public struct PsionWord {
                     // Check the fixed size
                     if recordDataLength != 28 {
                         var error = ProcessError(code: .badRecordLengthStyleDefinition)
-                        error.text = "Bad emphasis definition record size (\(recordDataLength) not 80 bytes"
+                        error.text = "Bad emphasis definition record size (\(recordDataLength)) not 28 bytes"
                         return .failure(error)
                     }
 
@@ -176,6 +181,7 @@ public struct PsionWord {
         }
 
         return .success(bodyText)
+         */
     }
 
 
@@ -185,7 +191,8 @@ public struct PsionWord {
     static public func processFile(_ data: Data, _ settings: ProcessSettings? = nil, _ filepath: String = "") -> Result<String, ProcessError> {
 
         let bytes = [UInt8](data)
-        return processFile(bytes[...], filepath, settings == nil ? ProcessSettings() : settings!)
+        return decodeWordFile(bytes[...], filepath, settings == nil ? ProcessSettings() : settings!)
+        //return processFile(bytes[...], filepath, settings == nil ? ProcessSettings() : settings!)
     }
 
 
@@ -429,44 +436,6 @@ public struct PsionWord {
 
 
     /**
-     Swap a CP 850 for a CP 1252.
-
-     Covers every CP 850 character that CP 1252 can represent: all of the
-     CP 850 accented letters and symbols, which sit at their Latin-1 code points
-     in CP 1252, plus ƒ. Box-drawing and other characters absent from CP 1252
-     (eg. `ı`, `‗`, `■`) still become `?`.
-
-     REVISED 0.4.0
-
-     - Parameters:
-        - char: A CP 850 integer value (0x80-0xFF).
-
-     - Returns: The equivalent 1252 code.
-     */
-    private static func charSwap(_ char: UInt8) -> UInt8 {
-
-        guard char >= 0x80 else { return char }
-        return cp850ToCp1252[Int(char) - 0x80]
-    }
-
-    /*
-     CP 1252 equivalents of CP 850 bytes 0x80-0xFF, derived from `cp850UpperHalf`
-     */
-    private static let cp850ToCp1252: [UInt8] = cp850UpperHalf.map { scalar in
-        switch scalar.value {
-            case 0xA0...0xFF:
-                // Latin-1 Supplement characters have the same code in CP 1252
-                return UInt8(scalar.value)
-            case 0x0192:
-                // ƒ
-                return 0x83
-            default:
-                return 0x3F
-        }
-    }
-
-
-    /**
      Parse a Psion Word block styling record and extract the formatting blocks.
 
      - Parameters:
@@ -484,23 +453,11 @@ public struct PsionWord {
         let length = data.endIndex - data.startIndex
         while recordByteCount < length {
             let blockStartByteIndex = data.startIndex + recordByteCount
-            let blockLength: Int = getWordValue(data[blockStartByteIndex..<blockStartByteIndex + 2])
+            let blockLength = getWordValue(data[blockStartByteIndex..<blockStartByteIndex + 2])
+            let styleCode = decodePsionText(data[blockStartByteIndex + 2..<blockStartByteIndex + 4])
+            let emphasisCode = decodePsionText(data[blockStartByteIndex + 4..<blockStartByteIndex + 6])
 
-            // FROM 0.1.3
-            // Try CP1252 encoding; if it fails (as it does on Linux), try Ascii then default to Body Text
-            var styleCode: String = String(bytes: data[blockStartByteIndex + 2..<blockStartByteIndex + 4], encoding: .windowsCP1252) ?? ""
-            if styleCode == "" {
-                styleCode = String(bytes: data[blockStartByteIndex + 2..<blockStartByteIndex + 4], encoding: .ascii) ?? "BT"
-            }
-
-            // FROM 0.1.3
-            // Try CP1252 encoding; if it fails (as it does on Linux), try Ascii then default to None
-            var emphasisCode: String = String(bytes: data[blockStartByteIndex + 4..<blockStartByteIndex + 6], encoding: .windowsCP1252) ?? ""
-            if emphasisCode == "" {
-                emphasisCode = String(bytes: data[blockStartByteIndex + 4..<blockStartByteIndex + 6], encoding: .ascii) ?? "NN"
-            }
-
-            var block: PsionWordFormatBlock = PsionWordFormatBlock()
+            var block = PsionWordFormatBlock()
             block.styleCode = styleCode
             block.emphasisCode = emphasisCode
             block.startIndex = dataByteCount
@@ -521,6 +478,43 @@ public struct PsionWord {
             if dataByteCount >= textLength {
                 break
             }
+        }
+
+        return blocks
+    }
+
+    internal static func getStyleBlocks2(_ data: ArraySlice<UInt8>, _ textLength: Int, _ settings: ProcessSettings) -> [PsionWordFormatBlock] {
+
+        var blocks: [PsionWordFormatBlock] = []
+        var recordIndex = data.startIndex
+        var textIndex = 0
+
+        // Stop when the text is used up, or when there isn't a whole block unit left to read
+        while textIndex < textLength && recordIndex + PsionWordConstants.BlockUnitLength <= data.endIndex {
+            let blockLength = getWordValue(data[recordIndex..<recordIndex + 2])
+            let styleCode = decodePsionText(data[recordIndex + 2..<recordIndex + 4])
+            let emphasisCode = decodePsionText(data[recordIndex + 4..<recordIndex + 6])
+            recordIndex += PsionWordConstants.BlockUnitLength
+
+            // Skip empty blocks: they cover no text
+            guard blockLength > 0 else {
+                continue
+            }
+
+            // NOTE The loop condition and the guard ensure that, for every block,
+            //      0 <= startIndex <= endIndex <= textLength - 1
+            var block = PsionWordFormatBlock()
+            block.styleCode = styleCode
+            block.emphasisCode = emphasisCode
+            block.startIndex = textIndex
+            block.endIndex = min(textIndex + blockLength, textLength) - 1
+            blocks.append(block)
+
+            if settings.showInfo {
+                log("  Text bytes range \(block.startIndex)-\(block.endIndex) has style code \(styleCode) and emphasis code \(emphasisCode)")
+            }
+
+            textIndex += blockLength
         }
 
         return blocks
@@ -781,32 +775,465 @@ public struct PsionWord {
     }
 
 
-    /**
-     Determine the longest length of two substrings.
-     */
-    private static func greater(_ a: Substring, _ b: Substring) -> String {
 
-        if a.count > b.count {
-            return String(a)
+
+    static public func decodeWordFile(_ data: ArraySlice<UInt8>, _ filepath: String, _ settings: ProcessSettings) -> Result<String, ProcessError> {
+
+        var bodyText = ""
+        var byteIndex = 40
+        var textBytes: [UInt8] = []
+        var outerText: [String] = ["", ""]
+        var styles: [String:PsionWordStyle] = [:]
+        var emphases: [String:PsionWordStyle] = [:]
+        var blocks: [PsionWordFormatBlock] = []
+        var document = Document()
+
+        // Check minimum file size: enough bytes to at least check the preamble
+        if data.count < PsionWordConstants.PreambleLength {
+            return .failure(ProcessError(code: .badPsionFileType))
         }
 
-        return String(b)
+        // Check the data preamble (C String of up to 15 chars plus `NUL`)
+        let preamble = String(decoding: data[0..<15], as: UTF8.self)
+        if preamble != "PSIONWPDATAFILE" || data.count < PsionWordConstants.HeaderLength {
+            // TODO Report actual file type
+            return .failure(ProcessError(code: .badPsionFileType))
+        }
+
+        if settings.showInfo {
+            log("File \(filepath) is a Psion Series 3 Word document")
+        }
+
+        // Check for encrypted files: look at file bytes 16 and 17
+        // NOTE We can't handle these yet as the decode algorithm remains unknown
+        if getWordValue(data[16..<18]) == PsionWordConstants.EncryptionMarker {
+            return .failure(ProcessError(code: .badFileEncrypted))
+        }
+
+        // Iterate over the file's bytes to extract the records
+        var recordCounter: UInt16 = 0
+        while byteIndex < data.count - PsionWordConstants.RecordHeaderLength {
+            // Get the 16-bit record type and 16-bit data length
+            let recordType = PsionWordRecordType(rawValue: getWordValue(data[byteIndex..<byteIndex + 2])) ?? .unknown
+            let recordDataLength: Int = getWordValue(data[byteIndex + 2..<byteIndex + 4])
+
+            // Move index to start of record
+            byteIndex += PsionWordConstants.RecordHeaderLength
+
+            if settings.showInfo {
+                log("Record of type \(PsionWordConstants.RecordTypes[recordType.rawValue - 1]) found at offset \(String(format: "0x%04x", arguments: [byteIndex])). Size: \(recordDataLength) bytes")
+            }
+
+            // Process the current record
+            switch recordType {
+                case .fileInfo:
+                    // We don't care about this beyond its size
+                    if recordDataLength != PsionWordConstants.FileInfoRecordLength {
+                        var error = ProcessError(code: .badRecordLengthFileInfo)
+                        error.text = "Bad file info record size (\(recordDataLength) not \(PsionWordConstants.FileInfoRecordLength) bytes)"
+                        return .failure(error)
+                    }
+                case .printerConfig:
+                    // We don't care about this beyond its size
+                    if recordDataLength != PsionWordConstants.PrinterConfigRecordLength {
+                        var error = ProcessError(code: .badRecordLengthPrinterConfig)
+                        error.text = "Bad printer config record size (\(recordDataLength) not \(PsionWordConstants.PrinterConfigRecordLength) bytes)"
+                        return .failure(error)
+                    }
+                case .printerDriver:
+                    // We don't care about this
+                    break
+                case .headerText:
+                    fallthrough
+                case .footerText:
+                    // Index in strings store is 0 for header, 1 for footer
+                    let index = recordType.rawValue - PsionWordRecordType.headerText.rawValue
+                    outerText[index] = decodeOuterText(data[byteIndex..<byteIndex + recordDataLength], index == 0, settings)
+                case .styleDefinition:
+                    // Check the fixed size
+                    if recordDataLength != PsionWordConstants.StyleRecordLength {
+                        var error = ProcessError(code: .badRecordLengthStyleDefinition)
+                        error.text = "Bad style definition record size (\(recordDataLength) not \(PsionWordConstants.StyleRecordLength) bytes)"
+                        return .failure(error)
+                    }
+
+                    let style = getStyle(data[byteIndex..<byteIndex + PsionWordConstants.StyleRecordLength], true, settings)
+                    styles[style.code] = style
+                case .emphasisDefinition:
+                    // Check the fixed size
+                    if recordDataLength != PsionWordConstants.EmphasisRecordLength {
+                        var error = ProcessError(code: .badRecordLengthStyleDefinition)
+                        error.text = "Bad emphasis definition record size (\(recordDataLength)) not \(PsionWordConstants.EmphasisRecordLength) bytes"
+                        return .failure(error)
+                    }
+
+                    let emphasis = getStyle(data[byteIndex..<byteIndex + PsionWordConstants.EmphasisRecordLength], false, settings)
+                    emphases[emphasis.code] = emphasis
+                case .bodyText:
+                    // Keep the raw CP 850 bytes: they are decoded per span in `createDoc()`.
+                    // NOTE No bytes are removed or replaced here, so the block ranges remain valid
+                    textBytes = Array(data[byteIndex..<byteIndex + recordDataLength])
+                    if settings.showInfo {
+                        log("  Body text length \(textBytes.count) byte\(textBytes.count == 1 ? "" : "s")")
+                    }
+                case .blockInfo:
+                    blocks = getStyleBlocks2(data[byteIndex..<data.endIndex], textBytes.count, settings)
+                    // Set each block's style and emphasis according to the codes.
+                    // NOTE We loop this way so we don't change copy-on-write array members.
+                    for index in blocks.indices {
+                        blocks[index].style = styles[blocks[index].styleCode]
+                        blocks[index].emphasis = emphases[blocks[index].emphasisCode]
+                    }
+                case .unknown:
+                    var error = ProcessError(code: .badRecordType)
+                    error.text = "Bad Word file record type (\(recordType.rawValue) at \(String(format: "0x%04x", arguments: [byteIndex]))"
+                    return .failure(error)
+            }
+
+            recordCounter |= (1 << recordType.rawValue)
+            byteIndex += recordDataLength
+        }
+
+        // Check we have at least one of every record
+        if recordCounter != PsionWordConstants.RecordTotal {
+            // Processing ended, but without a complete set of records
+            return .failure(ProcessError(code: .badFileMissingRecords))
+        }
+
+        document.paragraphs = createDoc(textBytes, blocks) //, styles, emphases, settings)
+
+        // Add the header and foot if requested
+        if settings.includeHeader {
+            document.header = Paragraph(spans: [Span(text: outerText[0])])
+            document.footer = Paragraph(spans: [Span(text: outerText[1])])
+        }
+
+        bodyText = convert(document: document, toMarkdown: settings.returnMarkdown, includeOuter: settings.includeHeader)
+        return .success(bodyText)
     }
 
 
     /**
-     Output raw bytes as hex values.
+     Decode a header or footer record's text.
 
-     Required for debugging ONLY.
+     - Parameters:
+        - data:     A slice of the Word file bytes containing the whole record, including its `NUL` terminator.
+        - isHeader: `true` if the record is the header; `false` if it is the footer.
+        - settings: File conversion parameters.
+
+     - Returns: The text as a string.
      */
-    private static func debugPrintBytes(_ data: ArraySlice<UInt8>) {
+    private static func decodeOuterText(_ data: ArraySlice<UInt8>, _ isHeader: Bool, _ settings: ProcessSettings) -> String {
 
-        var s = ""
-        for byte in data {
-            s += String(format: "%02X", byte)
+        // Remove the C String NUL terminator, if present
+        let textBytes = data.last == 0 ? data.dropLast() : data
+        let outerText = decodePsionText(textBytes).trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if settings.showInfo {
+            log("  \(isHeader ? "Header" : "Footer") text length \(textBytes.count) byte\(textBytes.count == 1 ? "" : "s")")
         }
 
-        print(s)
+        // String is empty (NUL only)?
+        return outerText.isEmpty ? (isHeader ? "No header" : "No footer") : outerText
     }
 
-}
+
+    /**
+     Convert Word Blocks into a sequence of Paragraphs.
+     Paragraphs map to Word paragraphs, ie. text of a given style, ending in `0`.
+     Paragraphs contain Spans, ie. text of a given emphasis within a paragraph.
+     Word Blocks are text units of a given style and emphasis, so 1 Span = 1 Block, 1 Paragraph = x Blocks
+
+     - Parameters:
+        - rawText: The body text as raw CP 850 bytes, unmodified from the file.
+        - blocks:  The block formatting data extracted from the document.
+
+     - Returns: The document's paragraphs, with their text decoded to Unicode.
+     */
+    private static func createDoc(_ rawText: [UInt8], _ blocks: [PsionWordFormatBlock]) -> [Paragraph] {
+
+        var paragraphs: [Paragraph] = []
+        var currentParagraph = Paragraph()
+        for block in blocks {
+            // Check block size (negative size/extends beyond the raw text bytes)
+            guard block.startIndex <= block.endIndex && block.endIndex < rawText.count else { continue }
+
+            // Get a span's text, minus the `0` paragraph separator if the block ends a paragraph
+            let isParagraphEnd = rawText[block.endIndex] == PsionWordConstants.ParagraphMarker
+            let spanBytes = isParagraphEnd ? rawText[block.startIndex..<block.endIndex] : rawText[block.startIndex...block.endIndex]
+            var span = Span()
+            span.text = decodePsionText(spanBytes)
+
+            if let emphasis = block.emphasis {
+                if emphasis.bold {
+                    span.type.insert(.bold)
+                }
+
+                if emphasis.italic {
+                    span.type.insert(.italic)
+                }
+
+                if emphasis.subScript {
+                    span.type.insert(.subScript)
+                }
+
+                if emphasis.superScript {
+                    span.type.insert(.superScript)
+                }
+
+                if emphasis.underlined {
+                    span.type.insert(.underline)
+                }
+            }
+
+            currentParagraph.spans.append(span)
+
+            if currentParagraph.spans.count == 1 {
+                // A paragraph's style is set by its first block
+                currentParagraph.type = paragraphType(for: block.styleCode)
+                currentParagraph.word3Style = block.style
+            }
+
+            if isParagraphEnd {
+                // Store the current para and prep the next one
+                paragraphs.append(removeListMarker(from: currentParagraph))
+                currentParagraph = Paragraph()
+            }
+        }
+
+        // Catch a final paragraph that lacks a Psion Word end-of-para marker
+        if !currentParagraph.spans.isEmpty {
+            paragraphs.append(removeListMarker(from: currentParagraph))
+        }
+
+        return paragraphs
+    }
+
+
+    /**
+     Remove the bullet or number that Word 3 list items carry as part of their text,
+     eg. `·<TAB>` or `12.<TAB>`, and record it in the paragraph's type instead.
+
+     The marker may be split across spans, eg. if only the number is bold, so it is
+     located in the paragraph's combined text then removed span by span. Paragraphs
+     that aren't list items, or which have no marker, are returned unchanged.
+
+     - Parameters:
+        - paragraph: The paragraph to process.
+
+     - Returns: The paragraph without its list marker.
+     */
+    private static func removeListMarker(from paragraph: Paragraph) -> Paragraph {
+
+        let text = Array(paragraph.spans.map { $0.text }.joined())
+        var markerLength = 0
+        var result = paragraph
+
+        switch paragraph.type {
+            case .bulletItem(let level, _):
+                // A bullet is any single non-alphanumeric, non-space character followed by a tab
+                guard text.count >= 2, text[1] == "\t" else { return paragraph }
+                let bullet = text[0]
+                guard !bullet.isLetter && !bullet.isNumber && !bullet.isWhitespace else { return paragraph }
+                result.type = .bulletItem(level: level, bullet: bullet)
+                markerLength = 2
+            case .numberItem(let level, _):
+                // A number is one or more digits, then `.` or `)`, then a tab or space
+                let digits = text.prefix(while: { $0.isASCII && $0.isNumber })
+                guard !digits.isEmpty, text.count >= digits.count + 2,
+                      text[digits.count] == "." || text[digits.count] == ")",
+                      text[digits.count + 1] == "\t" || text[digits.count + 1] == " ",
+                      let number = Int(String(digits)) else { return paragraph }
+                result.type = .numberItem(level: level, number: number)
+                markerLength = digits.count + 2
+            case .body, .heading:
+                return paragraph
+        }
+
+        // Remove the marker's characters from the leading span(s), dropping any left empty
+        var spans: [Span] = []
+        for var span in result.spans {
+            if markerLength > 0 {
+                let removed = min(markerLength, span.text.count)
+                span.text = String(span.text.dropFirst(removed))
+                markerLength -= removed
+                if span.text.isEmpty {
+                    continue
+                }
+            }
+
+            spans.append(span)
+        }
+
+        result.spans = spans
+        return result
+    }
+
+
+    /**
+     Map a Word 3 style code to a paragraph type.
+
+     - Parameters:
+        - styleCode: A two-character Word 3 style code, eg. `HA` or `B2`.
+
+     - Returns: The matching ParagraphType. Unrecognised codes, including user-defined
+                styles, are treated as body text.
+     */
+    private static func paragraphType(for styleCode: String) -> ParagraphType {
+
+        // Bulleted and numbered lists, levels 1-6
+        if let list = PsionWordConstants.listInfo(styleCode) {
+            return list.isBullet ? .bulletItem(level: list.level, bullet: nil) : .numberItem(level: list.level, number: nil)
+        }
+
+        // Headings A-F map to levels 1-6
+        if styleCode.count == 2 && styleCode.hasPrefix("H"),
+           let last = styleCode.unicodeScalars.last,
+           ("A"..."F").contains(last) {
+            return .heading(level: Int(last.value) - Int(("A" as Unicode.Scalar).value) + 1)
+        }
+
+        return .body
+    }
+
+
+    /**
+     Convert an internal Document instance, to plain text or Markdown.
+
+     - Parameters:
+        - document:     A Document instance instances.
+        - toMarkdown:   Convert to Markdown (`true`), or not (`false`).
+        - includeOuter: Add header and/or footer text if preseent
+
+     - Returns: The conversion as a string
+     */
+    static func convert(document: Document, toMarkdown: Bool = false, includeOuter: Bool = false) -> String {
+
+        var docText = ""
+
+        if toMarkdown {
+            // Paragraphs are separated by blank lines, except consecutive items of the same list,
+            // which must stay together to form a single Markdown list
+            var previousType: ParagraphType? = nil
+
+            // Widths of the Markdown list markers (eg. `* `, `12. `) of the open list levels, used to
+            // indent nested items so they sit under their parent's text, however wide its marker
+            var listMarkerWidths: [Int] = []
+
+            // Get the indent for a list item at `level` (1-based) with the given marker, and record
+            // the marker's width for any items nested within this one
+            func listIndent(_ level: Int, _ marker: String) -> String {
+                let parentLevels = level - 1
+                while listMarkerWidths.count < parentLevels {
+                    // Missing parent levels get the width of a bullet marker
+                    listMarkerWidths.append(2)
+                }
+
+                listMarkerWidths = Array(listMarkerWidths.prefix(parentLevels))
+                let indent = listMarkerWidths.reduce(0, +)
+                listMarkerWidths.append(marker.isEmpty ? 2 : marker.count)
+                return String(repeating: " ", count: indent)
+            }
+
+            for paragraph in document.paragraphs {
+                // Any paragraph that isn't a list item, including an empty one, ends the open lists
+                if paragraph.type.listItem == nil {
+                    listMarkerWidths = []
+                }
+
+                // Combine the paragraph's text spans
+                let spanText = combineSpans(paragraph.spans, true)
+
+                // Skip empty paragraphs, which the Psion uses for spacing: Markdown adds its own
+                if spanText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    continue
+                }
+
+                // Style span text according to paragraph style
+                // NOTE No `default:` so the compiler flags any new ParagraphType not handled here
+                var line: String
+                switch paragraph.type {
+                    case .body:
+                        line = spanText
+                    case .heading(let level):
+                        line = String(repeating: "#", count: level) + " \(spanText)"
+                    case .bulletItem(let level, _):
+                        line = listIndent(level, "* ") + "* \(spanText)"
+                    case .numberItem(let level, let number):
+                        // An item with no number in its text is output without a marker
+                        let marker = number.map { "\($0). " } ?? ""
+                        line = listIndent(level, marker) + marker + spanText
+                }
+
+                if let previousType {
+                    // Items of the same list, including nested items, stay together.
+                    // Only adjacent top-level items of different list types are separated
+                    var sameList = false
+                    if let previousList = previousType.listItem, let currentList = paragraph.type.listItem {
+                        sameList = previousList.level > 1 || currentList.level > 1 || previousList.isBullet == currentList.isBullet
+                    }
+
+                    docText += sameList ? "\n" : "\n\n"
+                }
+
+                docText += line
+                previousType = paragraph.type
+            }
+
+            if !docText.isEmpty {
+                docText += "\n"
+            }
+        } else {
+            for paragraph in document.paragraphs {
+                // Plain text follows the Psion layout, including empty paragraphs,
+                // but restores the list markers taken from the source text
+                var marker = ""
+                switch paragraph.type {
+                    case .bulletItem(_, let bullet):
+                        if let bullet {
+                            marker = "\(bullet)\t"
+                        }
+                    case .numberItem(_, let number):
+                        if let number {
+                            marker = "\(number).\t"
+                        }
+                    case .body, .heading:
+                        break
+                }
+
+                // Indent nested list items by one tab per parent level. As markers end in a tab,
+                // this places an item's marker under its parent's text, whatever the marker's width
+                // NOTE The Psion stores no indentation in the text: it comes from each list style
+                var indent = ""
+                if let list = paragraph.type.listItem {
+                    indent = String(repeating: "\t", count: list.level - 1)
+                }
+
+                docText += "\(indent)\(marker)\(combineSpans(paragraph.spans, false))\n"
+            }
+        }
+
+        // Apply headers and/or footers if present and requested
+        if includeOuter {
+            if let footer = document.footer, let header = document.header {
+                let footerText = combineSpans(footer.spans, toMarkdown)
+                let headerText = combineSpans(header.spans, toMarkdown)
+                let lineCount = max(footerText.count, headerText.count)
+                let line = String(repeating: "*", count: lineCount)
+                docText = "\(docText)\n\(line)\n\(footerText)\n"
+                docText = "\(headerText)\n\(line)\n\(docText)"
+            } else if let footer = document.footer {
+                let footerText = combineSpans(footer.spans, toMarkdown)
+                let line = String(repeating: "*", count: footerText.count)
+                docText = "\(docText)\n\(line)\n\(footerText)\n"
+            } else if let header = document.header {
+                let headerText = combineSpans(header.spans, toMarkdown)
+                let line = String(repeating: "*", count: headerText.count)
+                docText = "\(headerText)\n\(line)\n\(docText)"
+            }
+        }
+        
+        return plainCharacters(docText)
+    }
+
+ }

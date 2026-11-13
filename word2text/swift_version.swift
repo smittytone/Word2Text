@@ -29,5 +29,5 @@
          source of truth for the app's version and build numbers.
 */
 
-let SWIFT_BUILD_PROCESS_VERSION = "0.4.1"
-let SWIFT_BUILD_PROCESS_BUILD = 46
+let SWIFT_BUILD_PROCESS_VERSION = "0.5.0"
+let SWIFT_BUILD_PROCESS_BUILD = 48
